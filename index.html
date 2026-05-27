@@ -1,19 +1,19 @@
-```html
 <!DOCTYPE html>
-<html lang="id" class="overflow-x-hidden">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>M3 Expressive Reader</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js)"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js](https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js)"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js](https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js)"></script>
+    <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&family=Space+Mono&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&family=Space+Mono&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&family=Space+Mono&display=swap)" rel="stylesheet">
 
     <style id="dynamic-theme"></style>
 
@@ -41,14 +41,15 @@
     </script>
     
     <style>
-        /* KUNCI HORIZONTAL SCROLL DI SINI */
+        /* FIX TOTAL UNTUK VIEWPORT MOBILE & URL BAR MENGHILANG */
         html, body {
-            max-width: 100%;
-            overflow-x: hidden;
-            background-color: var(--md-sys-color-background); 
-            color: var(--md-sys-color-on-background);
-            transition: background-color 0.3s ease, color 0.3s ease;
-            -webkit-tap-highlight-color: transparent;
+            height: 100dvh;
+            width: 100vw;
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background-color: var(--md-sys-color-background); color: var(--md-sys-color-on-background);
+            transition: background-color 0.3s ease, color 0.3s ease; -webkit-tap-highlight-color: transparent;
         }
         
         .btn-morph { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 28px; }
@@ -63,30 +64,19 @@
         @media (min-width: 768px) { .reader-text-container { column-count: 2; } }
 
         .progress-smooth { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        mark.search-hl { background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); border-radius: 4px; padding: 0 2px; transition: background-color 1.5s ease, color 1.5s ease; }
+        mark.search-hl { background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); border-radius: 4px; padding: 0 4px; box-shadow: 0 0 10px rgba(0,0,0,0.2); transition: background-color 1.5s ease, color 1.5s ease; }
 
         :root { --reader-font: 'Lora', serif; --reader-size: 1.2rem; --reader-align: left; --reader-line-height: 1.8; }
         
-        /* PAKSA TEKS PATAH BIAR GA NGELEBARIN LAYAR */
-        .reader-dynamic-text {
-            word-wrap: break-word;
-            overflow-wrap: anywhere;
-            hyphens: auto;
-        }
-        .reader-dynamic-text p {
-            font-family: var(--reader-font) !important; font-size: var(--reader-size) !important;
-            text-align: var(--reader-align) !important; line-height: var(--reader-line-height) !important;
-            max-width: 100%;
-            overflow-x: hidden;
-        }
+        .reader-dynamic-text { word-wrap: break-word; overflow-wrap: anywhere; hyphens: auto; }
+        .reader-dynamic-text p { font-family: var(--reader-font) !important; font-size: var(--reader-size) !important; text-align: var(--reader-align) !important; line-height: var(--reader-line-height) !important; max-width: 100%; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
-<body class="h-screen w-full font-sans flex flex-col relative overflow-hidden">
+<body class="font-sans flex flex-col relative">
 
     <!-- VIEW: LIBRARY -->
-    <div id="library-view" class="absolute inset-0 block px-4 py-6 overflow-y-auto overflow-x-hidden transition-transform duration-500 origin-bottom">
+    <div id="library-view" class="absolute inset-0 block px-4 py-6 overflow-y-auto overflow-x-hidden transition-transform duration-500 origin-bottom bg-m3-bg z-10">
         <header class="pt-6 pb-6 sticky top-0 bg-m3-bg z-10 w-full">
             <div class="flex justify-between items-center mb-6 px-2">
                 <div>
@@ -108,7 +98,7 @@
 
         <div id="loading-state" class="hidden mb-8 mx-2 p-5 bg-m3-secondaryContainer text-m3-onSecondaryContainer rounded-[28px] shadow-sm">
             <div class="flex justify-between items-end mb-3">
-                <p id="loading-text" class="font-medium text-base leading-tight">Membaca PDF...</p>
+                <p id="loading-text" class="font-medium text-base leading-tight">Membaca Dokumen...</p>
                 <p id="loading-percent" class="font-bold text-lg">0%</p>
             </div>
             <div class="h-3 w-full bg-black/10 dark:bg-white/10 rounded-full overflow-hidden relative">
@@ -124,8 +114,8 @@
         </div>
 
         <div class="fixed bottom-8 right-6 z-50">
-            <input type="file" id="pdf-upload" accept="application/pdf" class="hidden">
-            <label for="pdf-upload" class="btn-morph flex items-center justify-center w-16 h-16 bg-m3-tertiaryContainer text-m3-onTertiaryContainer shadow-xl cursor-pointer">
+            <input type="file" id="doc-upload" accept="application/pdf,.epub" class="hidden">
+            <label for="doc-upload" class="btn-morph flex items-center justify-center w-16 h-16 bg-m3-tertiaryContainer text-m3-onTertiaryContainer shadow-xl cursor-pointer">
                 <i data-lucide="plus" class="w-8 h-8"></i>
             </label>
         </div>
@@ -134,9 +124,7 @@
     <!-- VIEW: READER -->
     <div id="reader-view" class="absolute inset-0 flex flex-col bg-m3-bg text-m3-onBg transform translate-y-full transition-transform duration-500 ease-in-out z-20 w-full overflow-hidden">
         <div class="flex items-center justify-between p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant shadow-sm shrink-0 z-30 relative rounded-b-[24px]">
-            <button id="btn-back" class="btn-morph p-3 hover:bg-m3-surface">
-                <i data-lucide="arrow-down"></i>
-            </button>
+            <button id="btn-back" class="btn-morph p-3 hover:bg-m3-surface"><i data-lucide="arrow-down"></i></button>
             <div class="flex-1 px-3 text-center overflow-hidden">
                 <span id="reader-title" class="font-bold truncate block text-base">Judul</span>
                 <span id="reader-progress-text" class="text-xs font-medium opacity-80 block">0%</span>
@@ -148,7 +136,7 @@
             </div>
         </div>
         
-        <div id="reader-search-bar" class="hidden bg-m3-surfaceVariant px-4 pb-4 shadow-sm z-20 transition-all w-full">
+        <div id="reader-search-bar" class="hidden bg-m3-surfaceVariant px-4 pb-4 shadow-sm z-20 transition-all w-full shrink-0">
             <div class="flex gap-2">
                 <input type="text" id="inbook-search-input" placeholder="Cari teks spesifik..." class="flex-1 bg-m3-surface text-m3-onSurface rounded-full px-4 py-2 outline-none text-sm font-medium">
                 <button id="btn-exec-search" class="bg-m3-primary text-m3-onPrimary px-4 py-2 rounded-full font-medium text-sm btn-morph">Cari</button>
@@ -161,23 +149,17 @@
         </div>
 
         <div class="flex-1 relative overflow-hidden flex w-full">
-            <div id="reader-content" class="flex-1 overflow-y-auto overflow-x-hidden px-6 py-8 pb-32 scroll-smooth reader-dynamic-text relative w-full">
+            <div id="reader-content" class="absolute inset-0 overflow-y-auto overflow-x-hidden px-6 py-6 pb-40 scroll-smooth reader-dynamic-text w-full">
                 <div id="reader-inner" class="max-w-4xl mx-auto reader-text-container space-y-5"></div>
             </div>
 
-            <!-- Panel TOC -->
             <div id="toc-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant shadow-2xl p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto">
-                <h3 class="text-xl font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2">
-                    <i data-lucide="list-tree"></i> Daftar Isi
-                </h3>
+                <h3 class="text-xl font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="list-tree"></i> Daftar Isi</h3>
                 <div id="toc-list" class="space-y-2 flex flex-col"></div>
             </div>
             
-            <!-- Panel Pengaturan Teks -->
             <div id="settings-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant shadow-2xl p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto">
-                <h3 class="text-xl font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2">
-                    <i data-lucide="sliders-horizontal"></i> Tampilan
-                </h3>
+                <h3 class="text-xl font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="sliders-horizontal"></i> Tampilan</h3>
                 <div class="space-y-6">
                     <div>
                         <label class="text-sm font-bold opacity-70 block mb-3">Ukuran Font</label>
@@ -214,19 +196,16 @@
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
             <h3 class="text-2xl font-bold mb-6 text-m3-onSurface">Pilih Tema M3 (15 Palet)</h3>
             <div class="grid grid-cols-5 gap-4 mb-4">
-                <!-- Baris 1 -->
                 <button onclick="setTheme('purple')" class="btn-morph w-12 h-12 bg-[#6750A4] shadow-md"></button>
                 <button onclick="setTheme('green')" class="btn-morph w-12 h-12 bg-[#006C4C] shadow-md"></button>
                 <button onclick="setTheme('rose')" class="btn-morph w-12 h-12 bg-[#984061] shadow-md"></button>
                 <button onclick="setTheme('blue')" class="btn-morph w-12 h-12 bg-[#0061A4] shadow-md"></button>
                 <button onclick="setTheme('orange')" class="btn-morph w-12 h-12 bg-[#8F4C38] shadow-md"></button>
-                <!-- Baris 2 -->
                 <button onclick="setTheme('teal')" class="btn-morph w-12 h-12 bg-[#006A60] shadow-md"></button>
                 <button onclick="setTheme('yellow')" class="btn-morph w-12 h-12 bg-[#695F00] shadow-md"></button>
                 <button onclick="setTheme('pink')" class="btn-morph w-12 h-12 bg-[#8C4A60] shadow-md"></button>
                 <button onclick="setTheme('cyan')" class="btn-morph w-12 h-12 bg-[#006874] shadow-md"></button>
                 <button onclick="setTheme('slate')" class="btn-morph w-12 h-12 bg-[#415F91] shadow-md"></button>
-                <!-- Baris 3 (Ekstra Baru) -->
                 <button onclick="setTheme('red')" class="btn-morph w-12 h-12 bg-[#B3261E] shadow-md"></button>
                 <button onclick="setTheme('indigo')" class="btn-morph w-12 h-12 bg-[#3F51B5] shadow-md"></button>
                 <button onclick="setTheme('lime')" class="btn-morph w-12 h-12 bg-[#556219] shadow-md"></button>
@@ -254,9 +233,8 @@
     </div>
 
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js)';
 
-        // Tema Palette - TOTAL 15 TEMA
         const M3_PALETTES = {
             purple: { light: `--md-sys-color-primary:#6750A4;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#EADDFF;--md-sys-color-on-primary-container:#21005D;--md-sys-color-secondary-container:#E8DEF8;--md-sys-color-on-secondary-container:#1D192B;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#FFFBFE;--md-sys-color-on-background:#1C1B1F;--md-sys-color-surface:#FFFBFE;--md-sys-color-on-surface:#1C1B1F;--md-sys-color-surface-variant:#E7E0EC;--md-sys-color-on-surface-variant:#49454F;`, dark: `--md-sys-color-primary:#D0BCFF;--md-sys-color-on-primary:#381E72;--md-sys-color-primary-container:#4F378B;--md-sys-color-on-primary-container:#EADDFF;--md-sys-color-secondary-container:#4A4458;--md-sys-color-on-secondary-container:#E8DEF8;--md-sys-color-tertiary-container:#633B48;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#1C1B1E;--md-sys-color-on-background:#E6E1E5;--md-sys-color-surface:#1C1B1E;--md-sys-color-on-surface:#E6E1E5;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
             green: { light: `--md-sys-color-primary:#006C4C;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#89F8D6;--md-sys-color-on-primary-container:#002114;--md-sys-color-secondary-container:#CCE8DB;--md-sys-color-on-secondary-container:#052016;--md-sys-color-tertiary-container:#BEEAF6;--md-sys-color-on-tertiary-container:#001F29;--md-sys-color-background:#FBFDF9;--md-sys-color-on-background:#191C1A;--md-sys-color-surface:#FBFDF9;--md-sys-color-on-surface:#191C1A;--md-sys-color-surface-variant:#DBE5DF;--md-sys-color-on-surface-variant:#404943;`, dark: `--md-sys-color-primary:#6CDBBA;--md-sys-color-on-primary:#003825;--md-sys-color-primary-container:#005138;--md-sys-color-on-primary-container:#89F8D6;--md-sys-color-secondary-container:#334B3F;--md-sys-color-on-secondary-container:#CCE8DB;--md-sys-color-tertiary-container:#204D59;--md-sys-color-on-tertiary-container:#BEEAF6;--md-sys-color-background:#191C1A;--md-sys-color-on-background:#E1E3DF;--md-sys-color-surface:#191C1A;--md-sys-color-on-surface:#E1E3DF;--md-sys-color-surface-variant:#404943;--md-sys-color-on-surface-variant:#BFC9C3;` },
@@ -268,7 +246,6 @@
             pink: { light: `--md-sys-color-primary:#8C4A60;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFD9E2;--md-sys-color-on-primary-container:#39071D;--md-sys-color-secondary-container:#FDDADA;--md-sys-color-on-secondary-container:#2C1516;--md-sys-color-tertiary-container:#FFD8CB;--md-sys-color-on-tertiary-container:#321105;--md-sys-color-background:#FFFBFF;--md-sys-color-on-background:#201A1B;--md-sys-color-surface:#FFFBFF;--md-sys-color-on-surface:#201A1B;--md-sys-color-surface-variant:#F4DDDF;--md-sys-color-on-surface-variant:#524346;`, dark: `--md-sys-color-primary:#FFB0C8;--md-sys-color-on-primary:#551D32;--md-sys-color-primary-container:#703348;--md-sys-color-on-primary-container:#FFD9E2;--md-sys-color-secondary-container:#5C3F3F;--md-sys-color-on-secondary-container:#FDDADA;--md-sys-color-tertiary-container:#663B2B;--md-sys-color-on-tertiary-container:#FFD8CB;--md-sys-color-background:#201A1B;--md-sys-color-on-background:#ECE0E1;--md-sys-color-surface:#201A1B;--md-sys-color-on-surface:#ECE0E1;--md-sys-color-surface-variant:#524346;--md-sys-color-on-surface-variant:#D7C1C4;` },
             cyan: { light: `--md-sys-color-primary:#006874;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#97F0FF;--md-sys-color-on-primary-container:#001F24;--md-sys-color-secondary-container:#CEE6EA;--md-sys-color-on-secondary-container:#051F23;--md-sys-color-tertiary-container:#DFE2FF;--md-sys-color-on-tertiary-container:#151937;--md-sys-color-background:#FAFCFD;--md-sys-color-on-background:#191C1D;--md-sys-color-surface:#FAFCFD;--md-sys-color-on-surface:#191C1D;--md-sys-color-surface-variant:#DBE4E6;--md-sys-color-on-surface-variant:#3F484A;`, dark: `--md-sys-color-primary:#4FD8EB;--md-sys-color-on-primary:#00363D;--md-sys-color-primary-container:#004F58;--md-sys-color-on-primary-container:#97F0FF;--md-sys-color-secondary-container:#334B4E;--md-sys-color-on-secondary-container:#CEE6EA;--md-sys-color-tertiary-container:#404364;--md-sys-color-on-tertiary-container:#DFE2FF;--md-sys-color-background:#191C1D;--md-sys-color-on-background:#E1E3E3;--md-sys-color-surface:#191C1D;--md-sys-color-on-surface:#E1E3E3;--md-sys-color-surface-variant:#3F484A;--md-sys-color-on-surface-variant:#BFC8CA;` },
             slate: { light: `--md-sys-color-primary:#415F91;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D6E3FF;--md-sys-color-on-primary-container:#001B3E;--md-sys-color-secondary-container:#DAE2F9;--md-sys-color-on-secondary-container:#131C2B;--md-sys-color-tertiary-container:#FBD7FC;--md-sys-color-on-tertiary-container:#29132D;--md-sys-color-background:#F9F9FF;--md-sys-color-on-background:#191C20;--md-sys-color-surface:#F9F9FF;--md-sys-color-on-surface:#191C20;--md-sys-color-surface-variant:#E0E2EC;--md-sys-color-on-surface-variant:#44474E;`, dark: `--md-sys-color-primary:#AAC7FF;--md-sys-color-on-primary:#0A305F;--md-sys-color-primary-container:#284777;--md-sys-color-on-primary-container:#D6E3FF;--md-sys-color-secondary-container:#3E4759;--md-sys-color-on-secondary-container:#DAE2F9;--md-sys-color-tertiary-container:#5C3F5F;--md-sys-color-on-tertiary-container:#FBD7FC;--md-sys-color-background:#191C20;--md-sys-color-on-background:#E2E2E9;--md-sys-color-surface:#191C20;--md-sys-color-on-surface:#E2E2E9;--md-sys-color-surface-variant:#44474E;--md-sys-color-on-surface-variant:#C4C6D0;` },
-            // NEW 5 PALETTES
             red: { light: `--md-sys-color-primary:#B3261E;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#F9DEDC;--md-sys-color-on-primary-container:#410E0B;--md-sys-color-secondary-container:#FFDAD6;--md-sys-color-on-secondary-container:#3E0000;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#FFFBFE;--md-sys-color-on-background:#1C1B1F;--md-sys-color-surface:#FFFBFE;--md-sys-color-on-surface:#1C1B1F;--md-sys-color-surface-variant:#E7E0EC;--md-sys-color-on-surface-variant:#49454F;`, dark: `--md-sys-color-primary:#F2B8B5;--md-sys-color-on-primary:#601410;--md-sys-color-primary-container:#8C1D18;--md-sys-color-on-primary-container:#F9DEDC;--md-sys-color-secondary-container:#733431;--md-sys-color-on-secondary-container:#FFDAD6;--md-sys-color-tertiary-container:#7D293E;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#1C1B1F;--md-sys-color-on-background:#E6E1E5;--md-sys-color-surface:#1C1B1F;--md-sys-color-on-surface:#E6E1E5;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
             indigo: { light: `--md-sys-color-primary:#4355B9;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#DEE0FF;--md-sys-color-on-primary-container:#00105C;--md-sys-color-secondary-container:#E0E0FF;--md-sys-color-on-secondary-container:#001159;--md-sys-color-tertiary-container:#E2DFFFF;--md-sys-color-on-tertiary-container:#181735;--md-sys-color-background:#FEFBFF;--md-sys-color-on-background:#1B1B1F;--md-sys-color-surface:#FEFBFF;--md-sys-color-on-surface:#1B1B1F;--md-sys-color-surface-variant:#E3E1EC;--md-sys-color-on-surface-variant:#46464F;`, dark: `--md-sys-color-primary:#BAC3FF;--md-sys-color-on-primary:#08218A;--md-sys-color-primary-container:#293CA0;--md-sys-color-on-primary-container:#DEE0FF;--md-sys-color-secondary-container:#3F4376;--md-sys-color-on-secondary-container:#E0E0FF;--md-sys-color-tertiary-container:#403D66;--md-sys-color-on-tertiary-container:#E2DFFFF;--md-sys-color-background:#1B1B1F;--md-sys-color-on-background:#E4E1E6;--md-sys-color-surface:#1B1B1F;--md-sys-color-on-surface:#E4E1E6;--md-sys-color-surface-variant:#46464F;--md-sys-color-on-surface-variant:#C7C5D0;` },
             lime: { light: `--md-sys-color-primary:#556219;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D9E7CB;--md-sys-color-on-primary-container:#171E00;--md-sys-color-secondary-container:#E2E4D4;--md-sys-color-on-secondary-container:#1B1D15;--md-sys-color-tertiary-container:#DDE6C6;--md-sys-color-on-tertiary-container:#171E0B;--md-sys-color-background:#FEFCF4;--md-sys-color-on-background:#1B1C17;--md-sys-color-surface:#FEFCF4;--md-sys-color-on-surface:#1B1C17;--md-sys-color-surface-variant:#E3E4D8;--md-sys-color-on-surface-variant:#46483C;`, dark: `--md-sys-color-primary:#BDCBA6;--md-sys-color-on-primary:#283400;--md-sys-color-primary-container:#3E4A00;--md-sys-color-on-primary-container:#D9E7CB;--md-sys-color-secondary-container:#44483D;--md-sys-color-on-secondary-container:#E2E4D4;--md-sys-color-tertiary-container:#3C4A35;--md-sys-color-on-tertiary-container:#DDE6C6;--md-sys-color-background:#1B1C17;--md-sys-color-on-background:#E4E3DB;--md-sys-color-surface:#1B1C17;--md-sys-color-on-surface:#E4E3DB;--md-sys-color-surface-variant:#46483C;--md-sys-color-on-surface-variant:#C6C8B8;` },
@@ -280,7 +257,7 @@
             libView: document.getElementById('library-view'), readView: document.getElementById('reader-view'),
             grid: document.getElementById('book-grid'), empty: document.getElementById('empty-state'),
             load: document.getElementById('loading-state'), loadTxt: document.getElementById('loading-text'), loadBar: document.getElementById('loading-bar'), loadPct: document.getElementById('loading-percent'),
-            file: document.getElementById('pdf-upload'), backBtn: document.getElementById('btn-back'),
+            file: document.getElementById('doc-upload'), backBtn: document.getElementById('btn-back'),
             inner: document.getElementById('reader-inner'), title: document.getElementById('reader-title'), count: document.getElementById('library-count'),
             themeToggle: document.getElementById('theme-toggle'), 
             tocBtn: document.getElementById('btn-toc'), tocPanel: document.getElementById('toc-panel'), tocList: document.getElementById('toc-list'),
@@ -290,12 +267,8 @@
             globalSearch: document.getElementById('global-search')
         };
 
-        let library = [];
-        let activeBookId = null;
-        let observer = null;
-        let activePanel = null;
+        let library = []; let activeBookId = null; let observer = null; let activePanel = null;
         
-        // --- HISTORY API NATIVE BACK BUTTON ---
         window.addEventListener('popstate', (e) => {
             if (!document.getElementById('color-modal').classList.contains('hidden')) { _closeModalAction('color-modal', 'color-sheet', false); } 
             else if (!document.getElementById('edit-modal').classList.contains('hidden')) { _closeModalAction('edit-modal', 'edit-sheet', true); } 
@@ -305,9 +278,7 @@
 
         function pushAppHistory(stateName) { history.pushState({ state: stateName }, '', `#${stateName}`); }
 
-        // --- THEME & MODAL LOGIC ---
-        let isDark = localStorage.getItem('theme') !== 'light';
-        let currentThemeKey = localStorage.getItem('m3-key') || 'purple';
+        let isDark = localStorage.getItem('theme') !== 'light'; let currentThemeKey = localStorage.getItem('m3-key') || 'purple';
 
         function applyThemeToDOM() {
             document.documentElement.classList.toggle('dark', isDark);
@@ -323,20 +294,16 @@
         function openModal(modalId, sheetId, isScale = false) {
             pushAppHistory(`modal-${modalId}`);
             const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
-            m.classList.remove('hidden');
-            requestAnimationFrame(() => { m.classList.remove('opacity-0'); if(isScale) s.classList.remove('scale-95'); else s.classList.remove('translate-y-full'); });
+            m.classList.remove('hidden'); requestAnimationFrame(() => { m.classList.remove('opacity-0'); if(isScale) s.classList.remove('scale-95'); else s.classList.remove('translate-y-full'); });
         }
-        
         function _closeModalAction(modalId, sheetId, isScale = false) {
             const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
             if(isScale) s.classList.add('scale-95'); else s.classList.add('translate-y-full');
             m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300);
         }
-        
         document.getElementById('color-picker-btn').addEventListener('click', () => openModal('color-modal', 'color-sheet'));
         applyThemeToDOM();
 
-        // --- TYPOGRAPHY LOGIC ---
         let typoPrefs = JSON.parse(localStorage.getItem('typo_prefs')) || { size: '1.2rem', align: 'left', font: 'Lora' };
         function applyTypo() {
             document.documentElement.style.setProperty('--reader-size', typoPrefs.size);
@@ -345,25 +312,14 @@
             localStorage.setItem('typo_prefs', JSON.stringify(typoPrefs)); syncTypoUI();
         }
         function syncTypoUI() {
-            const maps = {
-                size: { '1rem': 'typo-sz-sm', '1.2rem': 'typo-sz-md', '1.5rem': 'typo-sz-lg' },
-                align: { 'left': 'typo-al-left', 'center': 'typo-al-center', 'justify': 'typo-al-justify' },
-                font: { 'Lora': 'typo-fn-lora', 'Inter': 'typo-fn-inter', 'Space Mono': 'typo-fn-mono' }
-            };
-            Object.values(maps.size).forEach(id => document.getElementById(id).classList.remove('bg-m3-surfaceVariant'));
-            Object.values(maps.align).forEach(id => document.getElementById(id).classList.remove('bg-m3-surfaceVariant'));
-            Object.values(maps.font).forEach(id => document.getElementById(id).classList.remove('bg-m3-surfaceVariant'));
-            document.getElementById(maps.size[typoPrefs.size]).classList.add('bg-m3-surfaceVariant');
-            document.getElementById(maps.align[typoPrefs.align]).classList.add('bg-m3-surfaceVariant');
-            document.getElementById(maps.font[typoPrefs.font]).classList.add('bg-m3-surfaceVariant');
+            const maps = { size: { '1rem': 'typo-sz-sm', '1.2rem': 'typo-sz-md', '1.5rem': 'typo-sz-lg' }, align: { 'left': 'typo-al-left', 'center': 'typo-al-center', 'justify': 'typo-al-justify' }, font: { 'Lora': 'typo-fn-lora', 'Inter': 'typo-fn-inter', 'Space Mono': 'typo-fn-mono' } };
+            Object.values(maps.size).forEach(id => document.getElementById(id).classList.remove('bg-m3-surfaceVariant')); Object.values(maps.align).forEach(id => document.getElementById(id).classList.remove('bg-m3-surfaceVariant')); Object.values(maps.font).forEach(id => document.getElementById(id).classList.remove('bg-m3-surfaceVariant'));
+            document.getElementById(maps.size[typoPrefs.size]).classList.add('bg-m3-surfaceVariant'); document.getElementById(maps.align[typoPrefs.align]).classList.add('bg-m3-surfaceVariant'); document.getElementById(maps.font[typoPrefs.font]).classList.add('bg-m3-surfaceVariant');
         }
         window.changeTypo = function(type, value) { typoPrefs[type] = value; applyTypo(); }
         applyTypo();
 
-        // --- MAIN LIBRARY LOGIC ---
-        async function loadLibrary() {
-            try { library = await localforage.getItem('pdf_premium') || []; renderLibrary(); } catch (e) { console.error(e); }
-        }
+        async function loadLibrary() { try { library = await localforage.getItem('pdf_epub_master') || []; renderLibrary(); } catch (e) { console.error(e); } }
 
         function renderLibrary(filterText = "") {
             DOM.grid.innerHTML = '';
@@ -380,8 +336,7 @@
                     let bgStyle = ""; let textOverlay = ""; let baseClass = "";
                     if(book.coverBase64) {
                         bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
-                        baseClass = "text-white";
-                        textOverlay = `<div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/90 rounded-inherit pointer-events-none z-0"></div>`;
+                        baseClass = "text-white"; textOverlay = `<div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/90 rounded-inherit pointer-events-none z-0"></div>`;
                     } else {
                         const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
                         baseClass = colors[index % 3];
@@ -399,6 +354,7 @@
                                 </div>
                                 ${book.coverBase64 ? '' : '<i data-lucide="book" class="w-8 h-8 mb-4 opacity-80"></i>'}
                                 <h3 class="font-bold text-lg leading-tight mt-2 line-clamp-4 break-words drop-shadow-md">${book.title}</h3>
+                                <span class="inline-block mt-1 text-[0.65rem] font-mono px-2 py-0.5 bg-black/30 rounded-full text-white/90 uppercase tracking-widest backdrop-blur-sm">${book.type}</span>
                             </div>
                             <div class="mt-4">
                                 <div class="flex justify-between text-[0.7rem] font-bold opacity-90 mb-1">
@@ -411,64 +367,50 @@
                             </div>
                         </div>
                     `;
-                    card.onclick = () => openBook(book);
-                    DOM.grid.appendChild(card);
+                    card.onclick = () => openBook(book); DOM.grid.appendChild(card);
                 });
                 lucide.createIcons();
             }
         }
         DOM.globalSearch.addEventListener('input', (e) => renderLibrary(e.target.value));
 
-        window.deleteBook = async function(id, event) {
-            event.stopPropagation(); if(!confirm("Hapus permanen?")) return;
-            library = library.filter(b => b.id !== id); await localforage.setItem('pdf_premium', library); renderLibrary(DOM.globalSearch.value);
-        };
-        window.openEditModal = function(id, event) {
-            event.stopPropagation(); const book = library.find(b => b.id === id);
-            document.getElementById('edit-book-id').value = id; document.getElementById('edit-book-title').value = book.title; document.getElementById('edit-book-cover').value = '';
-            openModal('edit-modal', 'edit-sheet', true);
-        }
+        window.deleteBook = async function(id, event) { event.stopPropagation(); if(!confirm("Hapus permanen?")) return; library = library.filter(b => b.id !== id); await localforage.setItem('pdf_epub_master', library); renderLibrary(DOM.globalSearch.value); };
+        window.openEditModal = function(id, event) { event.stopPropagation(); const book = library.find(b => b.id === id); document.getElementById('edit-book-id').value = id; document.getElementById('edit-book-title').value = book.title; document.getElementById('edit-book-cover').value = ''; openModal('edit-modal', 'edit-sheet', true); }
         window.saveBookEdit = async function() {
             const id = document.getElementById('edit-book-id').value; const newTitle = document.getElementById('edit-book-title').value; const coverFile = document.getElementById('edit-book-cover').files[0];
             const bookIndex = library.findIndex(b => b.id === id);
             if(bookIndex > -1) {
                 library[bookIndex].title = newTitle;
-                if (coverFile) {
-                    const reader = new FileReader();
-                    reader.onload = async function(e) { library[bookIndex].coverBase64 = e.target.result; await localforage.setItem('pdf_premium', library); history.back(); renderLibrary(); };
-                    reader.readAsDataURL(coverFile);
-                } else { await localforage.setItem('pdf_premium', library); history.back(); renderLibrary(); }
+                if (coverFile) { const reader = new FileReader(); reader.onload = async function(e) { library[bookIndex].coverBase64 = e.target.result; await localforage.setItem('pdf_epub_master', library); history.back(); renderLibrary(); }; reader.readAsDataURL(coverFile); } 
+                else { await localforage.setItem('pdf_epub_master', library); history.back(); renderLibrary(); }
             }
         }
 
-        // --- READER ENGINE ---
         function openBook(book) {
-            activeBookId = book.id; 
-            pushAppHistory(`reader-${book.id}`);
-            
+            activeBookId = book.id; pushAppHistory(`reader-${book.id}`);
             DOM.libView.style.transform = 'scale(0.95)'; DOM.readView.classList.remove('translate-y-full');
             DOM.title.textContent = book.title; DOM.inner.innerHTML = ''; DOM.tocList.innerHTML = '';
             
-            let hCounter = 0; const fragment = document.createDocumentFragment();
-            let currentHeadingId = null;
+            let hCounter = 0; const fragment = document.createDocumentFragment(); let currentHeadingId = null;
 
             book.nodes.forEach((node, i) => {
-                const el = document.createElement(node.tag); el.textContent = node.text; el.id = `node-${i}`;
-                
-                if (node.tag === 'h1' || node.tag === 'h2') {
-                    hCounter++; currentHeadingId = el.id; 
-                    el.className = node.tag === 'h1' ? "text-3xl font-bold tracking-tight mt-12 mb-6 text-m3-onBg leading-snug break-words" : "text-xl font-bold mt-10 mb-4 text-m3-onBg opacity-90 break-words";
-                    const tocItem = document.createElement('button');
-                    tocItem.id = `toc-btn-${el.id}`;
-                    tocItem.className = `text-left text-sm p-3 rounded-2xl hover:bg-m3-surface transition-colors ${node.tag==='h1'?'font-bold text-m3-primary':'ml-4 opacity-80'}`;
-                    tocItem.textContent = node.text;
-                    tocItem.onclick = () => { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.back(); };
-                    DOM.tocList.appendChild(tocItem);
+                let el;
+                if (node.tag === 'img') {
+                    el = document.createElement('img'); el.src = node.src; el.id = `node-${i}`;
+                    el.className = "w-full max-w-lg mx-auto rounded-2xl my-8 object-contain shadow-md"; el.loading = "lazy";
                 } else {
-                    el.className = "text-m3-onSurface opacity-90 mb-5 tracking-wide";
+                    el = document.createElement(node.tag); el.textContent = node.text; el.id = `node-${i}`;
+                    if (node.tag === 'h1' || node.tag === 'h2') {
+                        hCounter++; currentHeadingId = el.id; 
+                        el.className = node.tag === 'h1' ? "text-3xl font-bold tracking-tight mt-12 mb-6 text-m3-onBg leading-snug break-words" : "text-xl font-bold mt-10 mb-4 text-m3-onBg opacity-90 break-words";
+                        const tocItem = document.createElement('button'); tocItem.id = `toc-btn-${el.id}`;
+                        tocItem.className = `text-left text-sm p-3 rounded-2xl hover:bg-m3-surface transition-colors ${node.tag==='h1'?'font-bold text-m3-primary':'ml-4 opacity-80'}`;
+                        tocItem.textContent = node.text;
+                        tocItem.onclick = () => { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.back(); };
+                        DOM.tocList.appendChild(tocItem);
+                    } else { el.className = "text-m3-onSurface opacity-90 mb-5 tracking-wide"; }
                 }
-                el.dataset.headingId = currentHeadingId; 
-                fragment.appendChild(el);
+                el.dataset.headingId = currentHeadingId; fragment.appendChild(el);
             });
             DOM.inner.appendChild(fragment);
             if(hCounter === 0) DOM.tocList.innerHTML = "<p class='text-sm opacity-50'>TOC tidak ditemukan.</p>";
@@ -478,7 +420,7 @@
 
             setTimeout(() => {
                 if (book.lastReadId) { const target = document.getElementById(book.lastReadId); if (target) target.scrollIntoView({ behavior: 'auto', block: 'center' }); } 
-                else DOM.readContent.scrollTop = 0;
+                else { DOM.readContent.scrollTo(0,0); }
             }, 100);
         }
 
@@ -488,31 +430,25 @@
         }
         DOM.backBtn.addEventListener('click', () => history.back());
 
-        function _closeSidePanelsAction() {
-            DOM.tocPanel.classList.add('translate-x-full', 'opacity-0');
-            DOM.setPanel.classList.add('translate-x-full', 'opacity-0');
-            activePanel = null;
-        }
+        function _closeSidePanelsAction() { DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); DOM.setPanel.classList.add('translate-x-full', 'opacity-0'); activePanel = null; }
         function togglePanel(panelEl, name) { 
             if(activePanel === name) { history.back(); return; } 
             if(activePanel) { _closeSidePanelsAction(); } 
-            pushAppHistory(`panel-${name}`); 
-            panelEl.classList.remove('translate-x-full', 'opacity-0'); activePanel = name; 
+            pushAppHistory(`panel-${name}`); panelEl.classList.remove('translate-x-full', 'opacity-0'); activePanel = name; 
         }
         DOM.tocBtn.onclick = () => togglePanel(DOM.tocPanel, 'toc'); DOM.setBtn.onclick = () => togglePanel(DOM.setPanel, 'set');
 
-        // --- SPECIFIC WORD SEARCH LOGIC ---
         DOM.searchBtn.onclick = () => { DOM.searchBar.classList.toggle('hidden'); if(!DOM.searchBar.classList.contains('hidden')) DOM.searchInput.focus(); };
         DOM.searchExec.onclick = executeSearch; DOM.searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') executeSearch(); });
 
         function executeSearch() {
             const query = DOM.searchInput.value.toLowerCase().trim(); DOM.searchRes.innerHTML = '';
             if(!query) { DOM.searchRes.classList.add('hidden'); return; }
-            
             document.querySelectorAll('mark.search-hl').forEach(m => m.outerHTML = m.innerHTML);
 
             const book = library.find(b => b.id === activeBookId); let results = [];
             book.nodes.forEach((node, idx) => {
+                if(node.tag === 'img') return; 
                 if(node.text.toLowerCase().includes(query)) {
                     let snippet = node.text;
                     if(snippet.length > 60) {
@@ -534,11 +470,12 @@
                         const target = document.getElementById(res.id);
                         if(target) {
                             target.innerHTML = target.textContent.replace(regexUI, `<mark class="search-hl">$1</mark>`);
-                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            setTimeout(() => {
-                                target.querySelectorAll('mark.search-hl').forEach(m => { m.style.backgroundColor = 'transparent'; m.style.color = 'inherit'; });
-                                setTimeout(() => { target.innerHTML = target.textContent; }, 1500);
-                            }, 2000);
+                            // SCROLL AKURAT KE TAG MARK
+                            const markEl = target.querySelector('mark.search-hl');
+                            if(markEl) markEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            else target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            setTimeout(() => { target.querySelectorAll('mark.search-hl').forEach(m => { m.style.backgroundColor = 'transparent'; m.style.color = 'inherit'; m.style.boxShadow = 'none'; }); setTimeout(() => { target.innerHTML = target.textContent; }, 1500); }, 2000);
                         }
                         DOM.searchBar.classList.add('hidden');
                     };
@@ -548,24 +485,18 @@
             DOM.searchRes.classList.remove('hidden');
         }
 
-        // --- OBSERVER (Sync TOC & Progress) ---
         function setupIntersectionObserver() {
-            if (observer) observer.disconnect();
-            const totalNodes = DOM.inner.children.length;
+            if (observer) observer.disconnect(); const totalNodes = DOM.inner.children.length;
             observer = new IntersectionObserver((entries) => {
                 let visibleEntry = entries.find(e => e.isIntersecting);
                 if (visibleEntry) {
-                    const el = visibleEntry.target;
-                    const id = el.id; const index = parseInt(id.split('-')[1]);
+                    const el = visibleEntry.target; const id = el.id; const index = parseInt(id.split('-')[1]);
                     const pct = Math.round(((index + 1) / totalNodes) * 100);
                     DOM.progBar.style.width = `${pct}%`; DOM.progTxt.textContent = `${pct}%`;
 
                     const activeHeadingId = el.dataset.headingId;
                     Array.from(DOM.tocList.children).forEach(btn => { btn.classList.remove('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer', 'font-bold'); });
-                    if(activeHeadingId) {
-                        const tocActiveBtn = document.getElementById(`toc-btn-${activeHeadingId}`);
-                        if(tocActiveBtn) tocActiveBtn.classList.add('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer', 'font-bold');
-                    }
+                    if(activeHeadingId) { const tocActiveBtn = document.getElementById(`toc-btn-${activeHeadingId}`); if(tocActiveBtn) tocActiveBtn.classList.add('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer', 'font-bold'); }
                     updateBookProgress(activeBookId, id, pct);
                 }
             }, { root: DOM.readContent, rootMargin: '-10% 0px -50% 0px', threshold: 0.1 });
@@ -574,91 +505,145 @@
 
         async function updateBookProgress(bookId, lastNodeId, pct) {
             let bookIndex = library.findIndex(b => b.id === bookId);
-            if(bookIndex > -1) { library[bookIndex].lastReadId = lastNodeId; library[bookIndex].progressPct = pct; await localforage.setItem('pdf_premium', library); }
+            if(bookIndex > -1) { library[bookIndex].lastReadId = lastNodeId; library[bookIndex].progressPct = pct; await localforage.setItem('pdf_epub_master', library); }
         }
 
-        // --- PDF ENGINE ---
         DOM.file.addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
-            const originalFilename = file.name.replace('.pdf', '');
-            DOM.load.classList.remove('hidden'); DOM.loadBar.style.width = '0%'; DOM.loadPct.textContent = '0%'; DOM.loadTxt.textContent = `Membedah PDF...`;
+            const originalFilename = file.name; const ext = originalFilename.split('.').pop().toLowerCase(); const bookTitle = originalFilename.replace(/\.[^/.]+$/, "");
+            DOM.load.classList.remove('hidden'); DOM.loadBar.style.width = '0%'; DOM.loadPct.textContent = '0%';
 
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                const numPages = pdf.numPages;
-                if(numPages === 0) throw new Error("Kosong");
-                let allItems = []; let coverBase64 = null;
-                
-                try {
-                    const page1 = await pdf.getPage(1); const viewport = page1.getViewport({ scale: 0.8 });
-                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                    canvas.height = viewport.height; canvas.width = viewport.width;
-                    await page1.render({ canvasContext: ctx, viewport: viewport }).promise;
-                    coverBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                } catch(e) { console.warn("Cover failed"); }
-
-                for (let i = 1; i <= numPages; i++) {
-                    const pct = Math.round((i / numPages) * 100);
-                    if(i % 5 === 0 || i === numPages) await new Promise(r => setTimeout(r, 0));
-                    DOM.loadBar.style.width = `${pct}%`; DOM.loadPct.textContent = `${pct}%`; DOM.loadTxt.textContent = `Baca Hal ${i}`;
-
-                    const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 1.0 }); const pageHeight = viewport.height;
-                    const textContent = await page.getTextContent();
-                    textContent.items.forEach(item => {
-                        const str = item.str.trim(); if (str === '') return;
-                        const yPos = item.transform[5];
-                        if (yPos < pageHeight * 0.08 || yPos > pageHeight * 0.92) return;
-                        if (/^\d+$/.test(str) || str.toLowerCase() === originalFilename.toLowerCase()) return;
-                        allItems.push({ text: item.str, height: item.transform[0], y: yPos });
-                    });
-                }
-
-                DOM.loadTxt.textContent = "Merakit Layout...";
-                await new Promise(r => setTimeout(r, 50));
-                if(allItems.length === 0) throw new Error("Isinya cuma gambar.");
-
-                const avgHeight = allItems.reduce((acc, i) => acc + i.height, 0) / allItems.length;
-                let parsedNodes = [], currentPar = "", lastY = -1;
-
-                allItems.forEach(item => {
-                    if (lastY !== -1 && Math.abs(item.y - lastY) > avgHeight * 1.5) {
-                        if (currentPar.trim() !== "") { 
-                            const lastChar = currentPar.trim().slice(-1);
-                            if (['.', '?', '!', '"', '”'].includes(lastChar)) { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; } 
-                            else { currentPar += " "; }
-                        }
-                    }
-                    if (item.height > avgHeight * 1.4) {
-                        if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
-                        parsedNodes.push({ tag: 'h1', text: item.text.trim() });
-                    } else if (item.height > avgHeight * 1.15) {
-                        if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
-                        parsedNodes.push({ tag: 'h2', text: item.text.trim() });
-                    } else { currentPar += item.text + " "; }
-                    lastY = item.y;
-                });
-                if (currentPar.trim() !== "") parsedNodes.push({ tag: 'p', text: currentPar.trim() });
-
-                let cleanedNodes = [];
-                parsedNodes.forEach(curr => {
-                    if (cleanedNodes.length > 0) {
-                        let prev = cleanedNodes[cleanedNodes.length-1];
-                        if (curr.tag === prev.tag && (curr.tag === 'h1' || curr.tag === 'h2')) { prev.text += " " + curr.text; return; }
-                    }
-                    cleanedNodes.push(curr);
-                });
-
-                library.push({ id: Date.now().toString(), title: originalFilename, nodes: cleanedNodes, pages: numPages, progressPct: 0, lastReadId: null, coverBase64: coverBase64 });
-                await localforage.setItem('pdf_premium', library); renderLibrary();
-            } catch (err) { alert(`Gagal: ${err.message}`); } 
+                if (ext === 'pdf') await handlePdf(file, bookTitle);
+                else if (ext === 'epub') await handleEpub(file, bookTitle);
+                else throw new Error("Format tidak didukung.");
+            } catch (err) { alert(`Gagal: ${err.message}`); console.error(err); } 
             finally { setTimeout(() => { DOM.load.classList.add('hidden'); DOM.file.value = ''; }, 500); }
         });
+
+        // PDF ENGINE - ANTI SEKAT DIPERKUAT
+        async function handlePdf(file, bookTitle) {
+            DOM.loadTxt.textContent = `Membedah PDF...`;
+            const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise; const numPages = pdf.numPages;
+            if(numPages === 0) throw new Error("Kosong");
+            let allItems = []; let coverBase64 = null;
+            
+            try {
+                DOM.loadTxt.textContent = "Mengambil Sampul...";
+                const page1 = await pdf.getPage(1); const viewport = page1.getViewport({ scale: 0.8 });
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.height = viewport.height; canvas.width = viewport.width;
+                await page1.render({ canvasContext: ctx, viewport: viewport }).promise; coverBase64 = canvas.toDataURL('image/jpeg', 0.6);
+            } catch(e) {}
+
+            for (let i = 1; i <= numPages; i++) {
+                const pct = Math.round((i / numPages) * 100);
+                if(i % 5 === 0 || i === numPages) await new Promise(r => setTimeout(r, 0));
+                DOM.loadBar.style.width = `${pct}%`; DOM.loadPct.textContent = `${pct}%`; DOM.loadTxt.textContent = `Baca Hal ${i}`;
+
+                const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 1.0 }); const pageHeight = viewport.height;
+                const textContent = await page.getTextContent();
+                textContent.items.forEach(item => {
+                    const str = item.str.trim(); if (str === '') return;
+                    const yPos = item.transform[5];
+                    // Jaring pemusnah sekat ditarik jadi 10% atas bawah biar lebih aman
+                    if (yPos < pageHeight * 0.10 || yPos > pageHeight * 0.90) return;
+                    if (/^\d+$/.test(str) || str.toLowerCase() === bookTitle.toLowerCase()) return;
+                    allItems.push({ text: item.str, height: item.transform[0], y: yPos });
+                });
+            }
+            DOM.loadTxt.textContent = "Merakit Layout..."; await new Promise(r => setTimeout(r, 50));
+            if(allItems.length === 0) throw new Error("Isinya cuma gambar.");
+
+            const avgHeight = allItems.reduce((acc, i) => acc + i.height, 0) / allItems.length;
+            let parsedNodes = [], currentPar = "", lastY = -1;
+
+            allItems.forEach(item => {
+                if (lastY !== -1 && Math.abs(item.y - lastY) > avgHeight * 1.5) {
+                    if (currentPar.trim() !== "") { 
+                        const lastChar = currentPar.trim().slice(-1);
+                        // Tambahan tanda baca yang dianggap penutup kalimat
+                        if (['.', '?', '!', '"', '”', '’', ':'].includes(lastChar)) { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; } 
+                        else { currentPar += " "; }
+                    }
+                }
+                if (item.height > avgHeight * 1.4) {
+                    if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
+                    parsedNodes.push({ tag: 'h1', text: item.text.trim() });
+                } else if (item.height > avgHeight * 1.15) {
+                    if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
+                    parsedNodes.push({ tag: 'h2', text: item.text.trim() });
+                } else { currentPar += item.text + " "; }
+                lastY = item.y;
+            });
+            if (currentPar.trim() !== "") parsedNodes.push({ tag: 'p', text: currentPar.trim() });
+
+            let cleanedNodes = [];
+            parsedNodes.forEach(curr => {
+                if (cleanedNodes.length > 0) {
+                    let prev = cleanedNodes[cleanedNodes.length-1];
+                    if (curr.tag === prev.tag && (curr.tag === 'h1' || curr.tag === 'h2')) { prev.text += " " + curr.text; return; }
+                }
+                cleanedNodes.push(curr);
+            });
+            library.push({ id: Date.now().toString(), type: 'pdf', title: bookTitle, nodes: cleanedNodes, pages: numPages, progressPct: 0, lastReadId: null, coverBase64: coverBase64 });
+            await localforage.setItem('pdf_epub_master', library); renderLibrary();
+        }
+
+        // EPUB ENGINE
+        async function handleEpub(file, bookTitle) {
+            DOM.loadTxt.textContent = "Bongkar ZIP EPUB..."; DOM.loadBar.style.width = '10%'; DOM.loadPct.textContent = '10%';
+            const zip = await JSZip.loadAsync(file);
+            const containerData = await zip.file("META-INF/container.xml").async("string");
+            const containerDom = new DOMParser().parseFromString(containerData, "text/xml");
+            const rootfile = containerDom.querySelector("rootfile"); if (!rootfile) throw new Error("EPUB tidak valid.");
+            const opfPath = rootfile.getAttribute("full-path"); const basePath = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+
+            DOM.loadTxt.textContent = "Analisa Struktur Buku...";
+            const opfData = await zip.file(opfPath).async("string"); const opfDom = new DOMParser().parseFromString(opfData, "text/xml");
+            const manifest = {}; opfDom.querySelectorAll("manifest > item").forEach(item => { manifest[item.getAttribute("id")] = item.getAttribute("href"); });
+            const spine = []; opfDom.querySelectorAll("spine > itemref").forEach(ref => { spine.push(manifest[ref.getAttribute("idref")]); });
+
+            let coverBase64 = null; const coverMeta = opfDom.querySelector("meta[name='cover']");
+            if (coverMeta && manifest[coverMeta.getAttribute("content")]) {
+                const coverPath = basePath + manifest[coverMeta.getAttribute("content")]; const coverFile = zip.file(coverPath);
+                if (coverFile) { const base64Str = await coverFile.async("base64"); coverBase64 = "data:image/jpeg;base64," + base64Str; }
+            }
+
+            let parsedNodes = [];
+            for (let i = 0; i < spine.length; i++) {
+                const pct = Math.round(((i+1) / spine.length) * 80) + 20;
+                DOM.loadBar.style.width = `${pct}%`; DOM.loadPct.textContent = `${pct}%`; DOM.loadTxt.textContent = `Ekstrak Bab ${i+1}/${spine.length}`;
+                await new Promise(r => setTimeout(r, 0));
+
+                const htmlPath = basePath + spine[i]; const htmlFile = zip.file(htmlPath); if(!htmlFile) continue;
+                const htmlString = await htmlFile.async("string"); const doc = new DOMParser().parseFromString(htmlString, "text/html");
+                const elements = doc.body.querySelectorAll('h1, h2, h3, p, img');
+                for (const el of elements) {
+                    const tag = el.tagName.toLowerCase();
+                    if (tag === 'img' || tag === 'image') {
+                        let src = el.getAttribute('src') || el.getAttribute('href');
+                        if (src && !src.startsWith('http')) {
+                            let absPath = resolveRelativePath(htmlPath, src); const imgFile = zip.file(absPath);
+                            if (imgFile) { const b64 = await imgFile.async("base64"); parsedNodes.push({ tag: 'img', src: "data:image/jpeg;base64," + b64 }); }
+                        }
+                    } else {
+                        const text = el.textContent.trim();
+                        if (text) { let cleanTag = tag; if (tag === 'h3') cleanTag = 'h2'; parsedNodes.push({ tag: cleanTag, text: text }); }
+                    }
+                }
+            }
+            library.push({ id: Date.now().toString(), type: 'epub', title: bookTitle, nodes: parsedNodes, pages: spine.length, progressPct: 0, lastReadId: null, coverBase64: coverBase64 });
+            await localforage.setItem('pdf_epub_master', library); renderLibrary();
+        }
+
+        function resolveRelativePath(base, relative) {
+            const stack = base.split('/'); stack.pop(); const parts = relative.split('/');
+            for (const part of parts) { if (part === '.') continue; if (part === '..') stack.pop(); else stack.push(part); }
+            return stack.join('/');
+        }
 
         loadLibrary();
     </script>
 </body>
 </html>
-
-
-```
