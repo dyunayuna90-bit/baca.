@@ -1,21 +1,59 @@
-# Baca. Reader 📖
+# Baca. — Zero-Friction Local Offline E-Book Reader
 
-**Baca.** is a highly optimized, privacy-first Progressive Web App (PWA) engineered for a pure, distraction-free reading experience[span_1](start_span)[span_1](end_span). Built entirely on client-side technologies, it transforms your web browser into a powerful, offline-capable e-reader for PDF and EPUB documents[span_2](start_span)[span_2](end_span). 
+A brilliant, self-contained **single-file Progressive Web App (PWA)** engineered for deep reading, distraction-free literacy, and immediate contextual research. 
 
-No servers. No accounts. No data telemetry. Your books and reading data never leave your device[span_3](start_span)[span_3](end_span).
+`Baca.` (Indonesian for *Read*) strips away the over-engineered bloat of modern e-readers. No logins, no cloud tracking, no paywalls, and absolutely no configuration friction. Just open your file, and start reading.
 
-## 🧠 The Philosophy & Architecture
-Unlike traditional cloud-based readers, **Baca.** relies entirely on your device's memory and local storage via IndexedDB (wrapper by localForage)[span_4](start_span)[span_4](end_span). 
-* **For EPUBs:** It parses the OPF manifest and reconstructs the chapters and inline Base64 images directly in the DOM[span_5](start_span)[span_5](end_span).
-* **For PDFs:** It uses a custom text-extraction algorithm via PDF.js. Instead of rendering heavy canvas images, it dynamically calculates line heights to reconstruct paragraphs and headings (H1/H2), discarding embedded images to give you a clean, unified text layout[span_6](start_span)[span_6](end_span).
+---
 
-## ✨ Comprehensive Feature Set
+## 📸 Screenshots
+*(Add your beautiful screenshots or GIFs here to showcase the stunning Material You interface!)*
+<!-- Placeholders for your assets -->
+<!-- <p align="center">
+  <img src="your-screenshot-library.png" width="45%" alt="Library View" />
+  <img src="your-screenshot-reader.png" width="45%" alt="Reader View" />
+</p> -->
 
-### 📚 Smart Library Management
-* **Zero-Upload Processing:** Files are processed entirely in-browser. 
-* **Persistent Storage:** Books, covers, reading progress (percentage and exact scroll position), and annotations are saved locally[span_7](start_span)[span_7](end_span).
-* **Customizable UI:** Personalize your library grid with 4 different book card shapes (Dynamic, Rounded, Square, Leaf)[span_8](start_span)[span_8](end_span).
-* **Metadata Editing:** Manually edit book titles and upload custom gallery images as book covers[span_9](start_span)[span_9](end_span).
+---
+
+## ⚡ What Makes It Unique? (The Philosophy)
+
+* **Zero-Friction Access:** No complex directory mapping or painful file trees (unlike Moon+ Reader). It leverages native OS file pickers to import files directly into your local database.
+* **True PDF Text-Reflow (Anti Pinch-to-Zoom):** Reading standard PDFs on mobile screens is usually a nightmare. `Baca.` forcefully extracts pure text spatial coordinates and rebuilds them into dynamic responsive HTML blocks (`<p>` and `<h1>`). Scroll vertically, adjust fonts, and read naturally.
+* **Contextual AI & Dictionary Overlays:** Encounted a complex academic term or historical figure? Simply highlight the text. `Baca.` fetches real-time breakdowns from Wikipedia, Wiktionary, and the public Dictionary API instantly without breaking your reading momentum.
+* **The "Frankenstein" Single-File Architecture:** UI layers, Material Design 3 theme engines, custom PDF/EPUB parsers, and local database management are all rolled into **one single `.html` file**. It runs entirely in-memory with zero compilation or build steps needed.
+
+---
+
+## 🛠️ Technical Deep Dive
+
+* **PWA Self-Infection (Blob Trik):** Bypasses traditional server requirements by compiling standard PWA `manifest.json` and `service-worker.js` files *on-the-fly* via JavaScript **Blob Objects** directly inside the RAM.
+* **Massive Local Database (IndexedDB):** Bypasses the strict 5MB `localStorage` limit by hijacking **IndexedDB** through `localForage`. You can safely store dozens of heavy books entirely offline.
+* **Smart Rendering (Intersection Observer):** Even a 1,200-page book runs smoothly. The DOM doesn't render thousands of paragraphs at once; it dynamically mounts and updates page progression indexes based on exactly what is visible on your screen.
+
+---
+
+## ⚠️ Known Limits (By Design)
+* **Pure Text Focus:** This engine is explicitly optimized for literature and text-heavy books. Images inside PDFs are skipped to optimize RAM overhead and maximize text-reflow responsiveness.
+* **No Scanned Images / OCR:** PDFs containing raw image scans will trigger a graceful warning notification. `Baca.` is built for pure typography, not heavy machine learning OCR scanning.
+
+---
+
+## 🤝 Open for Contributions & APK Porting (Call to Action!)
+
+This project is fully open-source and welcoming of all optimizations. 
+
+### 🚀 The Big Goal: Native APK Packaging
+We are looking for mobile developers to help wrap this single-file HTML app into a native **Android APK** (via **Capacitor**, **Trusted Web Activity (TWA)**, or **Cordova**).
+
+**Crucial Issue to Solve:** Android OS aggressively wipes WebView caches and IndexedDB structures when a phone's storage runs low. We need contributors to help implement a native bridge plugin to duplicate the `localForage` binaries directly into the secure physical local Android directory instead of relying solely on the browser's volatile storage box.
+
+If you love clean code, minimalist software architecture, or want to build a bulletproof Android wrapper for this, feel free to fork, optimize, and submit a Pull Request!
+
+---
+
+## 📄 License
+MIT License. Completely free to use, modify, and redistribute. Built with absolute logic.
 
 ### 📖 Advanced Reader Engine
 * **Immersive Mode:** Full-screen reading capability with a hideable top UI bar[span_10](start_span)[span_10](end_span).
