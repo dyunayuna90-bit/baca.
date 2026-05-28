@@ -60,19 +60,15 @@
         
         /* MATERIAL 3 EXPRESSIVE ANIMATIONS */
         
-        /* Standard morphing button */
         .btn-morph { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 99px; }
         .btn-morph:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; }
         
-        /* Card scaling */
         .card-morph { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; user-select: none; -webkit-user-select: none; }
         .card-morph:active { transform: scale(0.92); border-radius: 16px !important; }
         
-        /* FAB Capsule Expressive: Bulat memanjang saat ditekan, warna solid */
         .fab-capsule { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 32px; width: 64px; height: 64px; }
         .fab-capsule:active { transform: scale(0.95); width: 104px; border-radius: 20px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; opacity: 1 !important; }
 
-        /* Capsule Expressive: Stretch and Push */
         .capsule-group { display: flex; gap: 4px; width: 100%; transition: all 0.4s cubic-bezier(0.2, 0, 0, 1); }
         .capsule-btn { 
             flex: 1; display: flex; justify-content: center; align-items: center;
@@ -84,38 +80,16 @@
             background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; opacity: 1 !important;
         }
 
-        /* Search & Settings Expressive Row */
-        .search-row {
-            display: flex; align-items: center; gap: 0.75rem; width: 100%;
-            transition: gap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .search-capsule {
-            flex-grow: 1; display: flex; align-items: center; cursor: pointer;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .btn-settings {
-            width: 56px; height: 56px; overflow: hidden; flex-shrink: 0;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        /* Saat Setting ditahan, merenggang mendesak search bar - WARNA TETAP SOLID */
-        .btn-settings:active {
-            width: 72px; 
-            border-radius: 16px;
-            background-color: var(--md-sys-color-surface-variant) !important;
-            color: var(--md-sys-color-on-surface-variant) !important;
-            opacity: 1 !important;
-        }
-        /* State Saat Search Aktif (Melar mencaplok settings) */
+        .search-row { display: flex; align-items: center; gap: 0.75rem; width: 100%; transition: gap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .search-capsule { flex-grow: 1; display: flex; align-items: center; cursor: pointer; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .btn-settings { width: 56px; height: 56px; overflow: hidden; flex-shrink: 0; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .btn-settings:active { width: 72px; border-radius: 16px; background-color: var(--md-sys-color-surface-variant) !important; color: var(--md-sys-color-on-surface-variant) !important; opacity: 1 !important; }
+        
         .search-active { gap: 0px !important; }
-        .search-active .btn-settings {
-            width: 0px !important; padding: 0 !important; margin: 0 !important;
-            opacity: 0 !important; transform: scale(0.5); border: none;
-        }
+        .search-active .btn-settings { width: 0px !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; transform: scale(0.5); border: none; }
 
-        /* Modal Expressive Animation */
         .modal-overlay { transition: opacity 0.3s ease; }
         .modal-content { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; transform-origin: bottom; }
-        
         .side-panel { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; }
 
         .reader-text-container { column-gap: 2rem; column-rule: 1px solid var(--md-sys-color-surface-variant); }
@@ -159,9 +133,10 @@
             </div>
             
             <div id="search-area" class="search-row transition-shadow duration-300">
-                <div class="search-capsule bg-m3-surfaceVariant p-1.5 rounded-full px-4 relative">
-                    <i data-lucide="search" id="search-icon-lib" class="w-5 h-5 opacity-70 text-m3-onSurfaceVariant shrink-0 absolute left-4 transition-transform duration-300 pointer-events-none"></i>
-                    <input type="text" id="global-search" placeholder="..." class="w-full bg-transparent border-none outline-none py-2.5 pl-8 pr-2 font-bold text-m3-onSurfaceVariant placeholder:text-m3-onSurfaceVariant/60 text-sm">
+                <!-- Search bar Monet Theme with secondaryContainer -->
+                <div class="search-capsule bg-m3-secondaryContainer text-m3-onSecondaryContainer p-1.5 rounded-full px-4 relative">
+                    <i data-lucide="search" id="search-icon-lib" class="w-5 h-5 opacity-70 text-m3-onSecondaryContainer shrink-0 absolute left-4 transition-transform duration-300 pointer-events-none"></i>
+                    <input type="text" id="global-search" placeholder="..." class="w-full bg-transparent border-none outline-none py-2.5 pl-8 pr-2 font-bold text-m3-onSecondaryContainer placeholder:text-m3-onSecondaryContainer/70 text-sm">
                 </div>
                 <button onclick="openModal('global-settings-modal', 'global-settings-sheet')" id="settings-btn" class="btn-morph btn-settings flex items-center justify-center bg-m3-surfaceVariant text-m3-onSurfaceVariant">
                     <i data-lucide="settings"></i>
@@ -189,9 +164,12 @@
                 </div>
             </div>
 
-            <!-- Label Koleksi Buku -->
-            <div id="collection-heading" class="hidden mb-4 mt-2">
+            <!-- Label Koleksi Buku + Tombol Trash Delete Batch -->
+            <div id="collection-heading" class="hidden mb-4 mt-2 flex justify-between items-center">
                 <h2 class="text-base font-bold text-m3-onBg tracking-tight" id="str-book-collection">Koleksi Buku</h2>
+                <button onclick="toggleBatchDelete()" id="btn-trash-collection" class="p-2 -mr-2 btn-morph text-m3-onBg/50 hover:text-red-500 transition-colors rounded-full flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </button>
             </div>
 
             <div id="book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
@@ -202,12 +180,21 @@
             </div>
         </div>
 
-        <div class="fixed bottom-8 right-6 z-50">
+        <div id="fab-container" class="fixed bottom-8 right-6 z-50 transition-all duration-300">
             <!-- FAB Dengan animasi melar/ekspresif -->
             <button onclick="document.getElementById('doc-upload').click();" class="fab-capsule flex items-center justify-center bg-m3-primary text-m3-onPrimary cursor-pointer shadow-none overflow-hidden">
                 <i data-lucide="plus" class="w-8 h-8 shrink-0"></i>
             </button>
             <input type="file" id="doc-upload" accept=".epub,.pdf" class="hidden">
+        </div>
+        
+        <!-- Batch Delete Floating Bar -->
+        <div id="batch-delete-bar" class="fixed bottom-0 inset-x-0 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-5 z-[60] transform translate-y-full transition-transform duration-300 flex justify-between items-center rounded-t-[32px] border-t border-m3-onSurfaceVariant/10 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+            <span id="batch-delete-count" class="font-bold text-sm tracking-wide">0 Terpilih</span>
+            <div class="flex gap-2">
+                <button onclick="toggleBatchDelete()" id="btn-batch-cancel" class="px-5 py-2.5 font-bold text-xs uppercase tracking-wider text-m3-onSurfaceVariant bg-transparent rounded-full btn-morph">Batal</button>
+                <button onclick="executeBatchDelete()" id="btn-batch-exec" class="px-5 py-2.5 font-bold text-xs uppercase tracking-wider bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded-full btn-morph">Hapus</button>
+            </div>
         </div>
     </div>
 
@@ -398,16 +385,16 @@
         </div>
     </div>
 
-    <!-- Book Options Modal -->
+    <!-- Book Options Modal (Redesigned Theme) -->
     <div id="b-opt-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-m3-bg/90 z-[100] flex items-end justify-center opacity-0 p-4 pb-8">
-        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform translate-y-full border border-m3-surfaceVariant" id="b-opt-sheet">
-            <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
-            <h3 id="opt-title" class="text-base font-bold mb-6 text-m3-onSurface text-center truncate px-2">Book Options</h3>
-            <div class="flex flex-col gap-2">
-                <button onclick="triggerEditView()" class="flex items-center gap-4 w-full p-4 bg-m3-primaryContainer text-m3-onPrimaryContainer rounded-2xl font-bold btn-morph"><i data-lucide="edit-3" class="w-5 h-5"></i> <span>Edit Details</span></button>
-                <button onclick="triggerDeleteView()" class="flex items-center gap-4 w-full p-4 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded-2xl font-bold btn-morph"><i data-lucide="trash-2" class="w-5 h-5"></i> <span>Delete Permanently</span></button>
+        <div class="modal-content bg-m3-primaryContainer shadow-2xl w-full max-w-sm rounded-[32px] p-6 transform translate-y-full" id="b-opt-sheet">
+            <div class="w-12 h-1.5 bg-m3-onPrimaryContainer/30 rounded-full mx-auto mb-6"></div>
+            <h3 id="opt-title" class="text-base font-bold mb-6 text-m3-onPrimaryContainer text-center truncate px-2">Book Options</h3>
+            <div class="flex flex-col gap-3">
+                <button onclick="triggerEditView()" class="flex items-center gap-4 w-full p-4 bg-m3-surface text-m3-onSurface rounded-2xl font-bold btn-morph"><i data-lucide="edit-3" class="w-5 h-5"></i> <span>Edit Details</span></button>
+                <button onclick="triggerDeleteView()" class="flex items-center gap-4 w-full p-4 bg-red-600 text-white dark:bg-red-900 dark:text-red-100 rounded-2xl font-bold btn-morph"><i data-lucide="trash-2" class="w-5 h-5"></i> <span>Delete Permanently</span></button>
             </div>
-            <button onclick="history.back()" class="btn-morph w-full mt-4 py-4 bg-transparent text-m3-onSurface font-bold">Cancel</button>
+            <button onclick="history.back()" class="btn-morph w-full mt-4 py-4 bg-transparent text-m3-onPrimaryContainer font-bold tracking-wide">Cancel</button>
         </div>
     </div>
 
@@ -429,7 +416,7 @@
                 <button onclick="selectShape('rounded')" id="shape-rounded" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Rounded</button>
                 <button onclick="selectShape('square')" id="shape-square" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Square</button>
             </div>
-            <input type="hidden" id="edit-book-shape" value="rounded">
+            <input type="hidden" id="edit-book-shape" value="square">
 
             <div class="flex gap-2">
                 <button onclick="closeEditModal()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Cancel</button>
@@ -639,6 +626,9 @@
         let library = []; let activeBookId = null; let observer = null; let activePanel = null;
         let activeOptsId = null; let currentSelection = { text: "", nodeIdx: -1 }; let activeAnnotationId = null;
         
+        let isBatchDeleteMode = false;
+        let selectedForDelete = new Set();
+        
         window.addEventListener('popstate', (e) => {
             if (!document.getElementById('ai-modal').classList.contains('opacity-0')) { closeAiModal(true); }
             else if (!document.getElementById('show-note-modal').classList.contains('opacity-0')) { closeShowNoteModal(true); }
@@ -647,6 +637,7 @@
             else if (!document.getElementById('edit-modal').classList.contains('opacity-0')) { _closeModalAction('edit-modal', 'edit-sheet', true, true); }
             else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) { _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true); }
             else if (!document.getElementById('welcome-modal').classList.contains('opacity-0')) { closeWelcome(true); }
+            else if (isBatchDeleteMode) { window.toggleBatchDelete(true); }
             else if (activePanel) { _closeSidePanelsAction(true); } 
             else if (document.getElementById('search-area').classList.contains('search-active')) { closeSearch(true); }
             else if (document.getElementById('inbook-search-row') && document.getElementById('inbook-search-row').classList.contains('search-active')) { closeInbookSearch(true); }
@@ -662,10 +653,10 @@
 
         const i18n = {
             id: {
-                libEmpty: "Perpustakaan Kosong.", searchBooks: "Cari buku...", loadingDocs: "Membaca Dokumen...", booksCount: "Buku", continueReading: "Lanjutkan Membaca"
+                libEmpty: "Perpustakaan Kosong.", searchBooks: "Cari buku...", loadingDocs: "Membaca Dokumen...", booksCount: "Buku", continueReading: "Lanjutkan Membaca", bookCollection: "Koleksi Buku", selected: "Terpilih", cancel: "Batal", delete: "Hapus", deleteConfirm: "Hapus buku yang dipilih secara permanen?"
             },
             en: {
-                libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", booksCount: "Books", continueReading: "Continue Reading"
+                libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", booksCount: "Books", continueReading: "Continue Reading", bookCollection: "Book Collection", selected: "Selected", cancel: "Cancel", delete: "Delete", deleteConfirm: "Permanently delete selected books?"
             }
         };
 
@@ -673,9 +664,51 @@
             const d = i18n[wikiLang] || i18n['id'];
             if(document.getElementById('str-lib-empty')) document.getElementById('str-lib-empty').innerText = d.libEmpty;
             if(document.getElementById('str-continue-reading')) document.getElementById('str-continue-reading').innerText = d.continueReading;
+            if(document.getElementById('str-book-collection')) document.getElementById('str-book-collection').innerText = d.bookCollection;
             if(document.getElementById('global-search')) document.getElementById('global-search').placeholder = d.searchBooks;
             if(document.getElementById('loading-text')) document.getElementById('loading-text').innerText = d.loadingDocs;
             if(document.getElementById('library-count')) document.getElementById('library-count').textContent = `${(library.length)} ${d.booksCount}`;
+            if(document.getElementById('btn-batch-cancel')) document.getElementById('btn-batch-cancel').innerText = d.cancel;
+            if(document.getElementById('btn-batch-exec')) document.getElementById('btn-batch-exec').innerText = d.delete;
+            updateBatchDeleteBar();
+        };
+
+        window.toggleBatchDelete = function(isFromHistory = false) {
+            if(library.length === 0 && !isBatchDeleteMode) return;
+            isBatchDeleteMode = !isBatchDeleteMode;
+            selectedForDelete.clear();
+            
+            const bar = document.getElementById('batch-delete-bar');
+            const fab = document.getElementById('fab-container');
+            
+            if (isBatchDeleteMode) {
+                if(!isFromHistory) pushAppHistory('batch-delete');
+                bar.classList.remove('translate-y-full');
+                fab.classList.add('translate-y-24', 'opacity-0');
+            } else {
+                if(!isFromHistory && window.location.hash === '#batch-delete') history.back();
+                bar.classList.add('translate-y-full');
+                fab.classList.remove('translate-y-24', 'opacity-0');
+            }
+            
+            updateBatchDeleteBar();
+            renderLibrary(DOM.globalSearch.value);
+        };
+
+        window.updateBatchDeleteBar = function() {
+            const countEl = document.getElementById('batch-delete-count');
+            const d = i18n[wikiLang] || i18n['id'];
+            if(countEl) countEl.textContent = `${selectedForDelete.size} ${d.selected}`;
+        };
+
+        window.executeBatchDelete = async function() {
+            if(selectedForDelete.size === 0) return;
+            const d = i18n[wikiLang] || i18n['id'];
+            if(confirm(d.deleteConfirm)) {
+                library = library.filter(b => !selectedForDelete.has(b.id));
+                await localforage.setItem('pdf_epub_master', library);
+                toggleBatchDelete(); 
+            }
         };
 
         function renderNodeText(text, annots) {
@@ -874,9 +907,9 @@
             const card = document.createElement('div');
             
             let shapeClass = "";
-            let shp = book.shape || 'rounded';
+            let shp = book.shape || 'square';
             if (shp === 'rounded') shapeClass = 'rounded-[24px]';
-            else if (shp === 'square') shapeClass = 'rounded-lg';
+            else if (shp === 'square') shapeClass = 'rounded-xl';
             else shapeClass = index % 2 === 0 ? 'rounded-tl-[32px] rounded-br-[32px] rounded-tr-lg rounded-bl-lg' : 'rounded-tr-[32px] rounded-bl-[32px] rounded-tl-lg rounded-br-lg';
 
             let bgStyle = ""; let textOverlay = ""; let baseClass = "";
@@ -893,8 +926,8 @@
 
             let pressTimer = null; let isPressing = false; let hasLongPressed = false;
             const handleStart = (e) => {
+                if (isBatchDeleteMode) return;
                 isPressing = true; hasLongPressed = false;
-                // Sensitivitas diturunkan jadi 850ms biar gak gampang kepencet edit sampul
                 pressTimer = setTimeout(() => { if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); } }, 850);
             };
             const handleEnd = () => { isPressing = false; clearTimeout(pressTimer); };
@@ -903,10 +936,47 @@
             card.addEventListener('mousedown', handleStart); card.addEventListener('touchstart', handleStart, {passive: true});
             card.addEventListener('mouseup', handleEnd); card.addEventListener('touchend', handleEnd);
             card.addEventListener('mouseleave', handleMove); card.addEventListener('touchmove', handleMove, {passive: true});
-            card.addEventListener('click', (e) => { if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; } openBook(book); });
+            
+            card.addEventListener('click', (e) => { 
+                if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; } 
+                if (isBatchDeleteMode && !isSlider) {
+                    e.preventDefault(); e.stopPropagation();
+                    const isSel = selectedForDelete.has(book.id);
+                    const ovr = card.querySelector('.batch-overlay');
+                    const icBox = card.querySelector('.batch-icon-box');
+                    const ic = card.querySelector('.batch-icon');
+                    
+                    if (isSel) {
+                        selectedForDelete.delete(book.id);
+                        if(ovr) ovr.style.opacity = '0';
+                        if(icBox) icBox.className = 'batch-icon-box absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors bg-black/40 border-white/70';
+                        if(ic) ic.className = 'batch-icon w-4 h-4 transition-colors text-white/0';
+                    } else {
+                        selectedForDelete.add(book.id);
+                        if(ovr) ovr.style.opacity = '1';
+                        if(icBox) icBox.className = 'batch-icon-box absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors bg-m3-primary border-m3-primary';
+                        if(ic) ic.className = 'batch-icon w-4 h-4 transition-colors text-m3-onPrimary';
+                    }
+                    updateBatchDeleteBar();
+                    return;
+                }
+                openBook(book); 
+            });
 
             card.className = `${baseClass} ${shapeClass} ${dimensionClass} p-3 relative cursor-pointer card-morph flex flex-col justify-between overflow-hidden border-none outline-none ring-0`;
             card.style = bgStyle;
+
+            let batchOverlayHTML = '';
+            if (!isSlider) {
+                const isSel = selectedForDelete.has(book.id);
+                batchOverlayHTML = `
+                    <div class="batch-overlay absolute inset-0 z-20 transition-opacity bg-black/30 flex pointer-events-none rounded-inherit" style="opacity: ${isBatchDeleteMode ? (isSel ? '1' : '0') : '0'}; display: ${isBatchDeleteMode ? 'block' : 'none'};">
+                        <div class="batch-icon-box absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isSel ? 'bg-m3-primary border-m3-primary' : 'bg-black/40 border-white/70'}">
+                            <i data-lucide="check" class="batch-icon w-4 h-4 transition-colors ${isSel ? 'text-m3-onPrimary' : 'text-white/0'}"></i>
+                        </div>
+                    </div>
+                `;
+            }
 
             if (isSlider) {
                 card.innerHTML = `
@@ -928,6 +998,7 @@
                 `;
             } else {
                 card.innerHTML = `
+                    ${batchOverlayHTML}
                     ${textOverlay}
                     <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none border-none">
                         <div class="flex justify-end w-full"></div>
@@ -958,7 +1029,8 @@
             DOM.count.textContent = `${filteredLib.length} ${i18n[wikiLang].booksCount}`;
             
             let topBooks = [];
-            if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct); }
+            // Slice the top reading to max 4 items
+            if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4); }
 
             if (topBooks.length > 0) {
                 DOM.topSection.classList.remove('hidden');
@@ -971,7 +1043,7 @@
                 if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
             } else {
                 DOM.empty.classList.add('hidden'); DOM.grid.classList.remove('hidden');
-                if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.remove('hidden');
+                if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.remove('hidden', 'flex');
                 filteredLib.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
                 lucide.createIcons();
             }
@@ -1001,7 +1073,7 @@
             document.getElementById('edit-book-title').value = book.title; 
             document.getElementById('edit-book-cover').value = '';
             
-            window.selectShape(book.shape || 'rounded');
+            window.selectShape(book.shape || 'square');
             history.back(); setTimeout(() => { openModal('edit-modal', 'edit-sheet', true); }, 400); 
         }
         
@@ -1489,7 +1561,7 @@
                 }
                 cleanedNodes.push(curr);
             });
-            library.push({ id: Date.now().toString(), type: 'pdf', title: bookTitle, nodes: cleanedNodes, pages: numPages, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'default' });
+            library.push({ id: Date.now().toString(), type: 'pdf', title: bookTitle, nodes: cleanedNodes, pages: numPages, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'square' });
             await localforage.setItem('pdf_epub_master', library); renderLibrary();
         }
 
@@ -1535,7 +1607,7 @@
                     }
                 }
             }
-            library.push({ id: Date.now().toString(), type: 'epub', title: bookTitle, nodes: parsedNodes, pages: spine.length, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'default' });
+            library.push({ id: Date.now().toString(), type: 'epub', title: bookTitle, nodes: parsedNodes, pages: spine.length, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'square' });
             await localforage.setItem('pdf_epub_master', library); renderLibrary();
         }
 
