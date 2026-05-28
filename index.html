@@ -62,15 +62,15 @@
         
         /* Standard morphing button */
         .btn-morph { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 99px; }
-        .btn-morph:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+        .btn-morph:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; }
         
         /* Card scaling */
         .card-morph { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; user-select: none; -webkit-user-select: none; }
         .card-morph:active { transform: scale(0.92); border-radius: 16px !important; }
         
-        /* FAB Capsule Expressive: Bulat memanjang saat ditekan */
+        /* FAB Capsule Expressive: Bulat memanjang saat ditekan, warna solid */
         .fab-capsule { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 32px; width: 64px; height: 64px; }
-        .fab-capsule:active { transform: scale(0.95); width: 104px; border-radius: 20px; background-color: var(--md-sys-color-primaryContainer); color: var(--md-sys-color-on-primaryContainer); }
+        .fab-capsule:active { transform: scale(0.95); width: 104px; border-radius: 20px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; opacity: 1 !important; }
 
         /* Capsule Expressive: Stretch and Push */
         .capsule-group { display: flex; gap: 4px; width: 100%; transition: all 0.4s cubic-bezier(0.2, 0, 0, 1); }
@@ -81,7 +81,7 @@
         }
         .capsule-btn:active { 
             flex: 2; transform: scale(0.95); border-radius: 12px; 
-            background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); 
+            background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; opacity: 1 !important;
         }
 
         /* Search & Settings Expressive Row */
@@ -97,12 +97,13 @@
             width: 56px; height: 56px; overflow: hidden; flex-shrink: 0;
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        /* Saat Setting ditahan, merenggang mendesak search bar */
+        /* Saat Setting ditahan, merenggang mendesak search bar - WARNA TETAP SOLID */
         .btn-settings:active {
             width: 72px; 
             border-radius: 16px;
-            background-color: var(--md-sys-color-primaryContainer);
-            color: var(--md-sys-color-on-primaryContainer);
+            background-color: var(--md-sys-color-surface-variant) !important;
+            color: var(--md-sys-color-on-surface-variant) !important;
+            opacity: 1 !important;
         }
         /* State Saat Search Aktif (Melar mencaplok settings) */
         .search-active { gap: 0px !important; }
@@ -153,16 +154,13 @@
         <!-- FIXED STATIC HEADER -->
         <header id="main-header" class="flex-none sticky top-0 z-40 bg-m3-bg pt-10 pb-5 px-5 transition-shadow duration-300">
             <div id="title-area" class="mb-4">
-                <!-- Ukuran teks dibikin sedikit lebih kecil (text-4xl) sesuai request -->
                 <h1 class="text-4xl font-bold tracking-tighter mb-1 text-m3-onBg">Baca.</h1>
                 <p id="library-count" class="text-m3-onSurfaceVariant text-sm font-bold">0 Books</p>
             </div>
             
             <div id="search-area" class="search-row transition-shadow duration-300">
-                <!-- Wrapper pencarian yang bisa disentuh untuk menutup -->
                 <div class="search-capsule bg-m3-surfaceVariant p-1.5 rounded-full px-4 relative">
                     <i data-lucide="search" id="search-icon-lib" class="w-5 h-5 opacity-70 text-m3-onSurfaceVariant shrink-0 absolute left-4 transition-transform duration-300 pointer-events-none"></i>
-                    <!-- Input text murni tanpa border/outline -->
                     <input type="text" id="global-search" placeholder="..." class="w-full bg-transparent border-none outline-none py-2.5 pl-8 pr-2 font-bold text-m3-onSurfaceVariant placeholder:text-m3-onSurfaceVariant/60 text-sm">
                 </div>
                 <button onclick="openModal('global-settings-modal', 'global-settings-sheet')" id="settings-btn" class="btn-morph btn-settings flex items-center justify-center bg-m3-surfaceVariant text-m3-onSurfaceVariant">
@@ -205,7 +203,7 @@
         </div>
 
         <div class="fixed bottom-8 right-6 z-50">
-            <!-- FAB Dengan animasi melebar/memanjang -->
+            <!-- FAB Dengan animasi melar/ekspresif -->
             <button onclick="document.getElementById('doc-upload').click();" class="fab-capsule flex items-center justify-center bg-m3-primary text-m3-onPrimary cursor-pointer shadow-none overflow-hidden">
                 <i data-lucide="plus" class="w-8 h-8 shrink-0"></i>
             </button>
@@ -244,15 +242,12 @@
         </button>
         
         <div id="reader-search-bar" class="hidden bg-m3-surfaceVariant px-4 pb-4 z-20 transition-all w-full shrink-0 rounded-b-[24px]">
-            <!-- In-Book Search dengan animasi melar yang bisa ditutup kalo di-tap bar-nya -->
             <div class="search-row" id="inbook-search-row">
                 <div class="search-capsule bg-m3-surface p-1 rounded-full relative">
-                    <!-- Menggunakan Icon Panah buat search seperti request "hilangkan tulisan cari" -->
                     <i data-lucide="corner-down-right" id="search-icon-inbook" class="w-5 h-5 opacity-70 text-m3-onSurface shrink-0 absolute left-4 pointer-events-none"></i>
                     <input type="text" id="inbook-search-input" placeholder="..." class="w-full bg-transparent border-none outline-none py-2 pl-10 pr-2 font-bold text-m3-onSurface text-sm">
                 </div>
-                <!-- Tombol ini digusur saat kapsul input melar -->
-                <button id="btn-exec-search-book" onclick="executeSearch()" class="btn-morph btn-settings bg-m3-primary text-m3-onPrimary rounded-full flex items-center justify-center shrink-0">
+                <button id="btn-exec-search-book" onclick="executeSearch()" class="btn-morph btn-settings bg-m3-primary text-m3-onPrimary rounded-full flex items-center justify-center shrink-0" style="background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important;">
                     <i data-lucide="arrow-right" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -434,7 +429,7 @@
                 <button onclick="selectShape('rounded')" id="shape-rounded" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Rounded</button>
                 <button onclick="selectShape('square')" id="shape-square" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Square</button>
             </div>
-            <input type="hidden" id="edit-book-shape" value="default">
+            <input type="hidden" id="edit-book-shape" value="rounded">
 
             <div class="flex gap-2">
                 <button onclick="closeEditModal()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Cancel</button>
@@ -548,7 +543,6 @@
             globalSearch: document.getElementById('global-search')
         };
 
-        // Scroll listener untuk header bayangan (kini header anteng/fixed)
         const libScroll = document.getElementById('library-content-scroll');
         if(libScroll && DOM.mainHeader) {
             libScroll.addEventListener('scroll', () => {
@@ -557,7 +551,24 @@
             });
         }
 
-        // Logic Search Main Menu - Kapsul Ekspresif + Push State Back Button
+        // --- LOGIKA GLOBAL MENGUNCUPKAN SEARCH BAR (KLIK DI LUAR) ---
+        document.addEventListener('click', (e) => {
+            const searchArea = document.getElementById('search-area');
+            if (searchArea && searchArea.classList.contains('search-active')) {
+                if (!searchArea.contains(e.target)) {
+                    closeSearch(false);
+                }
+            }
+            
+            const inbookSearchRow = document.getElementById('inbook-search-row');
+            if (inbookSearchRow && inbookSearchRow.classList.contains('search-active')) {
+                if (!inbookSearchRow.contains(e.target)) {
+                    closeInbookSearch(false);
+                }
+            }
+        });
+
+        // Logic Search Main Menu
         const searchArea = document.getElementById('search-area');
         const searchCapsule = document.querySelector('.search-capsule');
         
@@ -591,7 +602,7 @@
             }
         };
 
-        // Logic Search In-Book (Dalam Buku) - Kapsul Ekspresif
+        // Logic Search In-Book (Dalam Buku)
         const inbookSearchRow = document.getElementById('inbook-search-row');
         const inbookSearchInput = document.getElementById('inbook-search-input');
         const inbookSearchCapsule = document.querySelector('#inbook-search-row .search-capsule');
@@ -624,7 +635,6 @@
                 }
             }
         };
-
 
         let library = []; let activeBookId = null; let observer = null; let activePanel = null;
         let activeOptsId = null; let currentSelection = { text: "", nodeIdx: -1 }; let activeAnnotationId = null;
@@ -864,7 +874,7 @@
             const card = document.createElement('div');
             
             let shapeClass = "";
-            let shp = book.shape || 'default';
+            let shp = book.shape || 'rounded';
             if (shp === 'rounded') shapeClass = 'rounded-[24px]';
             else if (shp === 'square') shapeClass = 'rounded-lg';
             else shapeClass = index % 2 === 0 ? 'rounded-tl-[32px] rounded-br-[32px] rounded-tr-lg rounded-bl-lg' : 'rounded-tr-[32px] rounded-bl-[32px] rounded-tl-lg rounded-br-lg';
@@ -872,7 +882,7 @@
             let bgStyle = ""; let textOverlay = ""; let baseClass = "";
             if(book.coverBase64) {
                 bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
-                baseClass = "text-white"; 
+                baseClass = "text-white border-none outline-none ring-0"; 
                 textOverlay = `<div class="absolute inset-x-0 bottom-0 h-[80%] bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-0 rounded-b-inherit border-none outline-none"></div>`;
             } else {
                 const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
@@ -884,7 +894,8 @@
             let pressTimer = null; let isPressing = false; let hasLongPressed = false;
             const handleStart = (e) => {
                 isPressing = true; hasLongPressed = false;
-                pressTimer = setTimeout(() => { if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); } }, 500);
+                // Sensitivitas diturunkan jadi 850ms biar gak gampang kepencet edit sampul
+                pressTimer = setTimeout(() => { if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); } }, 850);
             };
             const handleEnd = () => { isPressing = false; clearTimeout(pressTimer); };
             const handleMove = () => { isPressing = false; clearTimeout(pressTimer); };
