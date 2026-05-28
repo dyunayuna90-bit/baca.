@@ -104,9 +104,12 @@
         .dark .hl-pink { background-color: rgba(190, 24, 93, 0.4); }
         .dark .hl-blue { background-color: rgba(29, 78, 216, 0.4); }
 
+        /* Helper to hide scrollbar but keep functionality */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
         :root { --reader-font: 'Lora', serif; --reader-size: 1.2rem; --reader-align: left; --reader-line-height: 1.8; }
 
-        
         .reader-dynamic-text { word-wrap: break-word; overflow-wrap: anywhere; hyphens: auto; }
         .reader-dynamic-text p { font-family: var(--reader-font) !important; font-size: var(--reader-size) !important; text-align: var(--reader-align) !important; line-height: var(--reader-line-height) !important; max-width: 100%; overflow-x: hidden; }
         .reader-dynamic-text h1 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.8) !important; text-align: left !important; line-height: 1.3 !important; font-weight: bold; margin-top: 2rem; margin-bottom: 1.5rem; color: var(--md-sys-color-primary); }
@@ -118,7 +121,6 @@
 
     <!-- VIEW: LIBRARY -->
     <div id="library-view" class="absolute inset-0 flex flex-col overflow-hidden transition-transform duration-500 origin-bottom bg-m3-bg z-10 w-full">
-        <!-- Solid background sticky header with edge-to-edge padding to prevent content from sliding under the sides -->
         <header id="main-header" class="pt-10 pb-5 px-6 sticky top-0 bg-m3-bg z-40 w-full transition-shadow duration-300">
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -126,18 +128,17 @@
                     <p id="library-count" class="text-m3-onSurfaceVariant text-base font-medium">0 Books</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="openModal('global-settings-modal', 'global-settings-sheet')" class="btn-morph p-4 bg-m3-surfaceVariant text-m3-onSurfaceVariant shadow-sm flex items-center justify-center">
+                    <button onclick="openModal('global-settings-modal', 'global-settings-sheet')" class="btn-morph w-14 h-14 bg-m3-primary/10 dark:bg-m3-surfaceVariant text-m3-primary dark:text-m3-onSurfaceVariant shadow-sm flex items-center justify-center rounded-[20px] border border-m3-primary/20 dark:border-transparent">
                         <i data-lucide="settings"></i>
                     </button>
                 </div>
             </div>
             <div class="relative w-full">
-                <i data-lucide="search" class="absolute left-6 top-1/2 transform -translate-y-1/2 text-m3-onSurfaceVariant opacity-70"></i>
-                <input type="text" id="global-search" placeholder="Search books..." class="w-full bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-full py-4 pl-14 pr-4 outline-none focus:ring-2 focus:ring-m3-primary transition-all font-medium border border-transparent focus:border-m3-primary shadow-sm">
+                <i data-lucide="search" class="absolute left-6 top-1/2 transform -translate-y-1/2 text-m3-primary dark:text-m3-onSurfaceVariant opacity-90 z-10"></i>
+                <input type="text" id="global-search" placeholder="Search books..." class="w-full bg-m3-primary/10 dark:bg-m3-surfaceVariant text-m3-primary dark:text-m3-onSurfaceVariant placeholder-m3-primary/60 dark:placeholder-m3-onSurfaceVariant/60 rounded-full py-4 pl-14 pr-4 outline-none focus:ring-2 focus:ring-m3-primary transition-all font-bold border border-m3-primary/20 dark:border-transparent focus:border-m3-primary shadow-sm relative z-0">
             </div>
         </header>
 
-        <!-- Main Content Area padded correctly -->
         <div id="library-content-scroll" class="flex-1 overflow-y-auto px-6 pt-2 pb-32">
             <div id="loading-state" class="hidden mb-8 p-5 bg-m3-secondaryContainer text-m3-onSecondaryContainer rounded-[28px] shadow-sm">
                 <div class="flex justify-between items-end mb-3">
@@ -149,6 +150,16 @@
                 </div>
             </div>
 
+            <!-- Top Books / Continue Reading Section (Horizontal Slider) -->
+            <div id="continue-reading-section" class="hidden mb-8 -mx-6">
+                <h2 id="str-continue-reading" class="text-lg font-bold mb-4 text-m3-onBg px-6 tracking-tight">Lanjutkan Membaca</h2>
+                <!-- Slider container with snap proximity & scroll-padding to fix left edge issues -->
+                <div id="top-books-slider" class="flex gap-4 overflow-x-auto snap-x snap-proximity px-6 pb-6 hide-scroll [scroll-padding-left:1.5rem]">
+                    <!-- Top books injected here -->
+                </div>
+            </div>
+
+            <!-- Main Library Grid -->
             <div id="book-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 w-full"></div>
 
             <div id="empty-state" class="flex flex-col items-center justify-center mt-20 opacity-40">
@@ -158,8 +169,8 @@
         </div>
 
         <div class="fixed bottom-8 right-6 z-50">
-            <!-- Directly triggers the file input. -->
-            <button onclick="document.getElementById('doc-upload').click();" class="btn-morph flex items-center justify-center w-16 h-16 bg-m3-tertiaryContainer text-m3-onTertiaryContainer shadow-xl cursor-pointer">
+            <!-- Upload FAB with High Contrast Primary Color -->
+            <button onclick="document.getElementById('doc-upload').click();" class="btn-morph flex items-center justify-center w-16 h-16 bg-m3-primary text-m3-onPrimary shadow-2xl cursor-pointer border border-white/20 dark:border-transparent">
                 <i data-lucide="plus" class="w-8 h-8"></i>
             </button>
             <input type="file" id="doc-upload" accept=".epub,.pdf" class="hidden">
@@ -168,6 +179,17 @@
 
     <!-- VIEW: READER -->
     <div id="reader-view" class="absolute inset-0 flex flex-col bg-m3-bg text-m3-onBg transform translate-y-full transition-transform duration-500 ease-in-out z-20 w-full overflow-hidden">
+        
+        <!-- Loading Overlay (M3 Expressive) -->
+        <div id="reader-loading-overlay" class="absolute inset-0 z-50 bg-m3-bg flex flex-col items-center justify-center transition-opacity duration-300 hidden opacity-0">
+            <div class="relative w-20 h-20 mb-6 flex items-center justify-center">
+                <div class="absolute inset-0 border-4 border-m3-surfaceVariant rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-m3-primary rounded-full border-t-transparent animate-spin"></div>
+                <i data-lucide="book-open" class="w-8 h-8 text-m3-primary animate-pulse"></i>
+            </div>
+            <p class="text-m3-primary font-bold tracking-widest uppercase text-sm animate-pulse">Memuat Buku...</p>
+        </div>
+
         <div id="reader-top-bar" class="flex items-center justify-between p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant shadow-sm shrink-0 z-30 relative rounded-b-[24px]">
             <button id="btn-back" class="btn-morph p-3 hover:bg-m3-surface"><i data-lucide="arrow-down"></i></button>
             <div class="flex-1 px-3 text-center overflow-hidden">
@@ -188,8 +210,8 @@
         
         <div id="reader-search-bar" class="hidden bg-m3-surfaceVariant px-4 pb-4 shadow-sm z-20 transition-all w-full shrink-0">
             <div class="flex gap-2">
-                <input type="text" id="inbook-search-input" placeholder="Search specific text..." class="flex-1 bg-m3-surface text-m3-onSurface rounded-full px-4 py-2 outline-none text-sm font-medium">
-                <button id="btn-exec-search" class="bg-m3-primary text-m3-onPrimary px-4 py-2 rounded-full font-medium text-sm btn-morph">Search</button>
+                <input type="text" id="inbook-search-input" placeholder="Search specific text..." class="flex-1 bg-m3-primary/10 dark:bg-m3-surface text-m3-primary dark:text-m3-onSurface placeholder-m3-primary/60 dark:placeholder-m3-onSurface/60 rounded-full px-4 py-2 outline-none text-sm font-bold border border-m3-primary/20 dark:border-transparent">
+                <button id="btn-exec-search" class="bg-m3-primary text-m3-onPrimary px-4 py-2 rounded-full font-bold text-sm btn-morph shadow-sm border border-white/20 dark:border-transparent">Search</button>
             </div>
             <div id="search-results-panel" class="hidden mt-2 max-h-40 overflow-y-auto overflow-x-hidden rounded-xl bg-m3-surface text-sm shadow-inner"></div>
         </div>
@@ -253,9 +275,9 @@
     </div>
 
     <!-- Modals -->
-    <!-- Welcome Modal (Formal English & Specific PWA/Format Instructions) -->
-    <div id="welcome-modal" class="hidden modal-overlay fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4 opacity-0">
-        <div class="bg-m3-surface w-full max-w-md rounded-[32px] overflow-hidden flex flex-col scale-95 transition-transform max-h-[90vh] border border-m3-surfaceVariant" id="welcome-sheet">
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" onclick="if(event.target === this) closeWelcome()" class="hidden modal-overlay fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4 opacity-0">
+        <div class="bg-m3-surface w-full max-w-md rounded-[32px] overflow-hidden flex flex-col scale-95 transition-transform max-h-[90vh] border border-m3-surfaceVariant shadow-2xl" id="welcome-sheet">
             <div class="p-6 overflow-y-auto">
                 <h2 class="text-3xl font-bold text-m3-onSurface mb-2">Welcome to Baca.</h2>
                 <p class="text-m3-onSurfaceVariant mb-6">Please read these instructions to ensure the optimal reading experience.</p>
@@ -290,8 +312,8 @@
     </div>
 
     <!-- Global Settings Modal -->
-    <div id="global-settings-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0">
-        <div class="modal-content bg-m3-surface w-full max-w-md rounded-t-[32px] p-6 pb-12 transform translate-y-full border-t border-m3-surfaceVariant" id="global-settings-sheet">
+    <div id="global-settings-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0">
+        <div class="modal-content bg-m3-surface w-full max-w-md rounded-t-[32px] p-6 pb-12 transform translate-y-full border-t border-m3-surfaceVariant shadow-2xl" id="global-settings-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
             <h3 class="text-2xl font-bold mb-6 text-m3-onSurface">Settings</h3>
             
@@ -341,17 +363,17 @@
                 <i data-lucide="info"></i> <span>View Instructions</span>
             </button>
 
-            <button onclick="history.back()" class="btn-morph w-full mt-2 py-4 bg-m3-surfaceVariant text-m3-onSurfaceVariant font-bold text-lg">Close</button>
+            <button onclick="history.back()" class="btn-morph w-full mt-2 py-4 bg-m3-primary/10 dark:bg-m3-surfaceVariant text-m3-primary dark:text-m3-onSurfaceVariant font-bold text-lg border border-m3-primary/20 dark:border-transparent">Close</button>
         </div>
     </div>
 
     <!-- Book Options Modal -->
-    <div id="b-opt-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0 p-4 pb-8">
-        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform translate-y-full border border-m3-surfaceVariant" id="b-opt-sheet">
+    <div id="b-opt-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0 p-4 pb-8">
+        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform translate-y-full border border-m3-surfaceVariant shadow-2xl" id="b-opt-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
             <h3 id="opt-title" class="text-lg font-bold mb-6 text-m3-onSurface text-center truncate px-2">Book Options</h3>
             <div class="flex flex-col gap-3">
-                <button onclick="triggerEditView()" class="flex items-center gap-4 w-full p-4 bg-m3-primaryContainer text-m3-onPrimaryContainer rounded-2xl font-bold btn-morph"><i data-lucide="edit-3"></i> <span>Edit Book Details</span></button>
+                <button onclick="triggerEditView()" class="flex items-center gap-4 w-full p-4 bg-m3-primaryContainer text-m3-onPrimaryContainer rounded-2xl font-bold btn-morph border border-m3-primary/20 dark:border-transparent"><i data-lucide="edit-3"></i> <span>Edit Book Details</span></button>
                 <button onclick="triggerDeleteView()" class="flex items-center gap-4 w-full p-4 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded-2xl font-bold btn-morph"><i data-lucide="trash-2"></i> <span>Delete Permanently</span></button>
             </div>
             <button onclick="history.back()" class="btn-morph w-full mt-4 py-4 bg-transparent text-m3-onSurface font-bold">Cancel</button>
@@ -359,13 +381,13 @@
     </div>
 
     <!-- Edit Book Data Modal -->
-    <div id="edit-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
-        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-95 border border-m3-surfaceVariant" id="edit-sheet">
+    <div id="edit-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
+        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-95 border border-m3-surfaceVariant shadow-2xl" id="edit-sheet">
             <h3 class="text-2xl font-bold mb-4 text-m3-onSurface">Edit Details</h3>
             <input type="hidden" id="edit-book-id">
             
             <label class="text-sm font-bold opacity-70 block mb-2">Book Title</label>
-            <input type="text" id="edit-book-title" class="w-full bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-medium outline-none focus:ring-2 focus:ring-m3-primary">
+            <input type="text" id="edit-book-title" class="w-full bg-m3-primary/10 dark:bg-m3-surfaceVariant text-m3-primary dark:text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-bold outline-none focus:ring-2 focus:ring-m3-primary border border-m3-primary/20 dark:border-transparent">
             
             <label class="text-sm font-bold opacity-70 block mb-2">Cover Image (Gallery)</label>
             <input type="file" id="edit-book-cover" accept="image/*" class="w-full text-sm mb-5 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-m3-primaryContainer file:text-m3-onPrimaryContainer hover:file:bg-m3-primaryContainer/80 z-10 relative">
@@ -381,7 +403,7 @@
 
             <div class="flex gap-2">
                 <button onclick="closeEditModal()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Cancel</button>
-                <button onclick="saveBookEdit()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph shadow-md">Save</button>
+                <button onclick="saveBookEdit()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph shadow-md border border-white/20 dark:border-transparent">Save</button>
             </div>
         </div>
     </div>
@@ -407,21 +429,21 @@
     </div>
 
     <!-- Note Input Modal -->
-    <div id="note-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
-        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-95 border border-m3-surfaceVariant" id="note-sheet">
+    <div id="note-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
+        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-95 border border-m3-surfaceVariant shadow-2xl" id="note-sheet">
             <h3 class="text-xl font-bold mb-4 text-m3-onSurface flex items-center gap-2"><i data-lucide="notebook-pen" class="w-5 h-5"></i> Tambah Catatan</h3>
-            <textarea id="note-input-text" class="w-full h-32 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-medium outline-none focus:ring-2 focus:ring-m3-primary resize-none" placeholder="Tuliskan catatanmu di sini..."></textarea>
+            <textarea id="note-input-text" class="w-full h-32 bg-m3-primary/10 dark:bg-m3-surfaceVariant text-m3-primary dark:text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-medium outline-none focus:ring-2 focus:ring-m3-primary resize-none border border-m3-primary/20 dark:border-transparent" placeholder="Tuliskan catatanmu di sini..."></textarea>
             
             <div class="flex gap-2">
                 <button onclick="_closeModalAction('note-modal', 'note-sheet', true)" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Batal</button>
-                <button onclick="saveNoteAnnotation()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph shadow-md">Simpan</button>
+                <button onclick="saveNoteAnnotation()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph shadow-md border border-white/20 dark:border-transparent">Simpan</button>
             </div>
         </div>
     </div>
     
     <!-- Show Note Details Modal -->
-    <div id="show-note-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex justify-center items-end sm:items-center opacity-0 p-4 sm:p-0">
-        <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[32px] rounded-t-[32px] rounded-b-[0px] p-6 pb-12 sm:pb-6 transform translate-y-full sm:scale-95 border-t border-m3-surfaceVariant" id="show-note-sheet">
+    <div id="show-note-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex justify-center items-end sm:items-center opacity-0 p-4 sm:p-0">
+        <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[32px] rounded-t-[32px] rounded-b-[0px] p-6 pb-12 sm:pb-6 transform translate-y-full sm:scale-95 border-t border-m3-surfaceVariant shadow-2xl" id="show-note-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 sm:hidden"></div>
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface flex items-center gap-2"><i data-lucide="sticky-note" class="w-5 h-5 text-yellow-500"></i> Catatan Tersimpan</h3>
             <p id="show-note-hl" class="text-xs font-mono opacity-60 mb-4 bg-black/5 dark:bg-white/5 p-2 rounded-lg line-clamp-2"></p>
@@ -429,14 +451,14 @@
             
             <div class="flex gap-2">
                 <button onclick="deleteAnnotationById()" class="py-3 px-5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold rounded-full btn-morph shadow-sm flex items-center justify-center"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                <button onclick="closeShowNoteModal()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph shadow-md">Tutup</button>
+                <button onclick="closeShowNoteModal()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph shadow-md border border-white/20 dark:border-transparent">Tutup</button>
             </div>
         </div>
     </div>
 
     <!-- AI Definition Modal -->
-    <div id="ai-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-end sm:items-center justify-center opacity-0 pb-0 sm:pb-0 p-0 sm:p-4">
-        <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[32px] rounded-t-[32px] p-6 pb-12 sm:pb-6 transform translate-y-full sm:scale-95 border-t border-m3-surfaceVariant flex flex-col max-h-[85vh]" id="ai-sheet">
+    <div id="ai-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-end sm:items-center justify-center opacity-0 pb-0 sm:pb-0 p-0 sm:p-4">
+        <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[32px] rounded-t-[32px] p-6 pb-12 sm:pb-6 transform translate-y-full sm:scale-95 border-t border-m3-surfaceVariant shadow-2xl flex flex-col max-h-[85vh]" id="ai-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 sm:hidden"></div>
             <div class="flex items-center justify-between mb-4 shrink-0">
                 <h3 class="text-xl font-bold text-m3-onSurface flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-m3-primary"></i> Penjelasan AI / Wiki</h3>
@@ -459,28 +481,31 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
+        // M3 Light Palettes modified to use true Material You Surface Container colors (slightly tinted background instead of flat white)
+        // Also adjusted on-background/on-surface-variant for much stronger contrast!
         const M3_PALETTES = {
-            purple: { light: `--md-sys-color-primary:#6750A4;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#EADDFF;--md-sys-color-on-primary-container:#21005D;--md-sys-color-secondary-container:#E8DEF8;--md-sys-color-on-secondary-container:#1D192B;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#FFFBFE;--md-sys-color-on-background:#1C1B1F;--md-sys-color-surface:#FFFBFE;--md-sys-color-on-surface:#1C1B1F;--md-sys-color-surface-variant:#E7E0EC;--md-sys-color-on-surface-variant:#49454F;`, dark: `--md-sys-color-primary:#D0BCFF;--md-sys-color-on-primary:#381E72;--md-sys-color-primary-container:#4F378B;--md-sys-color-on-primary-container:#EADDFF;--md-sys-color-secondary-container:#4A4458;--md-sys-color-on-secondary-container:#E8DEF8;--md-sys-color-tertiary-container:#633B48;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#1C1B1E;--md-sys-color-on-background:#E6E1E5;--md-sys-color-surface:#1C1B1E;--md-sys-color-on-surface:#E6E1E5;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
-            green: { light: `--md-sys-color-primary:#006C4C;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#89F8D6;--md-sys-color-on-primary-container:#002114;--md-sys-color-secondary-container:#CCE8DB;--md-sys-color-on-secondary-container:#052016;--md-sys-color-tertiary-container:#BEEAF6;--md-sys-color-on-tertiary-container:#001F29;--md-sys-color-background:#FBFDF9;--md-sys-color-on-background:#191C1A;--md-sys-color-surface:#FBFDF9;--md-sys-color-on-surface:#191C1A;--md-sys-color-surface-variant:#DBE5DF;--md-sys-color-on-surface-variant:#404943;`, dark: `--md-sys-color-primary:#6CDBBA;--md-sys-color-on-primary:#003825;--md-sys-color-primary-container:#005138;--md-sys-color-on-primary-container:#89F8D6;--md-sys-color-secondary-container:#334B3F;--md-sys-color-on-secondary-container:#CCE8DB;--md-sys-color-tertiary-container:#204D59;--md-sys-color-on-tertiary-container:#BEEAF6;--md-sys-color-background:#191C1A;--md-sys-color-on-background:#E1E3DF;--md-sys-color-surface:#191C1A;--md-sys-color-on-surface:#E1E3DF;--md-sys-color-surface-variant:#404943;--md-sys-color-on-surface-variant:#BFC9C3;` },
-            rose: { light: `--md-sys-color-primary:#984061;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFD9E2;--md-sys-color-on-primary-container:#3E001D;--md-sys-color-secondary-container:#FDDADA;--md-sys-color-on-secondary-container:#2C1516;--md-sys-color-tertiary-container:#FFD8CB;--md-sys-color-on-tertiary-container:#321105;--md-sys-color-background:#FFFBFF;--md-sys-color-on-background:#201A1B;--md-sys-color-surface:#FFFBFF;--md-sys-color-on-surface:#201A1B;--md-sys-color-surface-variant:#F4DDDF;--md-sys-color-on-surface-variant:#524346;`, dark: `--md-sys-color-primary:#FFB0C8;--md-sys-color-on-primary:#551D32;--md-sys-color-primary-container:#703348;--md-sys-color-on-primary-container:#FFD9E2;--md-sys-color-secondary-container:#5C3F3F;--md-sys-color-on-secondary-container:#FDDADA;--md-sys-color-tertiary-container:#663B2B;--md-sys-color-on-tertiary-container:#FFD8CB;--md-sys-color-background:#201A1B;--md-sys-color-on-background:#ECE0E1;--md-sys-color-surface:#201A1B;--md-sys-color-on-surface:#ECE0E1;--md-sys-color-surface-variant:#524346;--md-sys-color-on-surface-variant:#D7C1C4;` },
-            blue: { light: `--md-sys-color-primary:#0061A4;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D1E4FF;--md-sys-color-on-primary-container:#001D36;--md-sys-color-secondary-container:#D7E3F7;--md-sys-color-on-secondary-container:#101C2B;--md-sys-color-tertiary-container:#E2E2FF;--md-sys-color-on-tertiary-container:#191637;--md-sys-color-background:#FDFBFF;--md-sys-color-on-background:#1A1C1E;--md-sys-color-surface:#FDFBFF;--md-sys-color-on-surface:#1A1C1E;--md-sys-color-surface-variant:#DFE2EB;--md-sys-color-on-surface-variant:#43474E;`, dark: `--md-sys-color-primary:#9ECAFF;--md-sys-color-on-primary:#003258;--md-sys-color-primary-container:#00497D;--md-sys-color-on-primary-container:#D1E4FF;--md-sys-color-secondary-container:#3B4858;--md-sys-color-on-secondary-container:#D7E3F7;--md-sys-color-tertiary-container:#423F62;--md-sys-color-on-tertiary-container:#E2E2FF;--md-sys-color-background:#1A1C1E;--md-sys-color-on-background:#E2E2E6;--md-sys-color-surface:#1A1C1E;--md-sys-color-on-surface:#E2E2E6;--md-sys-color-surface-variant:#43474E;--md-sys-color-on-surface-variant:#C3C7CF;` },
-            orange: { light: `--md-sys-color-primary:#8F4C38;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFDBD1;--md-sys-color-on-primary-container:#3A0B01;--md-sys-color-secondary-container:#FFDBD1;--md-sys-color-on-secondary-container:#2C150F;--md-sys-color-tertiary-container:#F7D8B7;--md-sys-color-on-tertiary-container:#271600;--md-sys-color-background:#FFF8F6;--md-sys-color-on-background:#221A18;--md-sys-color-surface:#FFF8F6;--md-sys-color-on-surface:#221A18;--md-sys-color-surface-variant:#F5DED8;--md-sys-color-on-surface-variant:#53433F;`, dark: `--md-sys-color-primary:#FFB5A0;--md-sys-color-on-primary:#561F0F;--md-sys-color-primary-container:#723523;--md-sys-color-on-primary-container:#FFDBD1;--md-sys-color-secondary-container:#5D3F37;--md-sys-color-on-secondary-container:#FFDBD1;--md-sys-color-tertiary-container:#524029;--md-sys-color-on-tertiary-container:#F7D8B7;--md-sys-color-background:#221A18;--md-sys-color-on-background:#EAE0DD;--md-sys-color-surface:#221A18;--md-sys-color-on-surface:#EAE0DD;--md-sys-color-surface-variant:#53433F;--md-sys-color-on-surface-variant:#D8C2BC;` },
-            teal: { light: `--md-sys-color-primary:#006A60;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#74F8E5;--md-sys-color-on-primary-container:#00201C;--md-sys-color-secondary-container:#CCE8E2;--md-sys-color-on-secondary-container:#05201C;--md-sys-color-tertiary-container:#D0E8CD;--md-sys-color-on-tertiary-container:#09200B;--md-sys-color-background:#FAFDFB;--md-sys-color-on-background:#191C1B;--md-sys-color-surface:#FAFDFB;--md-sys-color-on-surface:#191C1B;--md-sys-color-surface-variant:#DAE5E1;--md-sys-color-on-surface-variant:#3F4947;`, dark: `--md-sys-color-primary:#53DBC9;--md-sys-color-on-primary:#003732;--md-sys-color-primary-container:#005048;--md-sys-color-on-primary-container:#74F8E5;--md-sys-color-secondary-container:#324B46;--md-sys-color-on-secondary-container:#CCE8E2;--md-sys-color-tertiary-container:#364B34;--md-sys-color-on-tertiary-container:#D0E8CD;--md-sys-color-background:#191C1B;--md-sys-color-on-background:#E0E3E1;--md-sys-color-surface:#191C1B;--md-sys-color-on-surface:#E0E3E1;--md-sys-color-surface-variant:#3F4947;--md-sys-color-on-surface-variant:#BEC9C6;` },
-            yellow: { light: `--md-sys-color-primary:#695F00;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#F5E468;--md-sys-color-on-primary-container:#201C00;--md-sys-color-secondary-container:#E6E2D0;--md-sys-color-on-secondary-container:#1D190B;--md-sys-color-tertiary-container:#CFECC1;--md-sys-color-on-tertiary-container:#092104;--md-sys-color-background:#FFFBFF;--md-sys-color-on-background:#1D1C16;--md-sys-color-surface:#FFFBFF;--md-sys-color-on-surface:#1D1C16;--md-sys-color-surface-variant:#E8E2D0;--md-sys-color-on-surface-variant:#49473A;`, dark: `--md-sys-color-primary:#D8C84F;--md-sys-color-on-primary:#373100;--md-sys-color-primary-container:#4F4700;--md-sys-color-on-primary-container:#F5E468;--md-sys-color-secondary-container:#4B473A;--md-sys-color-on-secondary-container:#E6E2D0;--md-sys-color-tertiary-container:#344C2B;--md-sys-color-on-tertiary-container:#CFECC1;--md-sys-color-background:#1D1C16;--md-sys-color-on-background:#E7E2D9;--md-sys-color-surface:#1D1C16;--md-sys-color-on-surface:#E7E2D9;--md-sys-color-surface-variant:#49473A;--md-sys-color-on-surface-variant:#CBC6B5;` },
-            pink: { light: `--md-sys-color-primary:#8C4A60;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFD9E2;--md-sys-color-on-primary-container:#39071D;--md-sys-color-secondary-container:#FDDADA;--md-sys-color-on-secondary-container:#2C1516;--md-sys-color-tertiary-container:#FFD8CB;--md-sys-color-on-tertiary-container:#321105;--md-sys-color-background:#FFFBFF;--md-sys-color-on-background:#201A1B;--md-sys-color-surface:#FFFBFF;--md-sys-color-on-surface:#201A1B;--md-sys-color-surface-variant:#F4DDDF;--md-sys-color-on-surface-variant:#524346;`, dark: `--md-sys-color-primary:#FFB0C8;--md-sys-color-on-primary:#551D32;--md-sys-color-primary-container:#703348;--md-sys-color-on-primary-container:#FFD9E2;--md-sys-color-secondary-container:#5C3F3F;--md-sys-color-on-secondary-container:#FDDADA;--md-sys-color-tertiary-container:#663B2B;--md-sys-color-on-tertiary-container:#FFD8CB;--md-sys-color-background:#201A1B;--md-sys-color-on-background:#ECE0E1;--md-sys-color-surface:#201A1B;--md-sys-color-on-surface:#ECE0E1;--md-sys-color-surface-variant:#524346;--md-sys-color-on-surface-variant:#D7C1C4;` },
-            cyan: { light: `--md-sys-color-primary:#006874;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#97F0FF;--md-sys-color-on-primary-container:#001F24;--md-sys-color-secondary-container:#CEE6EA;--md-sys-color-on-secondary-container:#051F23;--md-sys-color-tertiary-container:#DFE2FF;--md-sys-color-on-tertiary-container:#151937;--md-sys-color-background:#FAFCFD;--md-sys-color-on-background:#191C1D;--md-sys-color-surface:#FAFCFD;--md-sys-color-on-surface:#191C1D;--md-sys-color-surface-variant:#DBE4E6;--md-sys-color-on-surface-variant:#3F484A;`, dark: `--md-sys-color-primary:#4FD8EB;--md-sys-color-on-primary:#00363D;--md-sys-color-primary-container:#004F58;--md-sys-color-on-primary-container:#97F0FF;--md-sys-color-secondary-container:#334B4E;--md-sys-color-on-secondary-container:#CEE6EA;--md-sys-color-tertiary-container:#404364;--md-sys-color-on-tertiary-container:#DFE2FF;--md-sys-color-background:#191C1D;--md-sys-color-on-background:#E1E3E3;--md-sys-color-surface:#191C1D;--md-sys-color-on-surface:#E1E3E3;--md-sys-color-surface-variant:#3F484A;--md-sys-color-on-surface-variant:#BFC8CA;` },
-            slate: { light: `--md-sys-color-primary:#415F91;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D6E3FF;--md-sys-color-on-primary-container:#001B3E;--md-sys-color-secondary-container:#DAE2F9;--md-sys-color-on-secondary-container:#131C2B;--md-sys-color-tertiary-container:#FBD7FC;--md-sys-color-on-tertiary-container:#29132D;--md-sys-color-background:#F9F9FF;--md-sys-color-on-background:#191C20;--md-sys-color-surface:#F9F9FF;--md-sys-color-on-surface:#191C20;--md-sys-color-surface-variant:#E0E2EC;--md-sys-color-on-surface-variant:#44474E;`, dark: `--md-sys-color-primary:#AAC7FF;--md-sys-color-on-primary:#0A305F;--md-sys-color-primary-container:#284777;--md-sys-color-on-primary-container:#D6E3FF;--md-sys-color-secondary-container:#3E4759;--md-sys-color-on-secondary-container:#DAE2F9;--md-sys-color-tertiary-container:#5C3F5F;--md-sys-color-on-tertiary-container:#FBD7FC;--md-sys-color-background:#191C20;--md-sys-color-on-background:#E2E2E9;--md-sys-color-surface:#191C20;--md-sys-color-on-surface:#E2E2E9;--md-sys-color-surface-variant:#44474E;--md-sys-color-on-surface-variant:#C4C6D0;` },
-            red: { light: `--md-sys-color-primary:#B3261E;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#F9DEDC;--md-sys-color-on-primary-container:#410E0B;--md-sys-color-secondary-container:#FFDAD6;--md-sys-color-on-secondary-container:#3E0000;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#FFFBFE;--md-sys-color-on-background:#1C1B1F;--md-sys-color-surface:#FFFBFE;--md-sys-color-on-surface:#1C1B1F;--md-sys-color-surface-variant:#E7E0EC;--md-sys-color-on-surface-variant:#49454F;`, dark: `--md-sys-color-primary:#F2B8B5;--md-sys-color-on-primary:#601410;--md-sys-color-primary-container:#8C1D18;--md-sys-color-on-primary-container:#F9DEDC;--md-sys-color-secondary-container:#733431;--md-sys-color-on-secondary-container:#FFDAD6;--md-sys-color-tertiary-container:#7D293E;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#1C1B1F;--md-sys-color-on-background:#E6E1E5;--md-sys-color-surface:#1C1B1F;--md-sys-color-on-surface:#E6E1E5;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
-            indigo: { light: `--md-sys-color-primary:#4355B9;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#DEE0FF;--md-sys-color-on-primary-container:#00105C;--md-sys-color-secondary-container:#E0E0FF;--md-sys-color-on-secondary-container:#001159;--md-sys-color-tertiary-container:#E2DFFFF;--md-sys-color-on-tertiary-container:#181735;--md-sys-color-background:#FEFBFF;--md-sys-color-on-background:#1B1B1F;--md-sys-color-surface:#FEFBFF;--md-sys-color-on-surface:#1B1B1F;--md-sys-color-surface-variant:#E3E1EC;--md-sys-color-on-surface-variant:#46464F;`, dark: `--md-sys-color-primary:#BAC3FF;--md-sys-color-on-primary:#08218A;--md-sys-color-primary-container:#293CA0;--md-sys-color-on-primary-container:#DEE0FF;--md-sys-color-secondary-container:#3F4376;--md-sys-color-on-secondary-container:#E0E0FF;--md-sys-color-tertiary-container:#403D66;--md-sys-color-on-tertiary-container:#E2DFFFF;--md-sys-color-background:#1B1B1F;--md-sys-color-on-background:#E4E1E6;--md-sys-color-surface:#1B1B1F;--md-sys-color-on-surface:#E4E1E6;--md-sys-color-surface-variant:#46464F;--md-sys-color-on-surface-variant:#C7C5D0;` },
-            lime: { light: `--md-sys-color-primary:#556219;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D9E7CB;--md-sys-color-on-primary-container:#171E00;--md-sys-color-secondary-container:#E2E4D4;--md-sys-color-on-secondary-container:#1B1D15;--md-sys-color-tertiary-container:#DDE6C6;--md-sys-color-on-tertiary-container:#171E0B;--md-sys-color-background:#FEFCF4;--md-sys-color-on-background:#1B1C17;--md-sys-color-surface:#FEFCF4;--md-sys-color-on-surface:#1B1C17;--md-sys-color-surface-variant:#E3E4D8;--md-sys-color-on-surface-variant:#46483C;`, dark: `--md-sys-color-primary:#BDCBA6;--md-sys-color-on-primary:#283400;--md-sys-color-primary-container:#3E4A00;--md-sys-color-on-primary-container:#D9E7CB;--md-sys-color-secondary-container:#44483D;--md-sys-color-on-secondary-container:#E2E4D4;--md-sys-color-tertiary-container:#3C4A35;--md-sys-color-on-tertiary-container:#DDE6C6;--md-sys-color-background:#1B1C17;--md-sys-color-on-background:#E4E3DB;--md-sys-color-surface:#1B1C17;--md-sys-color-on-surface:#E4E3DB;--md-sys-color-surface-variant:#46483C;--md-sys-color-on-surface-variant:#C6C8B8;` },
-            sepia: { light: `--md-sys-color-primary:#795900;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFDF9E;--md-sys-color-on-primary-container:#261A00;--md-sys-color-secondary-container:#F7E0C0;--md-sys-color-on-secondary-container:#271904;--md-sys-color-tertiary-container:#FFE0BA;--md-sys-color-on-tertiary-container:#291800;--md-sys-color-background:#FFFBFF;--md-sys-color-on-background:#1F1B16;--md-sys-color-surface:#FFFBFF;--md-sys-color-on-surface:#1F1B16;--md-sys-color-surface-variant:#EBE1CF;--md-sys-color-on-surface-variant:#4D4639;`, dark: `--md-sys-color-primary:#F5BE48;--md-sys-color-on-primary:#402D00;--md-sys-color-primary-container:#5C4200;--md-sys-color-on-primary-container:#FFDF9E;--md-sys-color-secondary-container:#564434;--md-sys-color-on-secondary-container:#F7E0C0;--md-sys-color-tertiary-container:#59442F;--md-sys-color-on-tertiary-container:#FFE0BA;--md-sys-color-background:#1F1B16;--md-sys-color-on-background:#EAE1D9;--md-sys-color-surface:#1F1B16;--md-sys-color-on-surface:#EAE1D9;--md-sys-color-surface-variant:#4D4639;--md-sys-color-on-surface-variant:#CFC5B4;` },
-            monochrome: { light: `--md-sys-color-primary:#5E5E5E;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#E2E2E2;--md-sys-color-on-primary-container:#1B1B1B;--md-sys-color-secondary-container:#E2E2E2;--md-sys-color-on-secondary-container:#1B1B1B;--md-sys-color-tertiary-container:#E2E2E2;--md-sys-color-on-tertiary-container:#1B1B1B;--md-sys-color-background:#FDFCFB;--md-sys-color-on-background:#1A1C18;--md-sys-color-surface:#FDFCFB;--md-sys-color-on-surface:#1A1C18;--md-sys-color-surface-variant:#E1E3DF;--md-sys-color-on-surface-variant:#444846;`, dark: `--md-sys-color-primary:#C6C6C6;--md-sys-color-on-primary:#303030;--md-sys-color-primary-container:#474747;--md-sys-color-on-primary-container:#E2E2E2;--md-sys-color-secondary-container:#474747;--md-sys-color-on-secondary-container:#E2E2E2;--md-sys-color-tertiary-container:#474747;--md-sys-color-on-tertiary-container:#E2E2E2;--md-sys-color-background:#1A1C18;--md-sys-color-on-background:#E3E3E3;--md-sys-color-surface:#1A1C18;--md-sys-color-on-surface:#E3E3E3;--md-sys-color-surface-variant:#444846;--md-sys-color-on-surface-variant:#C4C7C5;` }
+            purple: { light: `--md-sys-color-primary:#6750A4;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#EADDFF;--md-sys-color-on-primary-container:#21005D;--md-sys-color-secondary-container:#E8DEF8;--md-sys-color-on-secondary-container:#1D192B;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#EAE4F2;--md-sys-color-on-background:#1D1B20;--md-sys-color-surface:#EAE4F2;--md-sys-color-on-surface:#1D1B20;--md-sys-color-surface-variant:#D6CDE2;--md-sys-color-on-surface-variant:#313033;`, dark: `--md-sys-color-primary:#D0BCFF;--md-sys-color-on-primary:#381E72;--md-sys-color-primary-container:#4F378B;--md-sys-color-on-primary-container:#EADDFF;--md-sys-color-secondary-container:#4A4458;--md-sys-color-on-secondary-container:#E8DEF8;--md-sys-color-tertiary-container:#633B48;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#1C1B1E;--md-sys-color-on-background:#E6E1E5;--md-sys-color-surface:#1C1B1E;--md-sys-color-on-surface:#E6E1E5;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
+            green: { light: `--md-sys-color-primary:#006C4C;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#89F8D6;--md-sys-color-on-primary-container:#002114;--md-sys-color-secondary-container:#CCE8DB;--md-sys-color-on-secondary-container:#052016;--md-sys-color-tertiary-container:#BEEAF6;--md-sys-color-on-tertiary-container:#001F29;--md-sys-color-background:#E2EDE6;--md-sys-color-on-background:#1A1C1A;--md-sys-color-surface:#E2EDE6;--md-sys-color-on-surface:#1A1C1A;--md-sys-color-surface-variant:#CCDBCF;--md-sys-color-on-surface-variant:#2F3633;`, dark: `--md-sys-color-primary:#6CDBBA;--md-sys-color-on-primary:#003825;--md-sys-color-primary-container:#005138;--md-sys-color-on-primary-container:#89F8D6;--md-sys-color-secondary-container:#334B3F;--md-sys-color-on-secondary-container:#CCE8DB;--md-sys-color-tertiary-container:#204D59;--md-sys-color-on-tertiary-container:#BEEAF6;--md-sys-color-background:#191C1A;--md-sys-color-on-background:#E1E3DF;--md-sys-color-surface:#191C1A;--md-sys-color-on-surface:#E1E3DF;--md-sys-color-surface-variant:#404943;--md-sys-color-on-surface-variant:#BFC9C3;` },
+            rose: { light: `--md-sys-color-primary:#984061;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFD9E2;--md-sys-color-on-primary-container:#3E001D;--md-sys-color-secondary-container:#FDDADA;--md-sys-color-on-secondary-container:#2C1516;--md-sys-color-tertiary-container:#FFD8CB;--md-sys-color-on-tertiary-container:#321105;--md-sys-color-background:#F2E4E8;--md-sys-color-on-background:#201A1B;--md-sys-color-surface:#F2E4E8;--md-sys-color-on-surface:#201A1B;--md-sys-color-surface-variant:#E5CED4;--md-sys-color-on-surface-variant:#3B2D30;`, dark: `--md-sys-color-primary:#FFB0C8;--md-sys-color-on-primary:#551D32;--md-sys-color-primary-container:#703348;--md-sys-color-on-primary-container:#FFD9E2;--md-sys-color-secondary-container:#5C3F3F;--md-sys-color-on-secondary-container:#FDDADA;--md-sys-color-tertiary-container:#663B2B;--md-sys-color-on-tertiary-container:#FFD8CB;--md-sys-color-background:#201A1B;--md-sys-color-on-background:#ECE0E1;--md-sys-color-surface:#201A1B;--md-sys-color-on-surface:#ECE0E1;--md-sys-color-surface-variant:#524346;--md-sys-color-on-surface-variant:#D7C1C4;` },
+            blue: { light: `--md-sys-color-primary:#0061A4;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D1E4FF;--md-sys-color-on-primary-container:#001D36;--md-sys-color-secondary-container:#D7E3F7;--md-sys-color-on-secondary-container:#101C2B;--md-sys-color-tertiary-container:#E2E2FF;--md-sys-color-on-tertiary-container:#191637;--md-sys-color-background:#E2E9F2;--md-sys-color-on-background:#1A1C1E;--md-sys-color-surface:#E2E9F2;--md-sys-color-on-surface:#1A1C1E;--md-sys-color-surface-variant:#CCD7E5;--md-sys-color-on-surface-variant:#2F3339;`, dark: `--md-sys-color-primary:#9ECAFF;--md-sys-color-on-primary:#003258;--md-sys-color-primary-container:#00497D;--md-sys-color-on-primary-container:#D1E4FF;--md-sys-color-secondary-container:#3B4858;--md-sys-color-on-secondary-container:#D7E3F7;--md-sys-color-tertiary-container:#423F62;--md-sys-color-on-tertiary-container:#E2E2FF;--md-sys-color-background:#1A1C1E;--md-sys-color-on-background:#E2E2E6;--md-sys-color-surface:#1A1C1E;--md-sys-color-on-surface:#E2E2E6;--md-sys-color-surface-variant:#43474E;--md-sys-color-on-surface-variant:#C3C7CF;` },
+            orange: { light: `--md-sys-color-primary:#8F4C38;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFDBD1;--md-sys-color-on-primary-container:#3A0B01;--md-sys-color-secondary-container:#FFDBD1;--md-sys-color-on-secondary-container:#2C150F;--md-sys-color-tertiary-container:#F7D8B7;--md-sys-color-on-tertiary-container:#271600;--md-sys-color-background:#F2E5DF;--md-sys-color-on-background:#221A18;--md-sys-color-surface:#F2E5DF;--md-sys-color-on-surface:#221A18;--md-sys-color-surface-variant:#E5D1CA;--md-sys-color-on-surface-variant:#3B2D29;`, dark: `--md-sys-color-primary:#FFB5A0;--md-sys-color-on-primary:#561F0F;--md-sys-color-primary-container:#723523;--md-sys-color-on-primary-container:#FFDBD1;--md-sys-color-secondary-container:#5D3F37;--md-sys-color-on-secondary-container:#FFDBD1;--md-sys-color-tertiary-container:#524029;--md-sys-color-on-tertiary-container:#F7D8B7;--md-sys-color-background:#221A18;--md-sys-color-on-background:#EAE0DD;--md-sys-color-surface:#221A18;--md-sys-color-on-surface:#EAE0DD;--md-sys-color-surface-variant:#53433F;--md-sys-color-on-surface-variant:#D8C2BC;` },
+            teal: { light: `--md-sys-color-primary:#006A60;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#74F8E5;--md-sys-color-on-primary-container:#00201C;--md-sys-color-secondary-container:#CCE8E2;--md-sys-color-on-secondary-container:#05201C;--md-sys-color-tertiary-container:#D0E8CD;--md-sys-color-on-tertiary-container:#09200B;--md-sys-color-background:#E0EDE9;--md-sys-color-on-background:#191C1B;--md-sys-color-surface:#E0EDE9;--md-sys-color-on-surface:#191C1B;--md-sys-color-surface-variant:#CADCD7;--md-sys-color-on-surface-variant:#2D3635;`, dark: `--md-sys-color-primary:#53DBC9;--md-sys-color-on-primary:#003732;--md-sys-color-primary-container:#005048;--md-sys-color-on-primary-container:#74F8E5;--md-sys-color-secondary-container:#324B46;--md-sys-color-on-secondary-container:#CCE8E2;--md-sys-color-tertiary-container:#364B34;--md-sys-color-on-tertiary-container:#D0E8CD;--md-sys-color-background:#191C1B;--md-sys-color-on-background:#E0E3E1;--md-sys-color-surface:#191C1B;--md-sys-color-on-surface:#E0E3E1;--md-sys-color-surface-variant:#3F4947;--md-sys-color-on-surface-variant:#BEC9C6;` },
+            yellow: { light: `--md-sys-color-primary:#695F00;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#F5E468;--md-sys-color-on-primary-container:#201C00;--md-sys-color-secondary-container:#E6E2D0;--md-sys-color-on-secondary-container:#1D190B;--md-sys-color-tertiary-container:#CFECC1;--md-sys-color-on-tertiary-container:#092104;--md-sys-color-background:#EBE9DA;--md-sys-color-on-background:#1D1C16;--md-sys-color-surface:#EBE9DA;--md-sys-color-on-surface:#1D1C16;--md-sys-color-surface-variant:#D8D3BC;--md-sys-color-on-surface-variant:#333126;`, dark: `--md-sys-color-primary:#D8C84F;--md-sys-color-on-primary:#373100;--md-sys-color-primary-container:#4F4700;--md-sys-color-on-primary-container:#F5E468;--md-sys-color-secondary-container:#4B473A;--md-sys-color-on-secondary-container:#E6E2D0;--md-sys-color-tertiary-container:#344C2B;--md-sys-color-on-tertiary-container:#CFECC1;--md-sys-color-background:#1D1C16;--md-sys-color-on-background:#E7E2D9;--md-sys-color-surface:#1D1C16;--md-sys-color-on-surface:#E7E2D9;--md-sys-color-surface-variant:#49473A;--md-sys-color-on-surface-variant:#CBC6B5;` },
+            pink: { light: `--md-sys-color-primary:#8C4A60;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFD9E2;--md-sys-color-on-primary-container:#39071D;--md-sys-color-secondary-container:#FDDADA;--md-sys-color-on-secondary-container:#2C1516;--md-sys-color-tertiary-container:#FFD8CB;--md-sys-color-on-tertiary-container:#321105;--md-sys-color-background:#F2E4E8;--md-sys-color-on-background:#201A1B;--md-sys-color-surface:#F2E4E8;--md-sys-color-on-surface:#201A1B;--md-sys-color-surface-variant:#E5CED4;--md-sys-color-on-surface-variant:#3B2D30;`, dark: `--md-sys-color-primary:#FFB0C8;--md-sys-color-on-primary:#551D32;--md-sys-color-primary-container:#703348;--md-sys-color-on-primary-container:#FFD9E2;--md-sys-color-secondary-container:#5C3F3F;--md-sys-color-on-secondary-container:#FDDADA;--md-sys-color-tertiary-container:#663B2B;--md-sys-color-on-tertiary-container:#FFD8CB;--md-sys-color-background:#201A1B;--md-sys-color-on-background:#ECE0E1;--md-sys-color-surface:#201A1B;--md-sys-color-on-surface:#ECE0E1;--md-sys-color-surface-variant:#524346;--md-sys-color-on-surface-variant:#D7C1C4;` },
+            cyan: { light: `--md-sys-color-primary:#006874;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#97F0FF;--md-sys-color-on-primary-container:#001F24;--md-sys-color-secondary-container:#CEE6EA;--md-sys-color-on-secondary-container:#051F23;--md-sys-color-tertiary-container:#DFE2FF;--md-sys-color-on-tertiary-container:#151937;--md-sys-color-background:#DFEBEE;--md-sys-color-on-background:#191C1D;--md-sys-color-surface:#DFEBEE;--md-sys-color-on-surface:#191C1D;--md-sys-color-surface-variant:#C6DADD;--md-sys-color-on-surface-variant:#2D3538;`, dark: `--md-sys-color-primary:#4FD8EB;--md-sys-color-on-primary:#00363D;--md-sys-color-primary-container:#004F58;--md-sys-color-on-primary-container:#97F0FF;--md-sys-color-secondary-container:#334B4E;--md-sys-color-on-secondary-container:#CEE6EA;--md-sys-color-tertiary-container:#404364;--md-sys-color-on-tertiary-container:#DFE2FF;--md-sys-color-background:#191C1D;--md-sys-color-on-background:#E1E3E3;--md-sys-color-surface:#191C1D;--md-sys-color-on-surface:#E1E3E3;--md-sys-color-surface-variant:#3F484A;--md-sys-color-on-surface-variant:#BFC8CA;` },
+            slate: { light: `--md-sys-color-primary:#415F91;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D6E3FF;--md-sys-color-on-primary-container:#001B3E;--md-sys-color-secondary-container:#DAE2F9;--md-sys-color-on-secondary-container:#131C2B;--md-sys-color-tertiary-container:#FBD7FC;--md-sys-color-on-tertiary-container:#29132D;--md-sys-color-background:#E5E8EF;--md-sys-color-on-background:#191C20;--md-sys-color-surface:#E5E8EF;--md-sys-color-on-surface:#191C20;--md-sys-color-surface-variant:#D1D5E0;--md-sys-color-on-surface-variant:#31343B;`, dark: `--md-sys-color-primary:#AAC7FF;--md-sys-color-on-primary:#0A305F;--md-sys-color-primary-container:#284777;--md-sys-color-on-primary-container:#D6E3FF;--md-sys-color-secondary-container:#3E4759;--md-sys-color-on-secondary-container:#DAE2F9;--md-sys-color-tertiary-container:#5C3F5F;--md-sys-color-on-tertiary-container:#FBD7FC;--md-sys-color-background:#191C20;--md-sys-color-on-background:#E2E2E9;--md-sys-color-surface:#191C20;--md-sys-color-on-surface:#E2E2E9;--md-sys-color-surface-variant:#44474E;--md-sys-color-on-surface-variant:#C4C6D0;` },
+            red: { light: `--md-sys-color-primary:#B3261E;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#F9DEDC;--md-sys-color-on-primary-container:#410E0B;--md-sys-color-secondary-container:#FFDAD6;--md-sys-color-on-secondary-container:#3E0000;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#F2E4E3;--md-sys-color-on-background:#1C1B1F;--md-sys-color-surface:#F2E4E3;--md-sys-color-on-surface:#1C1B1F;--md-sys-color-surface-variant:#E5CECC;--md-sys-color-on-surface-variant:#332D30;`, dark: `--md-sys-color-primary:#F2B8B5;--md-sys-color-on-primary:#601410;--md-sys-color-primary-container:#8C1D18;--md-sys-color-on-primary-container:#F9DEDC;--md-sys-color-secondary-container:#733431;--md-sys-color-on-secondary-container:#FFDAD6;--md-sys-color-tertiary-container:#7D293E;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#1C1B1F;--md-sys-color-on-background:#E6E1E5;--md-sys-color-surface:#1C1B1F;--md-sys-color-on-surface:#E6E1E5;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
+            indigo: { light: `--md-sys-color-primary:#4355B9;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#DEE0FF;--md-sys-color-on-primary-container:#00105C;--md-sys-color-secondary-container:#E0E0FF;--md-sys-color-on-secondary-container:#001159;--md-sys-color-tertiary-container:#E2DFFFF;--md-sys-color-on-tertiary-container:#181735;--md-sys-color-background:#E5E7F2;--md-sys-color-on-background:#1B1B1F;--md-sys-color-surface:#E5E7F2;--md-sys-color-on-surface:#1B1B1F;--md-sys-color-surface-variant:#D2D5E5;--md-sys-color-on-surface-variant:#32323A;`, dark: `--md-sys-color-primary:#BAC3FF;--md-sys-color-on-primary:#08218A;--md-sys-color-primary-container:#293CA0;--md-sys-color-on-primary-container:#DEE0FF;--md-sys-color-secondary-container:#3F4376;--md-sys-color-on-secondary-container:#E0E0FF;--md-sys-color-tertiary-container:#403D66;--md-sys-color-on-tertiary-container:#E2DFFFF;--md-sys-color-background:#1B1B1F;--md-sys-color-on-background:#E4E1E6;--md-sys-color-surface:#1B1B1F;--md-sys-color-on-surface:#E4E1E6;--md-sys-color-surface-variant:#46464F;--md-sys-color-on-surface-variant:#C7C5D0;` },
+            lime: { light: `--md-sys-color-primary:#556219;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#D9E7CB;--md-sys-color-on-primary-container:#171E00;--md-sys-color-secondary-container:#E2E4D4;--md-sys-color-on-secondary-container:#1B1D15;--md-sys-color-tertiary-container:#DDE6C6;--md-sys-color-on-tertiary-container:#171E0B;--md-sys-color-background:#ECEEDF;--md-sys-color-on-background:#1B1C17;--md-sys-color-surface:#ECEEDF;--md-sys-color-on-surface:#1B1C17;--md-sys-color-surface-variant:#D8DBC4;--md-sys-color-on-surface-variant:#313328;`, dark: `--md-sys-color-primary:#BDCBA6;--md-sys-color-on-primary:#283400;--md-sys-color-primary-container:#3E4A00;--md-sys-color-on-primary-container:#D9E7CB;--md-sys-color-secondary-container:#44483D;--md-sys-color-on-secondary-container:#E2E4D4;--md-sys-color-tertiary-container:#3C4A35;--md-sys-color-on-tertiary-container:#DDE6C6;--md-sys-color-background:#1B1C17;--md-sys-color-on-background:#E4E3DB;--md-sys-color-surface:#1B1C17;--md-sys-color-on-surface:#E4E3DB;--md-sys-color-surface-variant:#46483C;--md-sys-color-on-surface-variant:#C6C8B8;` },
+            sepia: { light: `--md-sys-color-primary:#795900;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FFDF9E;--md-sys-color-on-primary-container:#261A00;--md-sys-color-secondary-container:#F7E0C0;--md-sys-color-on-secondary-container:#271904;--md-sys-color-tertiary-container:#FFE0BA;--md-sys-color-on-tertiary-container:#291800;--md-sys-color-background:#EFEBE3;--md-sys-color-on-background:#1F1B16;--md-sys-color-surface:#EFEBE3;--md-sys-color-on-surface:#1F1B16;--md-sys-color-surface-variant:#E0D8C8;--md-sys-color-on-surface-variant:#363025;`, dark: `--md-sys-color-primary:#F5BE48;--md-sys-color-on-primary:#402D00;--md-sys-color-primary-container:#5C4200;--md-sys-color-on-primary-container:#FFDF9E;--md-sys-color-secondary-container:#564434;--md-sys-color-on-secondary-container:#F7E0C0;--md-sys-color-tertiary-container:#59442F;--md-sys-color-on-tertiary-container:#FFE0BA;--md-sys-color-background:#1F1B16;--md-sys-color-on-background:#EAE1D9;--md-sys-color-surface:#1F1B16;--md-sys-color-on-surface:#EAE1D9;--md-sys-color-surface-variant:#4D4639;--md-sys-color-on-surface-variant:#CFC5B4;` },
+            monochrome: { light: `--md-sys-color-primary:#5E5E5E;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#E2E2E2;--md-sys-color-on-primary-container:#1B1B1B;--md-sys-color-secondary-container:#E2E2E2;--md-sys-color-on-secondary-container:#1B1B1B;--md-sys-color-tertiary-container:#E2E2E2;--md-sys-color-on-tertiary-container:#1B1B1B;--md-sys-color-background:#E8E8E8;--md-sys-color-on-background:#1A1C18;--md-sys-color-surface:#E8E8E8;--md-sys-color-on-surface:#1A1C18;--md-sys-color-surface-variant:#D4D4D4;--md-sys-color-on-surface-variant:#2D312F;`, dark: `--md-sys-color-primary:#C6C6C6;--md-sys-color-on-primary:#303030;--md-sys-color-primary-container:#474747;--md-sys-color-on-primary-container:#E2E2E2;--md-sys-color-secondary-container:#474747;--md-sys-color-on-secondary-container:#E2E2E2;--md-sys-color-tertiary-container:#474747;--md-sys-color-on-tertiary-container:#E2E2E2;--md-sys-color-background:#1A1C18;--md-sys-color-on-background:#E3E3E3;--md-sys-color-surface:#1A1C18;--md-sys-color-on-surface:#E3E3E3;--md-sys-color-surface-variant:#444846;--md-sys-color-on-surface-variant:#C4C7C5;` }
         };
 
         const DOM = {
             libView: document.getElementById('library-view'), readView: document.getElementById('reader-view'),
             mainHeader: document.getElementById('main-header'),
             grid: document.getElementById('book-grid'), empty: document.getElementById('empty-state'),
+            topSection: document.getElementById('continue-reading-section'), topSlider: document.getElementById('top-books-slider'),
             load: document.getElementById('loading-state'), loadTxt: document.getElementById('loading-text'), loadBar: document.getElementById('loading-bar'), loadPct: document.getElementById('loading-percent'),
             file: document.getElementById('doc-upload'), backBtn: document.getElementById('btn-back'),
             inner: document.getElementById('reader-inner'), title: document.getElementById('reader-title'), count: document.getElementById('library-count'),
@@ -536,6 +561,7 @@
                 searchBooks: "Cari buku...",
                 loadingDocs: "Membaca Dokumen...",
                 booksCount: "Buku",
+                continueReading: "Lanjutkan Membaca",
                 searchSpecific: "Cari teks tertentu...",
                 btnSearch: "Cari",
                 toc: "Daftar Isi",
@@ -592,6 +618,7 @@
                 searchBooks: "Search books...",
                 loadingDocs: "Reading Document...",
                 booksCount: "Books",
+                continueReading: "Continue Reading",
                 searchSpecific: "Search specific text...",
                 btnSearch: "Search",
                 toc: "Table of Contents",
@@ -650,6 +677,7 @@
             const el = id => document.getElementById(id);
             
             if(el('str-lib-empty')) el('str-lib-empty').innerText = d.libEmpty;
+            if(el('str-continue-reading')) el('str-continue-reading').innerText = d.continueReading;
             if(el('global-search')) el('global-search').placeholder = d.searchBooks;
             if(el('loading-text')) el('loading-text').innerText = d.loadingDocs;
             if(el('library-count')) el('library-count').textContent = `${(filteredLib ? filteredLib.length : library.length)} ${d.booksCount}`;
@@ -729,7 +757,7 @@
             }
             
             if(el('ai-sheet')) {
-                el('ai-sheet').querySelector('h3').innerHTML = `<i data-lucide="search" class="w-5 h-5 text-m3-primary"></i> ${d.penjelasan_ai}`;
+                el('ai-sheet').querySelector('h3').innerHTML = `<i data-lucide="search" class="w-5 h-5 text-m3-primary"></i> ${d.askAi || 'Penjelasan AI / Wiki'}`;
                 el('ai-sheet').querySelector('#ai-loading p').innerText = d.searchRef;
             }
             
@@ -783,7 +811,11 @@
             if(metaTheme) {
                 if(isDark && isAmoled) metaTheme.setAttribute("content", "#000000");
                 else if (isDark) metaTheme.setAttribute("content", "#1C1B1E");
-                else metaTheme.setAttribute("content", "#FFFBFE");
+                else {
+                    // Extract background hex from rootVars to match the tinted light mode
+                    const bgMatch = rootVars.match(/--md-sys-color-background:(#[A-Fa-f0-9]{6})/);
+                    metaTheme.setAttribute("content", bgMatch ? bgMatch[1] : "#EAE4F2");
+                }
             }
 
             const bg = document.getElementById('theme-switch-bg');
@@ -943,93 +975,136 @@
 
         async function loadLibrary() { try { library = await localforage.getItem('pdf_epub_master') || []; renderLibrary(); } catch (e) { console.error(e); } }
         
+        // Helper to generate Book Card Element (Reusable for slider and grid)
+        function createBookCard(book, isSlider = false, index = 0) {
+            const progress = book.progressPct || 0; 
+            const card = document.createElement('div');
+            
+            let shapeClass = "";
+            let shp = book.shape || 'default';
+            if (shp === 'rounded') shapeClass = 'rounded-[32px]';
+            else if (shp === 'square') shapeClass = 'rounded-md';
+            else if (shp === 'leaf') shapeClass = 'rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl';
+            else shapeClass = index % 2 === 0 ? 'rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl' : 'rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl';
+
+            let bgStyle = ""; let textOverlay = ""; let baseClass = "";
+            if(book.coverBase64) {
+                bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
+                baseClass = "text-white border-transparent"; 
+                textOverlay = `<div class="absolute inset-x-0 bottom-0 h-[80%] bg-gradient-to-t from-black/95 via-black/50 to-transparent rounded-b-inherit pointer-events-none z-0"></div>`;
+            } else {
+                const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
+                baseClass = colors[index % 3];
+            }
+
+            const dimensionClass = isSlider ? "w-64 h-40 shrink-0 snap-start" : "aspect-[3/4] w-full";
+
+            let pressTimer = null; let isPressing = false; let hasLongPressed = false;
+            const handleStart = (e) => {
+                isPressing = true; hasLongPressed = false;
+                pressTimer = setTimeout(() => {
+                    if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); }
+                }, 500);
+            };
+            const handleEnd = () => { isPressing = false; clearTimeout(pressTimer); };
+            const handleMove = () => { isPressing = false; clearTimeout(pressTimer); };
+
+            card.addEventListener('mousedown', handleStart); card.addEventListener('touchstart', handleStart, {passive: true});
+            card.addEventListener('mouseup', handleEnd); card.addEventListener('touchend', handleEnd);
+            card.addEventListener('mouseleave', handleMove); card.addEventListener('touchmove', handleMove, {passive: true});
+            card.addEventListener('click', (e) => {
+                if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; }
+                openBook(book);
+            });
+
+            card.className = `${baseClass} ${shapeClass} ${dimensionClass} p-4 relative cursor-pointer shadow-md card-morph flex flex-col justify-between group overflow-hidden`;
+            card.style = bgStyle;
+
+            if (isSlider) {
+                card.innerHTML = `
+                    ${textOverlay}
+                    <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none">
+                        <div class="flex justify-between w-full items-start">
+                            <span class="inline-block text-[0.65rem] font-mono px-2 py-0.5 bg-black/50 rounded-full text-white/90 uppercase tracking-widest backdrop-blur-sm">${book.type}</span>
+                            <span class="text-xs font-bold ${book.coverBase64 ? 'text-white' : 'opacity-70'} bg-black/20 px-2 py-0.5 rounded-full backdrop-blur-sm">${progress}%</span>
+                        </div>
+                        <div class="mt-auto flex flex-col">
+                            <h3 class="font-bold text-base leading-tight mt-1 line-clamp-2 drop-shadow-md ${book.coverBase64 ? 'text-white' : ''}">${book.title}</h3>
+                            <div class="w-full mt-2">
+                                <div class="h-1 w-full bg-black/20 dark:bg-white/20 rounded-full overflow-hidden">
+                                    <div class="h-full ${book.coverBase64 ? 'bg-white' : 'bg-m3-primary dark:bg-m3-primaryContainer'} rounded-full" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                card.innerHTML = `
+                    ${textOverlay}
+                    <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none">
+                        <div class="flex justify-end w-full"></div>
+                        <div class="mt-auto flex flex-col">
+                            ${book.coverBase64 ? '' : '<i data-lucide="book" class="w-8 h-8 mb-2 opacity-80"></i>'}
+                            <h3 class="font-bold text-lg leading-tight mt-1 line-clamp-3 break-all drop-shadow-md ${book.coverBase64 ? 'text-white' : ''}">${book.title}</h3>
+                            <span class="inline-block mt-2 mb-3 text-[0.65rem] font-mono px-2 py-0.5 bg-black/50 rounded-full text-white/90 uppercase tracking-widest backdrop-blur-sm self-start">${book.type}</span>
+                            <div class="w-full">
+                                <div class="flex justify-between text-[0.7rem] font-bold opacity-90 mb-1 ${book.coverBase64 ? 'text-white' : ''}">
+                                    <span>${book.pages} Pgs</span>
+                                    <span>${progress}%</span>
+                                </div>
+                                <div class="h-1.5 w-full bg-white/30 rounded-full overflow-hidden">
+                                    <div class="h-full bg-white rounded-full" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            return card;
+        }
+
         function renderLibrary(filterText = "") {
             DOM.grid.innerHTML = '';
+            DOM.topSlider.innerHTML = '';
+            
             let filteredLib = library;
             if(filterText) filteredLib = library.filter(b => b.title.toLowerCase().includes(filterText.toLowerCase()));
             DOM.count.textContent = `${filteredLib.length} ${i18n[wikiLang].booksCount}`;
             
-            if (filteredLib.length === 0) { DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); } 
+            let topBooks = [];
+            if (!filterText) {
+                topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct);
+            }
+
+            if (topBooks.length > 0) {
+                DOM.topSection.classList.remove('hidden');
+                topBooks.forEach((book, idx) => {
+                    const card = createBookCard(book, true, idx);
+                    DOM.topSlider.appendChild(card);
+                });
+                // Tambahkan spacer kosong di ujung kanan biar mentoknya gak nabrak layar
+                const spacer = document.createElement('div');
+                spacer.className = "w-2 shrink-0";
+                DOM.topSlider.appendChild(spacer);
+            } else {
+                DOM.topSection.classList.add('hidden');
+            }
+            
+            if (filteredLib.length === 0) { 
+                DOM.empty.classList.remove('hidden'); 
+                DOM.grid.classList.add('hidden'); 
+            } 
             else {
-                DOM.empty.classList.add('hidden'); DOM.grid.classList.remove('hidden');
+                DOM.empty.classList.add('hidden'); 
+                DOM.grid.classList.remove('hidden');
                 filteredLib.forEach((book, index) => {
-                    const progress = book.progressPct || 0; const card = document.createElement('div');
-                    
-                    let shapeClass = "";
-                    let shp = book.shape || 'default';
-                    if (shp === 'rounded') shapeClass = 'rounded-[32px]';
-                    else if (shp === 'square') shapeClass = 'rounded-md';
-                    else if (shp === 'leaf') shapeClass = 'rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl';
-                    else shapeClass = index % 2 === 0 ? 'rounded-tl-[40px] rounded-br-[40px] rounded-tr-xl rounded-bl-xl' : 'rounded-tr-[40px] rounded-bl-[40px] rounded-tl-xl rounded-br-xl';
-
-                    let bgStyle = ""; let textOverlay = ""; let baseClass = "";
-                    if(book.coverBase64) {
-                        bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
-                        baseClass = "text-white border-transparent"; 
-                        textOverlay = `<div class="absolute inset-x-0 bottom-0 h-[80%] bg-gradient-to-t from-black/95 via-black/50 to-transparent rounded-b-inherit pointer-events-none z-0"></div>`;
-                    } else {
-                        const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
-                        baseClass = colors[index % 3];
-                    }
-
-                    let pressTimer = null;
-                    let isPressing = false;
-                    let hasLongPressed = false;
-                    
-                    const handleStart = (e) => {
-                        isPressing = true; hasLongPressed = false;
-                        pressTimer = setTimeout(() => {
-                            if (isPressing) {
-                                hasLongPressed = true;
-                                window.openBookOptions(book.id);
-                            }
-                        }, 500);
-                    };
-                    const handleEnd = (e) => {
-                        isPressing = false; clearTimeout(pressTimer);
-                    };
-                    const handleMove = () => {
-                        isPressing = false; clearTimeout(pressTimer);
-                    };
-
-                    card.addEventListener('mousedown', handleStart);
-                    card.addEventListener('touchstart', handleStart, {passive: true});
-                    card.addEventListener('mouseup', handleEnd);
-                    card.addEventListener('touchend', handleEnd);
-                    card.addEventListener('mouseleave', handleMove);
-                    card.addEventListener('touchmove', handleMove, {passive: true});
-                    card.addEventListener('click', (e) => {
-                        if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; }
-                        openBook(book);
-                    });
-
-                    card.className = `${baseClass} ${shapeClass} p-4 aspect-[3/4] relative cursor-pointer shadow-md card-morph flex flex-col justify-between group overflow-hidden`;
-                    card.style = bgStyle;
-                    card.innerHTML = `
-                        ${textOverlay}
-                        <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none">
-                            <div class="flex justify-end w-full"></div>
-                            <div class="mt-auto flex flex-col">
-                                ${book.coverBase64 ? '' : '<i data-lucide="book" class="w-8 h-8 mb-2 opacity-80"></i>'}
-                                <h3 class="font-bold text-lg leading-tight mt-1 line-clamp-3 break-all drop-shadow-md ${book.coverBase64 ? 'text-white' : ''}">${book.title}</h3>
-                                <span class="inline-block mt-2 mb-3 text-[0.65rem] font-mono px-2 py-0.5 bg-black/50 rounded-full text-white/90 uppercase tracking-widest backdrop-blur-sm self-start">${book.type}</span>
-                                <div class="w-full">
-                                    <div class="flex justify-between text-[0.7rem] font-bold opacity-90 mb-1 ${book.coverBase64 ? 'text-white' : ''}">
-                                        <span>${book.pages} Pgs</span>
-                                        <span>${progress}%</span>
-                                    </div>
-                                    <div class="h-1.5 w-full bg-white/30 rounded-full overflow-hidden">
-                                        <div class="h-full bg-white rounded-full" style="width: ${progress}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    const card = createBookCard(book, false, index);
                     DOM.grid.appendChild(card);
                 });
                 lucide.createIcons();
             }
         }
+        
         DOM.globalSearch.addEventListener('input', (e) => renderLibrary(e.target.value));
 
         window.openBookOptions = function(id) {
@@ -1104,45 +1179,67 @@
 
         function openBook(book) {
             activeBookId = book.id; pushAppHistory(`reader-${book.id}`);
-            DOM.libView.style.transform = 'scale(0.95)'; DOM.readView.classList.remove('translate-y-full');
-            DOM.title.textContent = book.title; DOM.inner.innerHTML = ''; DOM.tocList.innerHTML = '';
             
-            let hCounter = 0; const fragment = document.createDocumentFragment(); let currentHeadingId = null;
-
-            book.nodes.forEach((node, i) => {
-                let el;
-                // Get annotations for this node
-                const annots = (book.annotations || []).filter(a => a.nodeIdx === i);
-
-                if (node.tag === 'img') {
-                    el = document.createElement('img'); el.src = node.src; el.id = `node-${i}`;
-                    el.className = "w-full max-w-lg mx-auto rounded-2xl my-8 object-contain shadow-md"; el.loading = "lazy";
-                } else {
-                    el = document.createElement(node.tag); 
-                    el.innerHTML = renderNodeText(node.text, annots); 
-                    el.id = `node-${i}`;
-                    if (node.tag === 'h1' || node.tag === 'h2') {
-                        hCounter++; currentHeadingId = el.id; 
-                        el.className = node.tag === 'h1' ? "text-3xl font-bold tracking-tight mt-12 mb-6 text-m3-primary leading-snug break-words" : "text-xl font-bold mt-10 mb-4 text-m3-onSurfaceVariant border-b border-m3-surfaceVariant pb-2 break-words";
-                        const tocItem = document.createElement('button'); tocItem.id = `toc-btn-${el.id}`;
-                        tocItem.className = `text-left text-sm p-3 rounded-2xl hover:bg-m3-surface transition-all duration-300 ${node.tag==='h1'?'font-bold text-m3-primary':'ml-4 opacity-80'}`;
-                        tocItem.textContent = node.text;
-                        tocItem.onclick = () => { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.back(); };
-                        DOM.tocList.appendChild(tocItem);
-                    } else { el.className = "text-m3-onSurface opacity-90 mb-5 tracking-wide"; }
-                }
-                el.dataset.headingId = currentHeadingId; fragment.appendChild(el);
-            });
-            DOM.inner.appendChild(fragment);
-            if(hCounter === 0) DOM.tocList.innerHTML = "<p class='text-sm opacity-50 block p-3'>No Table of Contents.</p>";
-
-            setupIntersectionObserver();
-            DOM.searchBar.classList.add('hidden'); DOM.searchRes.classList.add('hidden'); DOM.searchInput.value = '';
-
+            // Animasi transisi layar reader naik
+            DOM.libView.style.transform = 'scale(0.95)'; 
+            DOM.readView.classList.remove('translate-y-full');
+            DOM.title.textContent = book.title; 
+            
+            // Tampilkan M3 Loading Spinner dulu
+            const loader = document.getElementById('reader-loading-overlay');
+            loader.classList.remove('hidden', 'opacity-0');
+            
+            DOM.inner.innerHTML = ''; 
+            DOM.tocList.innerHTML = '';
+            
+            // Defer sinkronisasi berat DOM pake timeout,
+            // Kasih jeda waktu 300ms supaya animasi layar translate-y-full selesai dulu tanpa ngelag
             setTimeout(() => {
-                if (book.lastReadId) { const target = document.getElementById(book.lastReadId); if (target) target.scrollIntoView({ behavior: 'auto', block: 'center' }); } 
-                else { DOM.readContent.scrollTo(0,0); }
-            }, 100);
+                let hCounter = 0; 
+                const fragment = document.createDocumentFragment(); 
+                let currentHeadingId = null;
+
+                book.nodes.forEach((node, i) => {
+                    let el;
+                    const annots = (book.annotations || []).filter(a => a.nodeIdx === i);
+
+                    if (node.tag === 'img') {
+                        el = document.createElement('img'); el.src = node.src; el.id = `node-${i}`;
+                        el.className = "w-full max-w-lg mx-auto rounded-2xl my-8 object-contain shadow-md"; el.loading = "lazy";
+                    } else {
+                        el = document.createElement(node.tag); 
+                        el.innerHTML = renderNodeText(node.text, annots); 
+                        el.id = `node-${i}`;
+                        if (node.tag === 'h1' || node.tag === 'h2') {
+                            hCounter++; currentHeadingId = el.id; 
+                            el.className = node.tag === 'h1' ? "text-3xl font-bold tracking-tight mt-12 mb-6 text-m3-primary leading-snug break-words" : "text-xl font-bold mt-10 mb-4 text-m3-onSurfaceVariant border-b border-m3-surfaceVariant pb-2 break-words";
+                            const tocItem = document.createElement('button'); tocItem.id = `toc-btn-${el.id}`;
+                            tocItem.className = `text-left text-sm p-3 rounded-2xl hover:bg-m3-surface transition-all duration-300 ${node.tag==='h1'?'font-bold text-m3-primary':'ml-4 opacity-80'}`;
+                            tocItem.textContent = node.text;
+                            tocItem.onclick = () => { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.back(); };
+                            DOM.tocList.appendChild(tocItem);
+                        } else { el.className = "text-m3-onSurface opacity-90 mb-5 tracking-wide"; }
+                    }
+                    el.dataset.headingId = currentHeadingId; fragment.appendChild(el);
+                });
+                DOM.inner.appendChild(fragment);
+                
+                if(hCounter === 0) DOM.tocList.innerHTML = "<p class='text-sm opacity-50 block p-3'>No Table of Contents.</p>";
+
+                setupIntersectionObserver();
+                DOM.searchBar.classList.add('hidden'); DOM.searchRes.classList.add('hidden'); DOM.searchInput.value = '';
+
+                // Sembunyikan loading dengan transisi smooth
+                loader.classList.add('opacity-0');
+                setTimeout(() => loader.classList.add('hidden'), 300);
+
+                // Auto Scroll setelah semua ter-render
+                setTimeout(() => {
+                    if (book.lastReadId) { const target = document.getElementById(book.lastReadId); if (target) target.scrollIntoView({ behavior: 'auto', block: 'center' }); } 
+                    else { DOM.readContent.scrollTo(0,0); }
+                }, 100);
+                
+            }, 300); 
         }
 
         function _closeReaderAction(isFromHistory = false) {
