@@ -59,16 +59,20 @@
         }
         
         /* MATERIAL 3 EXPRESSIVE ANIMATIONS */
+        
+        /* Standard morphing button */
         .btn-morph { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 99px; }
         .btn-morph:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
         
+        /* Card scaling */
         .card-morph { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; user-select: none; -webkit-user-select: none; }
         .card-morph:active { transform: scale(0.92); border-radius: 16px !important; }
         
+        /* FAB Expressive: Round to Square */
         .fab-expressive { transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 50%; }
         .fab-expressive:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primaryContainer); color: var(--md-sys-color-on-primaryContainer); }
 
-        /* Kapsul Melar */
+        /* Capsule Expressive: Stretch and Push */
         .capsule-group { display: flex; gap: 4px; width: 100%; transition: all 0.4s cubic-bezier(0.2, 0, 0, 1); }
         .capsule-btn { 
             flex: 1; display: flex; justify-content: center; align-items: center;
@@ -100,16 +104,19 @@
             opacity: 0 !important; transform: scale(0.5); border: none;
         }
 
-        /* Modal & UI lainnya */
+        /* Modal Expressive Animation */
         .modal-overlay { transition: opacity 0.3s ease; }
         .modal-content { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; transform-origin: bottom; }
+        
         .side-panel { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; }
 
         .reader-text-container { column-gap: 2rem; column-rule: 1px solid var(--md-sys-color-surface-variant); }
         @media (min-width: 768px) { .reader-text-container { column-count: 2; } }
+
         .progress-smooth { transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
         mark.search-hl { background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); border-radius: 4px; padding: 0 4px; transition: background-color 1.5s ease, color 1.5s ease; }
+        
         .hl-yellow { background-color: #FDE047; color: #000; }
         .hl-green { background-color: #86EFAC; color: #000; }
         .hl-pink { background-color: #F9A8D4; color: #000; }
@@ -123,6 +130,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
         :root { --reader-font: 'Lora', serif; --reader-size: 1.2rem; --reader-align: left; --reader-line-height: 1.8; }
+
         .reader-dynamic-text { word-wrap: break-word; overflow-wrap: anywhere; hyphens: auto; }
         .reader-dynamic-text p { font-family: var(--reader-font) !important; font-size: var(--reader-size) !important; text-align: var(--reader-align) !important; line-height: var(--reader-line-height) !important; max-width: 100%; overflow-x: hidden; }
         .reader-dynamic-text h1 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.8) !important; text-align: left !important; line-height: 1.3 !important; font-weight: bold; margin-top: 2rem; margin-bottom: 1.5rem; color: var(--md-sys-color-primary); }
@@ -132,19 +140,20 @@
 </head>
 <body class="font-sans flex flex-col relative">
 
+    <!-- VIEW: LIBRARY -->
     <div id="library-view" class="absolute inset-0 flex flex-col overflow-hidden bg-m3-bg z-10 w-full transition-transform duration-500 origin-bottom">
         
-        <!-- HEADER DENGAN TRANSFORM MURNI (ANTI JITTER) -->
-        <header id="main-header" class="absolute top-0 left-0 right-0 z-40 bg-m3-bg transition-transform duration-300 ease-out" style="transform: translateY(0);">
+        <!-- HEADER DENGAN TRANSFORM MURNI (TANPA DELAY ANIMASI) -->
+        <!-- Dihapus class `transition-transform duration-x` supaya gerakan header 1:1 instan nempel sama jari -->
+        <header id="main-header" class="absolute top-0 left-0 right-0 z-40 bg-m3-bg shadow-sm" style="transform: translateY(0);">
             <div id="title-area" class="pt-10 pb-3 px-5">
                 <h1 class="text-5xl font-bold tracking-tighter mb-1 text-m3-onBg">Baca.</h1>
                 <p id="library-count" class="text-m3-onSurfaceVariant text-sm font-bold">0 Books</p>
             </div>
             
             <div id="search-area" class="search-row px-5 pb-4 transition-shadow duration-300">
-                <div class="search-capsule bg-m3-surfaceVariant p-1.5 rounded-full px-4 cursor-text relative">
+                <div class="search-capsule bg-m3-surfaceVariant p-1.5 rounded-full px-4 cursor-text relative border border-transparent focus-within:border-m3-primary">
                     <i data-lucide="search" class="w-5 h-5 opacity-70 text-m3-onSurfaceVariant shrink-0 absolute left-4"></i>
-                    <!-- Placeholder diubah menjadi tanpa tulisan 'Cari' seperti request -->
                     <input type="text" id="global-search" placeholder="..." class="w-full bg-transparent border-none outline-none py-2.5 pl-8 pr-2 font-bold text-m3-onSurfaceVariant placeholder:text-m3-onSurfaceVariant/60 text-sm">
                 </div>
                 <button onclick="openModal('global-settings-modal', 'global-settings-sheet')" id="settings-btn" class="btn-morph btn-settings p-4 flex items-center justify-center bg-m3-surfaceVariant text-m3-onSurfaceVariant">
@@ -192,6 +201,7 @@
         </div>
 
         <div class="fixed bottom-8 right-6 z-50">
+            <!-- FAB Expressive -->
             <button onclick="document.getElementById('doc-upload').click();" class="fab-expressive flex items-center justify-center w-16 h-16 bg-m3-primary text-m3-onPrimary cursor-pointer shadow-none">
                 <i data-lucide="plus" class="w-8 h-8"></i>
             </button>
@@ -202,6 +212,7 @@
     <!-- VIEW: READER -->
     <div id="reader-view" class="absolute inset-0 flex flex-col bg-m3-bg text-m3-onBg transform translate-y-full transition-transform duration-500 ease-in-out z-20 w-full overflow-hidden">
         
+        <!-- Loading Overlay -->
         <div id="reader-loading-overlay" class="absolute inset-0 z-50 bg-m3-bg flex flex-col items-center justify-center transition-opacity duration-300 hidden opacity-0">
             <div class="relative w-16 h-16 mb-6 flex items-center justify-center">
                 <div class="absolute inset-0 border-4 border-m3-surfaceVariant rounded-full"></div>
@@ -232,7 +243,7 @@
         <!-- Search In-Book Melar -->
         <div id="reader-search-bar" class="hidden bg-m3-surfaceVariant px-4 pb-4 z-20 transition-all w-full shrink-0 rounded-b-[24px]">
             <div class="search-row" id="inbook-search-row">
-                <div class="search-capsule bg-m3-surface p-1 rounded-full cursor-text relative">
+                <div class="search-capsule bg-m3-surface p-1 rounded-full cursor-text relative border border-transparent focus-within:border-m3-primary">
                     <i data-lucide="search" class="w-5 h-5 opacity-70 text-m3-onSurface shrink-0 absolute left-4"></i>
                     <input type="text" id="inbook-search-input" placeholder="..." class="w-full bg-transparent border-none outline-none py-2 pl-10 pr-2 font-bold text-m3-onSurface text-sm">
                 </div>
@@ -302,6 +313,7 @@
     </div>
 
     <!-- Modals -->
+    <!-- Welcome Modal -->
     <div id="welcome-modal" onclick="if(event.target === this) closeWelcome()" class="hidden modal-overlay fixed inset-0 bg-m3-bg/95 z-[200] flex items-center justify-center p-4 opacity-0">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[48px] overflow-hidden flex flex-col scale-75 translate-y-12 border border-m3-surfaceVariant" id="welcome-sheet">
             <div class="p-8 overflow-y-auto max-h-[75vh]">
@@ -332,6 +344,7 @@
         </div>
     </div>
 
+    <!-- Global Settings Modal -->
     <div id="global-settings-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-m3-bg/90 z-[100] flex items-end justify-center opacity-0">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-t-[48px] p-6 pb-12 transform translate-y-full border-t border-m3-surfaceVariant" id="global-settings-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
@@ -387,6 +400,7 @@
         </div>
     </div>
 
+    <!-- Book Options Modal -->
     <div id="b-opt-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-m3-bg/90 z-[100] flex items-end justify-center opacity-0 p-4 pb-8">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform translate-y-full border border-m3-surfaceVariant" id="b-opt-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
@@ -399,6 +413,7 @@
         </div>
     </div>
 
+    <!-- Edit Book Data Modal -->
     <div id="edit-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-m3-bg/90 z-[120] flex items-center justify-center opacity-0 p-4">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-8 transform scale-75 translate-y-12 border border-m3-surfaceVariant" id="edit-sheet">
             <h3 class="text-xl font-bold mb-6 text-m3-onSurface">Edit Details</h3>
@@ -412,12 +427,11 @@
             
             <label class="text-xs font-bold opacity-70 block mb-2 uppercase tracking-wider">Card Shape</label>
             <div class="grid grid-cols-2 gap-2 mb-8">
-                <button onclick="selectShape('rounded')" id="shape-rounded" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Rounded</button>
                 <button onclick="selectShape('default')" id="shape-default" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Dynamic</button>
+                <button onclick="selectShape('rounded')" id="shape-rounded" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Rounded</button>
                 <button onclick="selectShape('square')" id="shape-square" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Square</button>
             </div>
-            <!-- Default is now rounded -->
-            <input type="hidden" id="edit-book-shape" value="rounded">
+            <input type="hidden" id="edit-book-shape" value="default">
 
             <div class="flex gap-2">
                 <button onclick="closeEditModal()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Cancel</button>
@@ -531,13 +545,13 @@
             globalSearch: document.getElementById('global-search')
         };
 
-        // --- SISTEM HEADER ABSOLUTE TRANSFORM MURNI (ANTI JITTER) ---
+        // --- SISTEM HEADER ABSOLUTE TRANSFORM MURNI (ANTI JITTER, TANPA DELAY) ---
         const libScroll = document.getElementById('library-content-scroll');
         const headerSpacer = document.getElementById('header-spacer');
         const titleArea = document.getElementById('title-area');
         const searchArea = document.getElementById('search-area');
 
-        // Fungsi buat nyesuain spacer biar pas sama tinggi header
+        // Setup tinggi spacer biar pas dengan header
         function adjustHeaderSpacer() {
             if(DOM.mainHeader && headerSpacer) {
                 headerSpacer.style.height = `${DOM.mainHeader.offsetHeight}px`;
@@ -546,37 +560,46 @@
         window.addEventListener('resize', adjustHeaderSpacer);
 
         let lastScrollY = 0;
+        let currentTranslateY = 0;
+
         if(libScroll && DOM.mainHeader) {
             libScroll.addEventListener('scroll', () => {
                 const currentScrollY = libScroll.scrollTop;
                 const titleHeight = titleArea.offsetHeight;
                 
-                // Tambah shadow halus di search area kalo udah di-scroll ngelewatin title
+                // Tambah shadow halus di header (search area) kalo udah scroll ngelewatin title
                 if (currentScrollY > 10) { 
-                    searchArea.classList.add('shadow-[0_2px_10px_rgba(0,0,0,0.05)]'); 
+                    DOM.mainHeader.classList.add('shadow-[0_2px_10px_rgba(0,0,0,0.05)]'); 
                 } else { 
-                    searchArea.classList.remove('shadow-[0_2px_10px_rgba(0,0,0,0.05)]'); 
+                    DOM.mainHeader.classList.remove('shadow-[0_2px_10px_rgba(0,0,0,0.05)]'); 
                 }
 
-                // Kalkulasi ruang yang bisa di-scroll
+                // Kalkulasi ruang yang bisa di-scroll (mencegah header ilang kalau buku masih dikit)
                 const maxScroll = libScroll.scrollHeight - libScroll.clientHeight;
                 
-                // Animasi Transform Y (Menyembunyikan Tulisan "Baca.") 
-                // Hanya aktif kalau daftar buku cukup panjang buat di-scroll
-                if (maxScroll > titleHeight + 20) {
-                    if (currentScrollY > titleHeight && currentScrollY > lastScrollY) {
-                        // Scroll Turun: Geser header ke atas
-                        DOM.mainHeader.style.transform = `translateY(-${titleHeight}px)`;
-                    } else if (currentScrollY < lastScrollY || currentScrollY <= titleHeight) {
-                        // Scroll Naik: Kembalikan header
-                        DOM.mainHeader.style.transform = `translateY(0)`;
-                    }
+                // Batas maksimal transform ke atas (disisakan ~24px supaya search bar nggak nabrak ujung atas)
+                const gap = 24;
+                const maxTranslate = Math.max(0, titleHeight - gap);
+                
+                // Animasi Transform Y (1:1 tracking ke pergerakan jari, TANPA CSS delay)
+                if (maxScroll > titleHeight) {
+                    const deltaY = currentScrollY - lastScrollY;
+                    
+                    currentTranslateY -= deltaY;
+                    
+                    // Batasi clamp (mentok bawah 0, mentok atas -maxTranslate)
+                    if (currentTranslateY > 0) currentTranslateY = 0;
+                    if (currentTranslateY < -maxTranslate) currentTranslateY = -maxTranslate;
+                    
+                    // Proteksi overscroll (kalo di paling atas harus bener-bener mentok ke 0)
+                    if (currentScrollY <= 0) currentTranslateY = 0;
+
+                    DOM.mainHeader.style.transform = `translateY(${currentTranslateY}px)`;
                 } else {
-                    // Kalau buku dikit, jangan pernah lipat header
                     DOM.mainHeader.style.transform = `translateY(0)`;
                 }
                 
-                lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+                lastScrollY = Math.max(0, currentScrollY);
             }, { passive: true });
         }
 
@@ -823,7 +846,7 @@
         window.changeTypo = function(type, value) { typoPrefs[type] = value; applyTypo(); }
         applyTypo();
 
-        async function loadLibrary() { try { library = await localforage.getItem('pdf_epub_master') || []; renderLibrary(); adjustHeaderSpacer(); } catch (e) { console.error(e); } }
+        async function loadLibrary() { try { library = await localforage.getItem('pdf_epub_master') || []; renderLibrary(); setTimeout(adjustHeaderSpacer, 100); } catch (e) { console.error(e); } }
         
         function createBookCard(book, isSlider = false, index = 0) {
             const progress = book.progressPct || 0; 
@@ -838,9 +861,8 @@
             let bgStyle = ""; let textOverlay = ""; let baseClass = "";
             if(book.coverBase64) {
                 bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
-                // PENTING: Murni hapus border biar cover mulus 100% 
                 baseClass = "text-white border-none ring-0 outline-none"; 
-                textOverlay = `<div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-0 rounded-b-inherit border-none"></div>`;
+                textOverlay = `<div class="absolute inset-x-0 bottom-0 h-[85%] bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-0 rounded-b-inherit border-none"></div>`;
             } else {
                 const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
                 baseClass = colors[index % 3];
