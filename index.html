@@ -83,35 +83,43 @@
 
         /* Search Bar Expressive Stretching & Pushing */
         .search-capsule {
-            transition: flex-grow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s, border-color 0.4s, box-shadow 0.4s;
+            transition: flex-grow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s, border-color 0.4s;
             flex-grow: 1; 
         }
         .search-capsule:focus-within {
-            flex-grow: 4; /* Melar pesat saat disentuh */
+            flex-grow: 4; 
             background-color: var(--md-sys-color-surface);
             border-color: var(--md-sys-color-primary);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
         #settings-btn {
             transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease;
         }
-        /* Settings menyingkir sedikit pas Search memanjang */
         .search-capsule:focus-within + #settings-btn {
             transform: scale(0.85);
             opacity: 0.6;
         }
 
-        /* Header Scroll Morphing Animations */
+        /* Header Scroll Morphing Animations (Jitter-Free Grid Trick) */
         #main-header { transition: padding 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.5s ease; }
         .scrolled-header { padding-top: 1rem !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         
+        #header-top-wrapper {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .hide-top #header-top-wrapper {
+            grid-template-rows: 0fr;
+        }
+        #header-top-inner { min-height: 0; overflow: hidden; }
+        
         #header-top-row {
-            max-height: 100px; opacity: 1; transform: translateY(0) scale(1);
+            opacity: 1; transform: translateY(0) scale(1);
             margin-bottom: 1.5rem; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: top left;
         }
         .hide-top #header-top-row {
-            max-height: 0px; opacity: 0; margin-bottom: 0;
+            opacity: 0; margin-bottom: 0;
             transform: translateY(-10px) scale(0.9); pointer-events: none;
         }
 
@@ -150,21 +158,25 @@
 
     <div id="library-view" class="absolute inset-0 flex flex-col overflow-hidden transition-transform duration-500 origin-bottom bg-m3-bg z-10 w-full">
         
-        <!-- Header Dinamis dengan Animasi Morphing ke atas -->
+        <!-- Header Dinamis dengan Animasi Morphing -->
         <header id="main-header" class="pt-10 pb-4 px-5 sticky top-0 bg-m3-bg z-40 w-full">
             <div class="flex flex-col w-full" id="header-wrapper">
                 
-                <!-- Baris Atas: Judul (Tampil normal, menghilang pas scroll down) -->
-                <div id="header-top-row" class="flex justify-between items-start">
-                    <div>
-                        <h1 class="text-5xl font-bold tracking-tighter mb-1 text-m3-onBg">Baca.</h1>
-                        <p id="library-count" class="text-m3-onSurfaceVariant text-sm font-bold">0 Books</p>
+                <!-- Baris Atas: Judul menggunakan trik Grid untuk hindari jitter -->
+                <div id="header-top-wrapper" class="w-full">
+                    <div id="header-top-inner" class="w-full">
+                        <div id="header-top-row" class="flex justify-between items-start w-full">
+                            <div>
+                                <h1 class="text-5xl font-bold tracking-tighter mb-1 text-m3-onBg">Baca.</h1>
+                                <p id="library-count" class="text-m3-onSurfaceVariant text-sm font-bold">0 Books</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Baris Bawah: Search Kapsul + Settings -->
                 <div class="flex items-center gap-3 w-full" id="header-bottom-row">
-                    <!-- Kapsul Search Expressive (Memanjang mendesak settings saat di tap) -->
+                    <!-- Kapsul Search Expressive -->
                     <div class="search-capsule bg-m3-surfaceVariant p-1.5 rounded-full flex items-center px-4 border border-transparent cursor-text" onclick="document.getElementById('global-search').focus()">
                         <i data-lucide="search" class="w-5 h-5 opacity-70 text-m3-onSurfaceVariant shrink-0"></i>
                         <input type="text" id="global-search" placeholder="Search books..." class="w-full bg-transparent border-none outline-none py-2.5 pl-3 font-bold text-m3-onSurfaceVariant placeholder:text-m3-onSurfaceVariant/60 text-sm">
@@ -250,12 +262,12 @@
             <i data-lucide="minimize" class="w-6 h-6"></i>
         </button>
         
-        <!-- Search In-Book Expressive Capsule (Tulisan Cari Dihilangkan) -->
+        <!-- Search In-Book Expressive Capsule -->
         <div id="reader-search-bar" class="hidden bg-m3-surfaceVariant px-4 pb-4 z-20 transition-all w-full shrink-0 rounded-b-[24px]">
             <div class="search-capsule flex bg-m3-surface p-1 rounded-full items-center border border-transparent cursor-text" onclick="document.getElementById('inbook-search-input').focus()">
                 <i data-lucide="search" class="w-5 h-5 ml-3 opacity-70 text-m3-onSurface shrink-0"></i>
                 <input type="text" id="inbook-search-input" placeholder="Search specific text..." class="w-full bg-transparent border-none outline-none py-2 pl-3 pr-2 font-bold text-m3-onSurface text-sm">
-                <!-- Gunakan icon arrow-right murni, hilangkan text -->
+                <!-- Icon panah, hilangkan text cari -->
                 <button id="btn-exec-search" class="btn-morph w-8 h-8 mr-1 bg-m3-primary/10 text-m3-primary rounded-full hover:bg-m3-primary hover:text-m3-onPrimary transition-colors flex items-center justify-center shrink-0">
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
@@ -556,22 +568,33 @@
 
         const libScroll = document.getElementById('library-content-scroll');
         let lastScrollY = 0;
+        let isTicking = false;
+        
         if(libScroll && DOM.mainHeader) {
             libScroll.addEventListener('scroll', () => {
-                const currentScrollY = libScroll.scrollTop;
-                
-                if (currentScrollY > 10) { DOM.mainHeader.classList.add('scrolled-header'); } 
-                else { DOM.mainHeader.classList.remove('scrolled-header'); }
-                
-                // Animasi ngumpet/morph pas turun, nongol pas naik
-                if (currentScrollY > 50 && currentScrollY > lastScrollY) {
-                    DOM.mainHeader.classList.add('hide-top');
-                } else if (currentScrollY < lastScrollY) {
-                    DOM.mainHeader.classList.remove('hide-top');
+                if (!isTicking) {
+                    window.requestAnimationFrame(() => {
+                        const currentScrollY = libScroll.scrollTop;
+                        
+                        if (currentScrollY > 10) { DOM.mainHeader.classList.add('scrolled-header'); } 
+                        else { DOM.mainHeader.classList.remove('scrolled-header'); }
+                        
+                        // Jitter protection: Hanya merespons jika scroll berubah lebih dari 8 pixel
+                        if (Math.abs(currentScrollY - lastScrollY) > 8) {
+                            if (currentScrollY > 60 && currentScrollY > lastScrollY) {
+                                // Scroll down
+                                DOM.mainHeader.classList.add('hide-top');
+                            } else if (currentScrollY < lastScrollY || currentScrollY <= 60) {
+                                // Scroll up atau mentok atas
+                                DOM.mainHeader.classList.remove('hide-top');
+                            }
+                            lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
+                        }
+                        isTicking = false;
+                    });
+                    isTicking = true;
                 }
-                
-                lastScrollY = currentScrollY <= 0 ? 0 : currentScrollY;
-            });
+            }, { passive: true });
         }
 
         let library = []; let activeBookId = null; let observer = null; let activePanel = null;
@@ -815,10 +838,8 @@
             let bgStyle = ""; let textOverlay = ""; let baseClass = "";
             
             if(book.coverBase64) {
-                // Menghilangkan semua border/garis luar dan pastikan membaur murni
                 bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
                 baseClass = "text-white"; 
-                // Gradien murni hitam ke transparan supaya tidak kaku
                 textOverlay = `<div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none z-0 rounded-inherit"></div>`;
             } else {
                 const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
@@ -1060,9 +1081,7 @@
             if (activePanel) { history.back(); }
             DOM.searchBar.classList.toggle('hidden'); if(!DOM.searchBar.classList.contains('hidden')) DOM.searchInput.focus(); 
         };
-        
-        DOM.searchExec.onclick = executeSearch; 
-        DOM.searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') executeSearch(); });
+        DOM.searchExec.onclick = executeSearch; DOM.searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') executeSearch(); });
 
         function executeSearch() {
             const query = DOM.searchInput.value.toLowerCase().trim(); DOM.searchRes.innerHTML = '';
