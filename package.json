@@ -1,0 +1,10 @@
+{
+  "name": "baca-proxy-backend",
+  "version": "1.0.0",
+  "description": "Backend Proxy untuk agregator pencarian buku",
+  "main": "api/search.js",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
