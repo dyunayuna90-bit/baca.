@@ -21,7 +21,7 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
 ## 📦 Download & Installation
 The first stable release is ready. You can grab the source code or check out the v1.0.0 release using the link below:
 👉 **Download Release v1.0.0**
-**For Web/PWA Users:**
+**For Web/PWA Users:https://github.com/dyunayuna90-bit/baca./releases/tag/v1.0.0**
  1. Open the app via a modern mobile browser (Chrome/Safari/Edge).
  2. Tap the browser's menu (three dots) and select **"Install App"** or **"Add to Home Screen"**.
  3. Launch it from your home screen and enjoy offline reading!
