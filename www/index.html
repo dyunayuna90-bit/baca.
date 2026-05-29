@@ -70,7 +70,7 @@
         .capsule-group { display: flex; gap: 4px; width: 100%; transition: all 0.4s cubic-bezier(0.2, 0, 0, 1); }
         .capsule-btn { 
             flex: 1; display: flex; justify-content: center; align-items: center;
-            transition: flex 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, border-radius 0.3s; 
+            transition: flex 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, border-radius 0.3s; 
             border-radius: 99px; overflow: hidden; white-space: nowrap;
         }
         .capsule-btn:active, .capsule-btn.nav-active { 
@@ -116,12 +116,6 @@
         .reader-dynamic-text h1 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.8) !important; text-align: left !important; line-height: 1.3 !important; font-weight: bold; margin-top: 2rem; margin-bottom: 1.5rem; color: var(--md-sys-color-primary); }
         .reader-dynamic-text h2 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.4) !important; text-align: left !important; line-height: 1.4 !important; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--md-sys-color-on-surface-variant); border-bottom: 1px solid var(--md-sys-color-surface-variant); padding-bottom: 0.5rem; opacity: 1; }
         ::-webkit-scrollbar { width: 0px; }
-        
-        /* Animasi Search Bar menempel di Keyboard */
-        #reader-search-bar {
-            transition: transform 0.1s ease-out, opacity 0.3s ease-out;
-            will-change: transform;
-        }
     </style>
 </head>
 <body class="font-sans flex flex-col relative">
@@ -216,14 +210,32 @@
 
             <div id="side-panel-overlay" class="hidden absolute inset-0 bg-black/20 z-30 transition-opacity" onclick="history.back()"></div>
 
+            <!-- Panel Daftar Isi -->
             <div id="toc-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-toc-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="list-tree"></i> Daftar Isi</h3>
                 <div id="toc-list" class="space-y-2 flex flex-col pb-20"></div>
             </div>
             
+            <!-- Panel Tampilan & Pencarian -->
             <div id="settings-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-set-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="sliders-horizontal"></i> Tampilan</h3>
+                
                 <div class="space-y-6 pb-20">
+                    
+                    <!-- FITUR PENCARIAN -->
+                    <div>
+                        <label id="str-set-search" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Pencarian</label>
+                        <div class="capsule-group bg-m3-surface p-1 rounded-full flex w-full relative group">
+                            <!-- Kolom input ini memanjang dengan animasi berkat flex dan focus-within -->
+                            <div class="capsule-btn bg-transparent justify-start flex-1 focus-within:flex-[2.5] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+                                 <i data-lucide="search" class="w-4 h-4 ml-4 opacity-70 text-m3-onSurface shrink-0 pointer-events-none"></i>
+                                 <input type="text" id="inbook-search-input" class="w-full bg-transparent border-none outline-none py-3 pl-2 pr-3 text-xs font-bold text-m3-onSurface placeholder:opacity-60" placeholder="Cari dalam buku...">
+                            </div>
+                            <button id="btn-execute-search" class="capsule-btn bg-m3-primary/10 text-m3-primary py-3 px-4 text-xs font-bold shrink-0 transition-all hover:bg-m3-primary/20">Cari</button>
+                        </div>
+                        <div id="search-results-panel" class="hidden mt-3 max-h-48 overflow-y-auto rounded-2xl bg-m3-surface text-xs shadow-md border border-m3-onSurface/5 pointer-events-auto flex-col gap-1 p-2"></div>
+                    </div>
+
                     <div>
                         <label id="str-set-theme" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Mode Tema</label>
                         <div class="capsule-group bg-m3-surface p-1 rounded-full">
@@ -262,22 +274,12 @@
             </div>
         </div>
 
-        <!-- SEARCH BAR FIXED & MENGAMBANG DI ATAS KEYBOARD -->
-        <div id="reader-search-bar" class="hidden fixed bottom-4 left-4 right-4 z-[90] flex flex-col justify-end gap-2 transition-all">
-            <div id="search-results-panel" class="hidden max-h-60 overflow-y-auto rounded-2xl bg-m3-surface text-sm shadow-2xl transition-all scale-95 opacity-0 origin-bottom border border-m3-onSurface/10 pointer-events-auto"></div>
-            
-            <div class="search-capsule bg-m3-surfaceVariant p-1 rounded-full shadow-2xl relative flex items-center h-14 border border-m3-onSurfaceVariant/20 pointer-events-auto">
-                <i data-lucide="search" id="search-icon-inbook" class="w-6 h-6 opacity-70 text-m3-onSurface shrink-0 absolute left-4 pointer-events-none"></i>
-                <input type="text" id="inbook-search-input" placeholder="Cari dalam buku..." class="w-full bg-transparent border-none outline-none py-2 pl-12 pr-4 font-bold text-m3-onSurface text-base placeholder:opacity-60">
-            </div>
-        </div>
-
         <!-- PROGRESS BAR -->
         <div id="progress-container" class="h-1 w-full bg-m3-surfaceVariant shrink-0 z-40 relative">
             <div id="reading-progress-bar" class="h-full bg-m3-primary progress-smooth w-0"></div>
         </div>
 
-        <!-- BOTTOM NAV BAR -->
+        <!-- BOTTOM NAV BAR (Sisa 4 tombol yang pas) -->
         <div id="reader-bottom-bar" class="bg-m3-surfaceVariant px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] shrink-0 z-40 relative">
             <div class="capsule-group bg-transparent rounded-full h-[60px]">
                 <button id="btn-back" class="capsule-btn flex-col gap-1 text-m3-onSurfaceVariant transition-all">
@@ -287,10 +289,6 @@
                 <button id="btn-toc" class="capsule-btn flex-col gap-1 text-m3-onSurfaceVariant transition-all">
                     <i data-lucide="list" class="w-5 h-5 pointer-events-none"></i>
                     <span id="str-nav-toc" class="text-[10px] font-bold pointer-events-none">Daftar Isi</span>
-                </button>
-                <button id="btn-reader-search" class="capsule-btn flex-col gap-1 text-m3-onSurfaceVariant transition-all">
-                    <i data-lucide="search" class="w-5 h-5 pointer-events-none"></i>
-                    <span id="str-nav-search" class="text-[10px] font-bold pointer-events-none">Cari</span>
                 </button>
                 <button id="btn-settings" class="capsule-btn flex-col gap-1 text-m3-onSurfaceVariant transition-all">
                     <i data-lucide="type" class="w-5 h-5 pointer-events-none"></i>
@@ -499,7 +497,6 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // Tema dikurangi menjadi 10 item persis (Sage Green / "green" tetap ada)
         const M3_PALETTES = {
             purple: { light: `--md-sys-color-primary:#6750A4;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#EADDFF;--md-sys-color-on-primary-container:#21005D;--md-sys-color-secondary-container:#E8DEF8;--md-sys-color-on-secondary-container:#1D192B;--md-sys-color-tertiary-container:#FFD8E4;--md-sys-color-on-tertiary-container:#31111D;--md-sys-color-background:#FEF7FF;--md-sys-color-on-background:#1D1B20;--md-sys-color-surface:#FEF7FF;--md-sys-color-on-surface:#1D1B20;--md-sys-color-surface-variant:#E7E0EC;--md-sys-color-on-surface-variant:#49454F;`, dark: `--md-sys-color-primary:#D0BCFF;--md-sys-color-on-primary:#381E72;--md-sys-color-primary-container:#4F378B;--md-sys-color-on-primary-container:#EADDFF;--md-sys-color-secondary-container:#4A4458;--md-sys-color-on-secondary-container:#E8DEF8;--md-sys-color-tertiary-container:#633B48;--md-sys-color-on-tertiary-container:#FFD8E4;--md-sys-color-background:#141218;--md-sys-color-on-background:#E6E0E9;--md-sys-color-surface:#141218;--md-sys-color-on-surface:#E6E0E9;--md-sys-color-surface-variant:#49454F;--md-sys-color-on-surface-variant:#CAC4D0;` },
             green: { light: `--md-sys-color-primary:#006C4C;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#89F8D6;--md-sys-color-on-primary-container:#002114;--md-sys-color-secondary-container:#CCE8DB;--md-sys-color-on-secondary-container:#052016;--md-sys-color-tertiary-container:#BEEAF6;--md-sys-color-on-tertiary-container:#001F29;--md-sys-color-background:#FBFDF8;--md-sys-color-on-background:#191C1A;--md-sys-color-surface:#FBFDF8;--md-sys-color-on-surface:#191C1A;--md-sys-color-surface-variant:#DBE5DD;--md-sys-color-on-surface-variant:#404943;`, dark: `--md-sys-color-primary:#6CDBBA;--md-sys-color-on-primary:#003825;--md-sys-color-primary-container:#005138;--md-sys-color-on-primary-container:#89F8D6;--md-sys-color-secondary-container:#334B3F;--md-sys-color-on-secondary-container:#CCE8DB;--md-sys-color-tertiary-container:#204D59;--md-sys-color-on-tertiary-container:#BEEAF6;--md-sys-color-background:#111412;--md-sys-color-on-background:#E1E3DF;--md-sys-color-surface:#111412;--md-sys-color-on-surface:#E1E3DF;--md-sys-color-surface-variant:#404943;--md-sys-color-on-surface-variant:#BFC9C3;` },
@@ -524,13 +521,12 @@
             backBtn: document.getElementById('btn-back'),
             tocBtn: document.getElementById('btn-toc'), 
             setBtn: document.getElementById('btn-settings'),
-            searchBtn: document.getElementById('btn-reader-search'), 
             
             inner: document.getElementById('reader-inner'), title: document.getElementById('reader-title'), count: document.getElementById('library-count'),
             tocPanel: document.getElementById('toc-panel'), tocList: document.getElementById('toc-list'),
             setPanel: document.getElementById('settings-panel'),
             readContent: document.getElementById('reader-content'), progBar: document.getElementById('reading-progress-bar'), progTxt: document.getElementById('reader-progress-text'),
-            searchBar: document.getElementById('reader-search-bar'), searchInput: document.getElementById('inbook-search-input'), searchRes: document.getElementById('search-results-panel'),
+            searchInput: document.getElementById('inbook-search-input'), searchRes: document.getElementById('search-results-panel'),
             globalSearch: document.getElementById('global-search')
         };
 
@@ -543,7 +539,7 @@
         }
 
         function updateBottomNavUI(activeId) {
-            const btns = ['btn-toc', 'btn-reader-search', 'btn-settings'];
+            const btns = ['btn-toc', 'btn-settings'];
             btns.forEach(id => {
                 const b = document.getElementById(id);
                 if(b) {
@@ -567,30 +563,7 @@
                     closeSearch(false);
                 }
             }
-            
-            const readerSearchBar = document.getElementById('reader-search-bar');
-            if (readerSearchBar && !readerSearchBar.classList.contains('hidden')) {
-                const isSearchBtnClick = e.target.closest('#btn-reader-search');
-                if (!readerSearchBar.contains(e.target) && !isSearchBtnClick) {
-                    closeInbookSearch();
-                }
-            }
         });
-
-        // TRACK VISUAL VIEWPORT (Untuk animasi di atas keyboard yang akurat)
-        if (window.visualViewport) {
-            const updateSearchBarPosition = () => {
-                const searchBar = document.getElementById('reader-search-bar');
-                if (!searchBar.classList.contains('hidden')) {
-                    // Hitung seberapa besar area yang terpotong keyboard (jika ada)
-                    const offsetBottom = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-                    const shiftY = Math.max(0, offsetBottom);
-                    searchBar.style.transform = `translateY(-${shiftY}px)`;
-                }
-            };
-            window.visualViewport.addEventListener('resize', updateSearchBarPosition);
-            window.visualViewport.addEventListener('scroll', updateSearchBarPosition);
-        }
 
         const searchArea = document.getElementById('search-area');
         const searchCapsule = document.querySelector('.search-capsule');
@@ -614,13 +587,6 @@
                 DOM.globalSearch.blur(); DOM.globalSearch.value = ''; renderLibrary();
                 if (!fromHistory && window.location.hash === '#search') history.back();
             }
-        };
-
-        window.closeInbookSearch = function() {
-            DOM.searchBar.classList.add('hidden');
-            DOM.searchBar.style.transform = 'translateY(0px)'; // reset posisi
-            DOM.searchInput.blur();
-            if(activePanel !== 'search') updateBottomNavUI(null);
         };
 
         let library = []; let activeBookId = null; let observer = null; let activePanel = null;
@@ -665,7 +631,7 @@
                 welPrivacy: "Privasi Total", welPrivacyDesc: "Diproses secara lokal di perangkat Anda.", welBtn: "Mengerti",
                 setMainTitle: "Pengaturan", setPalette: "Palet Tema", setLang: "Bahasa", setInfo: "Info & Dukungan",
                 btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnClose: "Tutup",
-                navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Cari", navText: "Teks", navFull: "Penuh",
+                navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navText: "Teks", navFull: "Penuh",
                 readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
                 setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
                 searchPlaceholder: "Cari dalam buku...", searchNotFound: "Tidak ditemukan.",
@@ -720,8 +686,8 @@
             setElementText('str-btn-close', d.btnClose);
             
             setElementText('str-nav-back', d.navBack); setElementText('str-nav-toc', d.navToc);
-            setElementText('str-nav-search', d.navSearch); setElementText('str-nav-text', d.navText);
-            setElementText('str-nav-full', d.navFull);
+            setElementText('str-nav-text', d.navText); setElementText('str-nav-full', d.navFull);
+            setElementText('str-set-search', d.navSearch);
             
             setElementText('str-reader-loading', d.readerLoading); setElementText('str-toc-title', d.tocTitle);
             setElementText('str-set-title', d.setTitle); setElementText('str-set-theme', d.setTheme);
@@ -952,7 +918,6 @@
         window.toggleFullscreenReading = function() {
             const bottomBar = document.getElementById('reader-bottom-bar');
             const floatHeader = document.getElementById('reader-floating-header');
-            const searchBar = document.getElementById('reader-search-bar');
             const progContainer = document.getElementById('progress-container');
             const exitBtn = document.getElementById('btn-exit-fullscreen');
             
@@ -964,7 +929,6 @@
             } else {
                 bottomBar.classList.add('hidden'); 
                 floatHeader.classList.add('opacity-0');
-                searchBar.classList.add('hidden'); 
                 progContainer.classList.add('hidden');
                 exitBtn.classList.remove('hidden');
                 updateBottomNavUI(null);
@@ -1267,7 +1231,7 @@
                 DOM.inner.appendChild(fragment);
                 
                 if(hCounter === 0) DOM.tocList.innerHTML = "<p class='text-sm opacity-50 block p-3'>No Table of Contents.</p>";
-                DOM.searchBar.classList.add('hidden'); DOM.searchRes.classList.add('hidden'); DOM.searchInput.value = '';
+                DOM.searchRes.classList.add('hidden'); DOM.searchInput.value = '';
 
                 loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
@@ -1299,7 +1263,6 @@
         }
 
         function togglePanel(panelEl, name, btnId) { 
-            if(!DOM.searchBar.classList.contains('hidden')) { DOM.searchBar.classList.add('hidden'); DOM.searchRes.classList.add('hidden'); }
             if(activePanel === name) { history.back(); return; } 
             
             if(activePanel) { 
@@ -1317,26 +1280,6 @@
 
         DOM.tocBtn.onclick = () => togglePanel(DOM.tocPanel, 'toc', 'btn-toc'); 
         DOM.setBtn.onclick = () => togglePanel(DOM.setPanel, 'set', 'btn-settings');
-
-        DOM.searchBtn.onclick = (e) => { 
-            e.stopPropagation(); 
-            if (activePanel) { history.back(); }
-            
-            const isHidden = DOM.searchBar.classList.contains('hidden');
-            if(isHidden) {
-                DOM.searchBar.classList.remove('hidden');
-                DOM.searchInput.focus(); 
-                updateBottomNavUI('btn-reader-search');
-                
-                // Cek lagi posisi viewport sblm animasi
-                if (window.visualViewport) {
-                    const offsetBottom = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-                    DOM.searchBar.style.transform = `translateY(-${Math.max(0, offsetBottom)}px)`;
-                }
-            } else {
-                closeInbookSearch();
-            }
-        };
         
         let inbookSearchTimeout;
         DOM.searchInput.addEventListener('input', (e) => {
@@ -1344,12 +1287,22 @@
             inbookSearchTimeout = setTimeout(() => executeSearch(), 300);
         });
 
+        // Trigger pencarian kalau tombol cari di samping diklik
+        document.getElementById('btn-execute-search').addEventListener('click', () => {
+            executeSearch();
+            const firstResult = DOM.searchRes.querySelector('button');
+            if (firstResult) {
+                firstResult.click();
+            } else {
+                history.back(); // Kalo gada hasil, cukup nutup panel
+            }
+        });
+
         window.executeSearch = function() {
             const query = DOM.searchInput.value.toLowerCase().trim(); DOM.searchRes.innerHTML = '';
             const d = i18n[wikiLang] || i18n['id'];
             if(!query) { 
-                DOM.searchRes.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => DOM.searchRes.classList.add('hidden'), 300);
+                DOM.searchRes.classList.add('hidden');
                 return; 
             }
             
@@ -1369,13 +1322,13 @@
             });
             
             if(results.length === 0) {
-                DOM.searchRes.innerHTML = `<p class="p-3 text-center opacity-60">${d.searchNotFound}</p>`;
+                DOM.searchRes.innerHTML = `<p class="p-3 text-center opacity-60 text-xs">${d.searchNotFound}</p>`;
             } else {
                 results.forEach(res => {
                     const btn = document.createElement('button');
-                    btn.className = `w-full text-left p-3 hover:bg-black/5 dark:hover:bg-white/5 border-b border-black/5 dark:border-white/5 ${res.isTitle ? 'font-bold text-m3-primary' : ''}`;
+                    btn.className = `w-full text-left p-3 hover:bg-m3-onSurfaceVariant/10 rounded-xl transition-colors ${res.isTitle ? 'font-bold text-m3-primary' : ''}`;
                     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const regexUI = new RegExp(`(${escapedQuery})`, 'gi');
-                    btn.innerHTML = res.text.replace(regexUI, `<mark class="bg-m3-primaryContainer text-m3-onPrimaryContainer rounded px-1">$1</mark>`);
+                    btn.innerHTML = res.text.replace(regexUI, `<mark class="bg-m3-primary/20 text-m3-primary rounded px-1 font-bold">$1</mark>`);
                     
                     btn.onclick = () => {
                         const target = document.getElementById(res.id);
@@ -1396,15 +1349,13 @@
                                 setTimeout(() => { target.innerHTML = renderNodeText(nodeText, currentAnnots); }, 1500); 
                             }, 2000);
                         }
-                        closeInbookSearch();
+                        // Nutup side panel setelah dipilih
+                        history.back();
                     };
                     DOM.searchRes.appendChild(btn);
                 });
             }
             DOM.searchRes.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                DOM.searchRes.classList.remove('scale-95', 'opacity-0');
-            });
         }
 
         function setupIntersectionObserver() {
@@ -1852,3 +1803,4 @@
     </script>
 </body>
 </html>
+
