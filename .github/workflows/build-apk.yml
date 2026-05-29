@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Tombol manual trigger di GitHub Actions
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,11 +19,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java 17 (Required for Android)
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+
+      - name: Generate Fixed Keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug"
 
       - name: Install Dependencies
         run: npm install
@@ -32,6 +37,21 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+
+      - name: Sync Version & Force Fullscreen
+        run: |
+          # Ambil angka versi murni dari package.json lu
+          APP_VERSION=$(node -p "require('./package.json').version")
+          # Ilangin titiknya buat kode rahasia Android (Misal: 1.0.1 jadi 101)
+          APP_CODE=$(echo $APP_VERSION | sed 's/\.//g')
+          
+          # Suntik versinya ke jantung Android
+          sed -i "s/versionCode 1/versionCode $APP_CODE/g" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"$APP_VERSION\"/g" android/app/build.gradle
+          
+          # Jebol poni layar (Notch) & ilangin tembok warna
+          sed -i '/<style name="AppTheme.NoActionBar"/a \        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>' android/app/src/main/res/values/styles.xml
+          sed -i '/<style name="AppTheme.NoActionBar"/a \        <item name="android:statusBarColor">@android:color/transparent</item>' android/app/src/main/res/values/styles.xml
 
       - name: Generate Android Icons
         run: npx @capacitor/assets generate --android
