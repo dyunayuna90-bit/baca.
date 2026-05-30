@@ -87,7 +87,7 @@
         .search-active .btn-settings { width: 0px !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; transform: scale(0.5); border: none; }
 
         .modal-overlay { transition: opacity 0.3s ease; }
-        .modal-content { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; transform-origin: bottom; }
+        .modal-content { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; transform-origin: bottom; }
         .side-panel { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; }
 
         .reader-text-container { column-gap: 2rem; column-rule: 1px solid var(--md-sys-color-surface-variant); }
@@ -221,7 +221,6 @@
                 <h3 id="str-set-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="sliders-horizontal"></i> Tampilan</h3>
                 
                 <div class="space-y-6 pb-20">
-                    
                     <div>
                         <label id="str-set-search" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Pencarian</label>
                         <div class="search-capsule bg-m3-surface p-1 rounded-full relative flex items-center h-14 border border-m3-onSurface/10 transition-all duration-300">
@@ -309,11 +308,10 @@
                 <h2 id="str-wel-title" class="text-3xl font-bold text-m3-onSurface mb-2 tracking-tight">Selamat Datang di Baca.</h2>
                 <p id="str-wel-desc" class="text-m3-onSurfaceVariant mb-8 font-medium">Harap baca instruksi berikut untuk pengalaman membaca yang optimal.</p>
                 <div class="flex flex-col gap-4">
-                    <!-- Instruksi Backup -->
                     <div class="bg-m3-surfaceVariant p-5 rounded-3xl pb-6 border-l-4 border-m3-primary">
                         <i data-lucide="database-backup" class="text-m3-primary mb-3 w-6 h-6"></i>
                         <h3 id="str-wel-backup" class="font-bold mb-1 text-sm">Pencadangan Data</h3>
-                        <p id="str-wel-backup-desc" class="text-xs opacity-80 leading-relaxed font-medium">Gunakan fitur Backup di menu Pengaturan. Karena keamanan sistem, Anda bisa membagikan data tersebut ke memori perangkat atau Drive secara langsung.</p>
+                        <p id="str-wel-backup-desc" class="text-xs opacity-80 leading-relaxed font-medium">Gunakan fitur Backup di menu Pengaturan. Cukup salin teks mentah (JSON) dan simpan dengan aman.</p>
                     </div>
                     <div class="bg-m3-surfaceVariant p-5 rounded-3xl pb-6">
                         <i data-lucide="file-warning" class="text-m3-primary mb-3 w-6 h-6"></i>
@@ -375,18 +373,18 @@
                 <button id="wiki-lang-en" onclick="setWikiLang('en')" class="capsule-btn py-3 font-bold text-xs text-m3-onSurfaceVariant">English</button>
             </div>
 
-            <!-- Fitur Data Backup / Restore via Share API -->
+            <!-- Fitur Data Backup / Restore via Clipboard -->
             <h4 id="str-set-data" class="text-xs font-bold opacity-70 mb-3 px-1 mt-6 uppercase tracking-wider">Data Aplikasi</h4>
             <div class="flex gap-2 mb-4">
                 <button onclick="exportData()" class="flex-1 flex flex-col items-center justify-center gap-2 p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-2xl font-bold btn-morph text-xs relative overflow-hidden group">
-                    <i data-lucide="share-2" class="w-5 h-5 transition-transform group-active:scale-90"></i> 
-                    <span id="str-btn-backup">Backup / Share</span>
+                    <i data-lucide="copy" class="w-5 h-5 transition-transform group-active:scale-90"></i> 
+                    <span id="str-btn-backup">Backup Data</span>
                 </button>
-                <button onclick="document.getElementById('import-upload').click()" class="flex-1 flex flex-col items-center justify-center gap-2 p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-2xl font-bold btn-morph text-xs relative overflow-hidden group">
-                    <i data-lucide="upload" class="w-5 h-5 transition-transform group-active:scale-90"></i> 
+                <button onclick="openRestoreOptions()" class="flex-1 flex flex-col items-center justify-center gap-2 p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-2xl font-bold btn-morph text-xs relative overflow-hidden group">
+                    <i data-lucide="download-cloud" class="w-5 h-5 transition-transform group-active:scale-90"></i> 
                     <span id="str-btn-restore">Pulihkan</span>
                 </button>
-                <input type="file" id="import-upload" accept=".json" class="hidden" onchange="importData(event)">
+                <input type="file" id="import-upload" accept=".json" class="hidden" onchange="importDataFile(event)">
             </div>
 
             <h4 id="str-set-info" class="text-xs font-bold opacity-70 mb-3 px-1 mt-6 uppercase tracking-wider">Info & Dukungan</h4>
@@ -399,6 +397,35 @@
             </a>
 
             <button id="str-btn-close" onclick="history.back()" class="btn-morph w-full mt-2 py-4 bg-transparent text-m3-onSurface font-bold text-base">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Modal Raw Backup (Copy to Clipboard) -->
+    <div id="raw-backup-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-backup-sheet">
+            <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-bak-title">Data Backup Mentah</h3>
+            <p class="text-xs text-m3-onSurfaceVariant mb-4" id="str-raw-bak-desc">Karena batasan sistem perangkat, silakan salin teks di bawah ini dan simpan ke dalam Note/Pesan WhatsApp/File teks dengan aman.</p>
+            <textarea id="raw-backup-textarea" class="w-full flex-1 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-3 rounded-xl font-mono text-[10px] outline-none resize-none mb-4 min-h-[150px]" readonly></textarea>
+            <div class="flex gap-2">
+                <button onclick="history.back()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph text-sm" id="str-raw-bak-btn-close">Tutup</button>
+                <button onclick="copyRawBackup()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph text-sm flex items-center justify-center gap-2"><i data-lucide="copy" class="w-4 h-4"></i> <span id="str-raw-bak-btn-copy">Salin Teks</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Raw Restore (Paste from Clipboard) -->
+    <div id="raw-restore-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-restore-sheet">
+            <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-res-title">Pulihkan Data</h3>
+            <p class="text-xs text-m3-onSurfaceVariant mb-4" id="str-raw-res-desc">Paste teks mentah (JSON) backup lu di kotak ini, ATAU pilih file JSON dari perangkat.</p>
+            <textarea id="raw-restore-textarea" class="w-full flex-1 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-3 rounded-xl font-mono text-[10px] outline-none resize-none mb-4 min-h-[150px]" placeholder="Paste di sini..."></textarea>
+            <div class="flex flex-col gap-2">
+                <div class="flex gap-2">
+                    <button onclick="document.getElementById('import-upload').click()" class="flex-1 py-3 bg-m3-secondaryContainer text-m3-onSecondaryContainer font-bold rounded-full btn-morph text-sm flex items-center justify-center gap-2"><i data-lucide="file-json" class="w-4 h-4"></i> <span id="str-raw-res-btn-file">Pilih File</span></button>
+                    <button onclick="processRawRestore()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph text-sm flex items-center justify-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> <span id="str-raw-res-btn-process">Proses Teks</span></button>
+                </div>
+                <button onclick="history.back()" class="w-full py-2 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph text-sm mt-2" id="str-raw-res-btn-close">Batal</button>
+            </div>
         </div>
     </div>
 
@@ -504,7 +531,7 @@
         </div>
     </div>
 
-    <!-- CUSTOM DIALOG MODAL (Pengganti native alert/confirm) -->
+    <!-- CUSTOM DIALOG MODAL -->
     <div id="custom-dialog" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform" id="custom-dialog-sheet">
             <div class="flex items-center gap-3 mb-4">
@@ -642,7 +669,9 @@
         let editingAnnotId = null;
         
         window.addEventListener('popstate', (e) => {
-            if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) { window.closeDialog(true); }
+            if (!document.getElementById('raw-backup-modal').classList.contains('opacity-0')) { _closeModalAction('raw-backup-modal', 'raw-backup-sheet', true, true); }
+            else if (!document.getElementById('raw-restore-modal').classList.contains('opacity-0')) { _closeModalAction('raw-restore-modal', 'raw-restore-sheet', true, true); }
+            else if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) { window.closeDialog(true); }
             else if (!document.getElementById('ai-modal').classList.contains('opacity-0')) { closeAiModal(true); }
             else if (!document.getElementById('note-modal').classList.contains('opacity-0')) { _closeModalAction('note-modal', 'note-sheet', true, true); }
             else if (!document.getElementById('b-opt-modal').classList.contains('opacity-0')) { _closeModalAction('b-opt-modal', 'b-opt-sheet', false, true); }
@@ -671,12 +700,12 @@
                 extractingCover: "Mengekstrak Sampul...", readingPage: "Membaca Halaman", formattingText: "Memformat Teks...",
                 extractingEpub: "Mengekstrak EPUB...", analyzingStruct: "Menganalisa Struktur...", extractingChapter: "Mengekstrak Bab",
                 welcomeTitle: "Selamat Datang di Baca.", welcomeDesc: "Harap baca instruksi berikut untuk pengalaman membaca yang optimal.",
-                welBackup: "Pencadangan Data", welBackupDesc: "Gunakan fitur Backup di menu Pengaturan. Karena keamanan sistem, Anda bisa membagikan data tersebut ke memori perangkat atau Drive secara langsung.",
+                welBackup: "Pencadangan Data", welBackupDesc: "Gunakan fitur Backup di menu Pengaturan. Cukup salin teks mentah (JSON) dan simpan dengan aman.",
                 welFormat: "Batasan Format", welFormatDesc: "<b>PDF:</b> Hanya teks. Gambar diabaikan.<br><b>EPUB:</b> Didukung penuh.",
                 welPrivacy: "Privasi Total", welPrivacyDesc: "Diproses secara lokal di perangkat Anda.", welBtn: "Mengerti",
                 setMainTitle: "Pengaturan", setPalette: "Palet Tema", setLang: "Bahasa", setInfo: "Info & Dukungan",
                 btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnClose: "Tutup",
-                setData: "Data Aplikasi", btnBackup: "Backup / Share", btnRestore: "Pulihkan",
+                setData: "Data Aplikasi", btnBackup: "Backup Data", btnRestore: "Pulihkan",
                 navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navText: "Teks", navFull: "Penuh",
                 readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
                 setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
@@ -684,7 +713,9 @@
                 noteTitle: "Catatan", noteCancel: "Batal", noteSave: "Simpan", notePlaceholder: "Tuliskan catatan...",
                 aiTitle: "Penjelasan", aiLoading: "Mencari referensi...", noInternet: "Koneksi internet bermasalah.",
                 deleteNoteConfirm: "Hapus catatan/sorotan ini?",
-                editTitle: "Edit Detail", editBookTitle: "Judul Buku", editBookCover: "Gambar Sampul", editBookShape: "Bentuk Kartu", editCancel: "Batal", editSave: "Simpan", optCancel: "Batal", themeLight: "Mode Terang", themeDark: "Mode Gelap", amoledLabel: "AMOLED (Hitam Pekat)"
+                editTitle: "Edit Detail", editBookTitle: "Judul Buku", editBookCover: "Gambar Sampul", editBookShape: "Bentuk Kartu", editCancel: "Batal", editSave: "Simpan", optCancel: "Batal", themeLight: "Mode Terang", themeDark: "Mode Gelap", amoledLabel: "AMOLED (Hitam Pekat)",
+                rawBakTitle: "Data Backup Mentah", rawBakDesc: "Karena batasan sistem perangkat, silakan salin teks di bawah ini dan simpan ke dalam Note/Pesan WhatsApp/File teks dengan aman.", rawBakCopy: "Salin Teks", rawBakClose: "Tutup",
+                rawResTitle: "Pulihkan Data", rawResDesc: "Paste teks mentah (JSON) backup lu di kotak ini, ATAU pilih file JSON dari perangkat.", rawResFile: "Pilih File", rawResProcess: "Proses Teks", rawResClose: "Batal"
             },
             en: {
                 libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
@@ -694,12 +725,12 @@
                 extractingCover: "Extracting Cover...", readingPage: "Reading Page", formattingText: "Formatting Text...",
                 extractingEpub: "Extracting EPUB...", analyzingStruct: "Analyzing Structure...", extractingChapter: "Extracting Chapter",
                 welcomeTitle: "Welcome to Baca.", welcomeDesc: "Please read these instructions for the optimal reading experience.",
-                welBackup: "Data Backup", welBackupDesc: "Use the Backup feature in Settings. Due to system security, you can share or save the data directly to your device storage or Drive.",
+                welBackup: "Data Backup", welBackupDesc: "Use the Backup feature in Settings. Simply copy the raw text (JSON) and save it securely.",
                 welFormat: "Format Limitations", welFormatDesc: "<b>PDF:</b> Text only. Images ignored.<br><b>EPUB:</b> Fully supported.",
                 welPrivacy: "Total Privacy", welPrivacyDesc: "Processed locally on your device.", welBtn: "Got it",
                 setMainTitle: "Settings", setPalette: "Theme Palette", setLang: "Language", setInfo: "Info & Support",
                 btnInfo: "View Instructions", btnDonate: "Buy Me a Coffee", btnClose: "Close",
-                setData: "App Data", btnBackup: "Backup / Share", btnRestore: "Restore",
+                setData: "App Data", btnBackup: "Backup Data", btnRestore: "Restore Data",
                 navBack: "Back", navToc: "Contents", navSearch: "Search", navText: "Text", navFull: "Full",
                 readerLoading: "Loading Book...", tocTitle: "Table of Contents", setTitle: "Appearance",
                 setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
@@ -707,7 +738,9 @@
                 noteTitle: "Note", noteCancel: "Cancel", noteSave: "Save", notePlaceholder: "Write a note...",
                 aiTitle: "Definition", aiLoading: "Looking for references...", noInternet: "Internet connection issue.",
                 deleteNoteConfirm: "Delete this note/highlight?",
-                editTitle: "Edit Details", editBookTitle: "Book Title", editBookCover: "Cover Image", editBookShape: "Card Shape", editCancel: "Cancel", editSave: "Save", optCancel: "Cancel", themeLight: "Light Mode", themeDark: "Dark Mode", amoledLabel: "AMOLED (Pitch Black)"
+                editTitle: "Edit Details", editBookTitle: "Book Title", editBookCover: "Cover Image", editBookShape: "Card Shape", editCancel: "Cancel", editSave: "Save", optCancel: "Cancel", themeLight: "Light Mode", themeDark: "Dark Mode", amoledLabel: "AMOLED (Pitch Black)",
+                rawBakTitle: "Raw Backup Data", rawBakDesc: "Due to device restrictions, please copy the text below and save it safely in your Notes or a text file.", rawBakCopy: "Copy Text", rawBakClose: "Close",
+                rawResTitle: "Restore Data", rawResDesc: "Paste your raw backup JSON text here, OR choose a JSON file from your device.", rawResFile: "Select File", rawResProcess: "Process Text", rawResClose: "Cancel"
             }
         };
 
@@ -752,6 +785,12 @@
             setElementText('str-edit-cancel', d.editCancel); setElementText('str-edit-save', d.editSave);
             setElementText('str-amoled-label', d.amoledLabel);
             
+            setElementText('str-raw-bak-title', d.rawBakTitle); setElementText('str-raw-bak-desc', d.rawBakDesc);
+            setElementText('str-raw-bak-btn-close', d.rawBakClose); setElementText('str-raw-bak-btn-copy', d.rawBakCopy);
+            setElementText('str-raw-res-title', d.rawResTitle); setElementText('str-raw-res-desc', d.rawResDesc);
+            setElementText('str-raw-res-btn-file', d.rawResFile); setElementText('str-raw-res-btn-process', d.rawResProcess);
+            setElementText('str-raw-res-btn-close', d.rawResClose);
+
             if(document.getElementById('global-search')) document.getElementById('global-search').placeholder = d.searchBooks;
             if(document.getElementById('inbook-search-input')) document.getElementById('inbook-search-input').placeholder = d.searchPlaceholder;
             if(document.getElementById('note-input-text')) document.getElementById('note-input-text').placeholder = d.notePlaceholder;
@@ -812,113 +851,111 @@
             setTimeout(() => m.classList.add('hidden'), 300);
         };
 
-        // FITUR BACKUP VIA WEB SHARE API (Supaya tembus WebView Android/Capacitor)
+        // FITUR BACKUP RAW TEXT (Anti-WebView Blokir)
         window.exportData = async function() {
             try {
                 const data = await localforage.getItem('pdf_epub_master');
                 if (!data || data.length === 0) {
-                    showDialog(
-                        wikiLang === 'id' ? "Gagal Backup" : "Backup Failed", 
-                        wikiLang === 'id' ? "Ga ada buku yang bisa di-backup, bro. Tambahin buku dulu." : "No books to backup.",
-                        "info",
-                        [{ text: "Oke", primary: true }]
-                    );
+                    showDialog("Info", wikiLang === 'id' ? "Ga ada buku untuk di-backup." : "No books to backup.", "info", [{ text: "Oke", primary: true }]);
                     return;
                 }
                 const dataStr = JSON.stringify(data);
-                const blob = new Blob([dataStr], { type: "application/json" });
-                const date = new Date().toISOString().split('T')[0];
-                const filename = `Baca_Backup_${date}.json`;
                 
-                const file = new File([blob], filename, { type: "application/json" });
-
-                // Gunakan Share API kalo didukung (Paling ampuh buat Capacitor/WebView)
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Backup Baca App',
-                        text: 'Ini file backup data buku lu dari aplikasi Baca.'
-                    });
-                    
-                    showDialog(
-                        wikiLang === 'id' ? "Share Backup Sukses" : "Share Backup Success", 
-                        wikiLang === 'id' ? `File (${filename}) udah berhasil di-share/disimpan. Aman bro.` : `File (${filename}) shared/saved successfully.`,
-                        "check-circle",
-                        [{ text: "Sip", primary: true }]
-                    );
-                } else {
-                    // Fallback pake download biasa kalo Share API ga jalan di browser spesifik
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    
-                    showDialog(
-                        wikiLang === 'id' ? "Info Ekstraksi" : "Extraction Info", 
-                        wikiLang === 'id' ? `Karena perangkat lu ga dukung Share API, gw pake cara download biasa. Kalo ga nemu filenya, berarti OS lu ngeblokir WebView.` : `Fallback to normal download used. File might be blocked if running in WebView.`,
-                        "info",
-                        [{ text: "Mengerti", primary: true }]
-                    );
-                }
+                // Selalu tampilkan modal raw copy biar fail-safe di mana aja
+                document.getElementById('raw-backup-textarea').value = dataStr;
+                openModal('raw-backup-modal', 'raw-backup-sheet', true);
+                
             } catch (err) {
                 console.error("Backup failed:", err);
-                if (err.name !== 'AbortError') { // Error Abort terjadi kalau user batalin Share Sheet
-                    showDialog("Error", "Backup gagal: " + err.message, "alert-triangle", [{ text: "Tutup", primary: true }]);
-                }
+                showDialog("Error", "Backup gagal: " + err.message, "alert-triangle", [{ text: "Tutup", primary: true }]);
             }
         };
 
-        window.importData = function(event) {
+        window.copyRawBackup = function() {
+            const textarea = document.getElementById('raw-backup-textarea');
+            textarea.select();
+            textarea.setSelectionRange(0, 9999999); 
+            
+            try {
+                document.execCommand('copy');
+                const btnSpan = document.getElementById('str-raw-bak-btn-copy');
+                const originalText = btnSpan.innerText;
+                btnSpan.innerText = wikiLang === 'id' ? "Berhasil Disalin!" : "Copied!";
+                setTimeout(() => { btnSpan.innerText = originalText; }, 2000);
+            } catch (err) {
+                showDialog("Error", "Gagal menyalin otomatis. Silakan blok semua teks secara manual dan salin.", "alert-circle", [{ text: "Tutup", primary: true }]);
+            }
+        };
+
+        // FITUR RESTORE
+        window.openRestoreOptions = function() {
+            document.getElementById('raw-restore-textarea').value = '';
+            openModal('raw-restore-modal', 'raw-restore-sheet', true);
+        };
+
+        window.processRawRestore = function() {
+            const val = document.getElementById('raw-restore-textarea').value.trim();
+            if(!val) {
+                showDialog("Info", wikiLang === 'id' ? "Kotak teks masih kosong." : "Text box is empty.", "info", [{ text: "Oke", primary: true }]);
+                return;
+            }
+            executeRestoreLogic(val);
+        };
+
+        window.importDataFile = function(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const contents = e.target.result;
-                    const parsedData = JSON.parse(contents);
-                    if (!Array.isArray(parsedData)) throw new Error("Format file tidak valid.");
-                    
-                    const isValid = parsedData.every(b => b.id && b.title && b.nodes);
-                    if (!isValid) throw new Error("File backup rusak atau tidak kompatibel.");
-                    
-                    showDialog(
-                        wikiLang === 'id' ? "Konfirmasi Restore" : "Confirm Restore",
-                        wikiLang === 'id' ? "PERINGATAN: Semua data buku saat ini akan ketimpa total sama file backup ini. Yakin mau lanjut?" : "WARNING: Current books will be completely replaced by the backup. Continue?",
-                        "alert-triangle",
-                        [
-                            { text: "Batal", primary: false },
-                            { text: "Lanjut", primary: true, action: async () => {
-                                window.closeDialog();
-                                await localforage.setItem('pdf_epub_master', parsedData);
-                                library = parsedData;
-                                renderLibrary(DOM.globalSearch.value);
-                                _closeModalAction('global-settings-modal', 'global-settings-sheet', false, false);
-                                
-                                setTimeout(() => {
-                                    showDialog(
-                                        wikiLang === 'id' ? "Restore Berhasil!" : "Restore Success!",
-                                        wikiLang === 'id' ? "Data aplikasi lu udah berhasil dipulihin." : "Your data has been successfully restored.",
-                                        "check-circle",
-                                        [{ text: "Oke", primary: true }]
-                                    );
-                                }, 400);
-                            }}
-                        ]
-                    );
-
-                } catch (err) {
-                    console.error("Restore failed:", err);
-                    showDialog("Error", (wikiLang === 'id' ? "Gagal memulihkan: " : "Failed to restore: ") + err.message, "alert-circle", [{ text: "Tutup", primary: true }]);
-                } finally {
-                    event.target.value = ''; 
-                }
+            reader.onload = function(e) {
+                executeRestoreLogic(e.target.result);
+                event.target.value = ''; // Reset input
             };
             reader.readAsText(file);
         };
+
+        function executeRestoreLogic(jsonString) {
+            try {
+                const parsedData = JSON.parse(jsonString);
+                if (!Array.isArray(parsedData)) throw new Error("Format file/teks tidak valid.");
+                
+                const isValid = parsedData.every(b => b.id && b.title && b.nodes);
+                if (!isValid) throw new Error("Data backup rusak atau tidak kompatibel.");
+                
+                showDialog(
+                    wikiLang === 'id' ? "Konfirmasi Restore" : "Confirm Restore",
+                    wikiLang === 'id' ? "PERINGATAN: Semua data buku saat ini akan ketimpa total. Yakin mau lanjut?" : "WARNING: Current books will be completely replaced. Continue?",
+                    "alert-triangle",
+                    [
+                        { text: "Batal", primary: false },
+                        { text: "Lanjut", primary: true, action: async () => {
+                            window.closeDialog();
+                            await localforage.setItem('pdf_epub_master', parsedData);
+                            library = parsedData;
+                            renderLibrary(DOM.globalSearch.value);
+                            
+                            // Tutup semua modal terkait
+                            if (!document.getElementById('raw-restore-modal').classList.contains('hidden')) history.back();
+                            setTimeout(() => {
+                                if (!document.getElementById('global-settings-modal').classList.contains('hidden')) history.back();
+                            }, 300);
+                            
+                            setTimeout(() => {
+                                showDialog(
+                                    wikiLang === 'id' ? "Restore Berhasil!" : "Restore Success!",
+                                    wikiLang === 'id' ? "Data aplikasi lu udah berhasil dipulihin." : "Your data has been successfully restored.",
+                                    "check-circle",
+                                    [{ text: "Oke", primary: true }]
+                                );
+                            }, 700);
+                        }}
+                    ]
+                );
+
+            } catch (err) {
+                console.error("Restore failed:", err);
+                showDialog("Error", (wikiLang === 'id' ? "Gagal memulihkan: " : "Failed to restore: ") + err.message, "alert-circle", [{ text: "Tutup", primary: true }]);
+            }
+        }
 
         window.triggerSelectMode = function() {
             if(!activeOptsId) return;
@@ -1200,10 +1237,13 @@
             const deltaY = touchEndY - touchStartY;
 
             if (deltaY > 80) { 
-                // Clear the inline style first so the CSS class 'translate-y-full' triggers the slide-down animation properly.
+                // Fix animasi swipe down
                 settingsSheet.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                settingsSheet.style.transform = '';
-                history.back(); // Trigger the actual app history routing and CSS close classes
+                settingsSheet.style.transform = 'translateY(100%)'; 
+                setTimeout(() => {
+                    history.back(); // Panggil history.back untuk trigger _closeModalAction agar background overlay hilang
+                    setTimeout(() => { settingsSheet.style.transform = ''; }, 100);
+                }, 100);
             } else {
                 settingsSheet.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
                 settingsSheet.style.transform = ''; 
@@ -1212,12 +1252,12 @@
         
         applyThemeToDOM();
 
-        if (!localStorage.getItem('first_time_seen_v4')) {
+        if (!localStorage.getItem('first_time_seen_v5')) {
             setTimeout(() => { openModal('welcome-modal', 'welcome-sheet', true); }, 500);
         }
         window.closeWelcome = function(isFromHistory = false) {
             _closeModalAction('welcome-modal', 'welcome-sheet', true, isFromHistory || (window.location.hash !== '#modal-welcome'));
-            localStorage.setItem('first_time_seen_v4', 'true');
+            localStorage.setItem('first_time_seen_v5', 'true');
         };
 
         let typoPrefs = JSON.parse(localStorage.getItem('typo_prefs')) || { size: '1.2rem', align: 'left', font: 'Lora' };
@@ -1398,6 +1438,7 @@
         window.triggerDeleteView = async function() {
             if(!activeOptsId) return;
             const d = i18n[wikiLang] || i18n['id'];
+            
             showDialog(
                 "Hapus Permanen",
                 d.deleteConfirm,
@@ -2035,7 +2076,7 @@
 
         if ('serviceWorker' in navigator) {
             const swCode = `
-            const CACHE_NAME = 'baca-pwa-v4';
+            const CACHE_NAME = 'baca-pwa-v5';
             self.addEventListener('install', (e) => {
                 self.skipWaiting();
                 e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll([
