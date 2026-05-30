@@ -23,7 +23,8 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
  * **Bilingual Support:** Interface is fully available in English and Indonesian.
    
 ## 📦 Download & Installation
-is in the release menu
+[![Download Latest Release](https://img.shields.io/github/v/release/dyunayuna90-bit/baca.?style=for-the-badge&logo=android&color=3DDC84&label=DOWNLOAD%20APK)](https://github.com/dyunayuna90-bit/baca./releases/latest)
+
 
 ## 🛠️ Tech Stack
  * **HTML5, CSS3, Vanilla JavaScript** (Zero framework bloat for the core logic).
