@@ -20,11 +20,8 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
  * **PWA Ready:** Install **Baca.** directly to your phone's home screen via any modern browser (Chrome/Safari) and experience it as a native app.
 ## 📦 Download & Installation
 The first stable release is ready. You can grab the source code or check out the v1.0.0 release using the link below:
-👉 **Download Release v1.0.0**
-**For Web/PWA Users:https://github.com/dyunayuna90-bit/baca./releases/tag/v1.0.0**
- 1. Open the app via a modern mobile browser (Chrome/Safari/Edge).
- 2. Tap the browser's menu (three dots) and select **"Install App"** or **"Add to Home Screen"**.
- 3. Launch it from your home screen and enjoy offline reading!
+👉 **Download Release v1.0.0** Users:https://github.com/dyunayuna90-bit/baca./releases/tag/v1.0.0**
+
 ## 🛠️ Tech Stack
  * **HTML5, CSS3, Vanilla JavaScript** (Zero framework bloat for the core logic).
  * **Tailwind CSS** (Utility-first styling via CDN).
