@@ -25,12 +25,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Download Permanent Keystore
-        run: |
-          mkdir -p ~/.android
-          # Trik KTP Abadi: Sedot file keystore statis yang selalu sama di setiap build
-          wget https://raw.githubusercontent.com/expo/expo/main/templates/expo-template-bare-minimum/android/app/debug.keystore -O ~/.android/debug.keystore
-
       - name: Install Dependencies
         run: npm install
 
@@ -44,7 +38,6 @@ jobs:
           APP_VERSION=$(node -p "require('./package.json').version")
           APP_CODE=$(echo $APP_VERSION | sed 's/\.//g')
           
-          # PERBAIKAN DI SINI: Pake Regex (-E) biar angka/teks apapun sebelumnya pasti ketimpa
           sed -i -E "s/versionCode [0-9]+/versionCode $APP_CODE/g" android/app/build.gradle
           sed -i -E "s/versionName \"[^\"]+\"/versionName \"$APP_VERSION\"/g" android/app/build.gradle
           
@@ -66,6 +59,11 @@ jobs:
           }
           EOF
 
+      - name: Download Permanent Keystore
+        run: |
+          # Download KTP abadi langsung ke root folder project
+          wget https://raw.githubusercontent.com/expo/expo/main/templates/expo-template-bare-minimum/android/app/debug.keystore -O debug.keystore
+
       - name: Generate Android Icons
         run: npx @capacitor/assets generate --android
 
@@ -73,7 +71,8 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          # PAKSA Gradle pakai KTP abadi secara mutlak di command line
+          ./gradlew assembleDebug -Pandroid.injected.signing.store.file=../debug.keystore -Pandroid.injected.signing.store.password=android -Pandroid.injected.signing.key.alias=androiddebugkey -Pandroid.injected.signing.key.password=android
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
