@@ -34,4 +34,7 @@ is in the release menu
  * **Lucide Icons** (Clean and modern iconography).
 ## ☕ Support
 This application is developed for the reading community that craves comfort and absolute privacy. If you find this app useful and want to support its ongoing development, consider buying the developer a coffee!
-Buy Me a Coffee on Saweria ☕
+
+<a href="https://saweria.co/Densl" target="_blank">
+  <img src="https://img.shields.io/badge/Saweria-Buy_Me_A_Coffee-FFCE00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Support via Saweria">
+</a>
