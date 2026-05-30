@@ -141,7 +141,6 @@
         </header>
 
         <div id="library-content-scroll" class="flex-1 overflow-y-auto w-full px-5 pb-32">
-            
             <div id="loading-state" class="hidden mb-8 p-5 bg-m3-secondaryContainer text-m3-onSecondaryContainer rounded-[28px]">
                 <div class="flex justify-between items-end mb-3">
                     <p id="loading-text" class="font-bold text-sm leading-tight">Reading Document...</p>
@@ -151,19 +150,14 @@
                     <div id="loading-bar" class="absolute h-full w-0 bg-m3-primary progress-smooth rounded-full"></div>
                 </div>
             </div>
-
             <div id="continue-reading-section" class="hidden mb-8 -mx-5 mt-2">
                 <h2 id="str-continue-reading" class="text-base font-bold mb-4 text-m3-onBg px-5 tracking-tight">Lanjutkan Membaca</h2>
-                <div id="top-books-slider" class="flex gap-3 overflow-x-auto snap-x snap-proximity px-5 pb-2 hide-scroll" style="scroll-padding-left: 1.25rem;">
-                </div>
+                <div id="top-books-slider" class="flex gap-3 overflow-x-auto snap-x snap-proximity px-5 pb-2 hide-scroll" style="scroll-padding-left: 1.25rem;"></div>
             </div>
-
             <div id="collection-heading" class="hidden mb-4 mt-2">
                 <h2 class="text-base font-bold text-m3-onBg tracking-tight" id="str-book-collection">Koleksi Buku</h2>
             </div>
-
             <div id="book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
-
             <div id="empty-state" class="flex flex-col items-center justify-center mt-20 opacity-40">
                 <i data-lucide="library" class="w-16 h-16 mb-4"></i>
                 <p class="text-lg font-bold text-center tracking-tight" id="str-lib-empty">Library is Empty.</p>
@@ -373,7 +367,19 @@
                 <button id="wiki-lang-en" onclick="setWikiLang('en')" class="capsule-btn py-3 font-bold text-xs text-m3-onSurfaceVariant">English</button>
             </div>
 
-            <!-- Fitur Data Backup / Restore via Clipboard -->
+            <!-- Gemini API Section -->
+            <h4 id="str-set-gemini" class="text-xs font-bold opacity-70 mb-3 px-1 mt-6 uppercase tracking-wider">Gemini AI (Pintar)</h4>
+            <div class="bg-m3-surfaceVariant p-4 rounded-[28px] mb-4">
+                <label class="text-[10px] font-bold opacity-60 uppercase mb-2 block tracking-widest" id="str-gemini-key-label">API Key</label>
+                <div class="flex gap-2 mb-2">
+                    <input type="password" id="gemini-api-key" placeholder="AIzaSy..." class="flex-1 bg-m3-surface text-m3-onSurface px-4 py-3 rounded-2xl text-xs font-mono outline-none border border-transparent focus:border-m3-primary transition-all">
+                    <button onclick="saveGeminiKey()" class="px-5 py-3 bg-m3-primary text-m3-onPrimary rounded-2xl font-bold text-xs btn-morph shadow-sm" id="str-gemini-save">Save</button>
+                </div>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] font-bold text-m3-primary flex items-center gap-1 mt-1 pl-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i> <span id="str-gemini-get-key">Dapatkan API Key Gratis</span>
+                </a>
+            </div>
+
             <h4 id="str-set-data" class="text-xs font-bold opacity-70 mb-3 px-1 mt-6 uppercase tracking-wider">Data Aplikasi</h4>
             <div class="flex gap-2 mb-4">
                 <button onclick="exportData()" class="flex-1 flex flex-col items-center justify-center gap-2 p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-2xl font-bold btn-morph text-xs relative overflow-hidden group">
@@ -391,20 +397,18 @@
             <button onclick="openModal('welcome-modal', 'welcome-sheet', true)" class="flex items-center justify-center gap-2 w-full p-4 bg-m3-secondaryContainer text-m3-onSecondaryContainer rounded-2xl font-bold btn-morph mb-3">
                 <i data-lucide="info"></i> <span id="str-btn-info">Lihat Instruksi</span>
             </button>
-            
             <a href="https://saweria.co/Densl" target="_blank" class="flex items-center justify-center gap-2 w-full p-4 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-2xl font-bold btn-morph mb-4">
                 <i data-lucide="coffee"></i> <span id="str-btn-donate">Traktir Kopi (Donasi)</span>
             </a>
-
             <button id="str-btn-close" onclick="history.back()" class="btn-morph w-full mt-2 py-4 bg-transparent text-m3-onSurface font-bold text-base">Tutup</button>
         </div>
     </div>
 
-    <!-- Modal Raw Backup (Copy to Clipboard) -->
+    <!-- Modal Raw Backup -->
     <div id="raw-backup-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-backup-sheet">
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-bak-title">Data Backup Mentah</h3>
-            <p class="text-xs text-m3-onSurfaceVariant mb-4" id="str-raw-bak-desc">Karena batasan sistem perangkat, silakan salin teks di bawah ini dan simpan ke dalam Note/Pesan WhatsApp/File teks dengan aman.</p>
+            <p class="text-xs text-m3-onSurfaceVariant mb-4" id="str-raw-bak-desc">Silakan salin teks di bawah ini.</p>
             <textarea id="raw-backup-textarea" class="w-full flex-1 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-3 rounded-xl font-mono text-[10px] outline-none resize-none mb-4 min-h-[150px]" readonly></textarea>
             <div class="flex gap-2">
                 <button onclick="history.back()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph text-sm" id="str-raw-bak-btn-close">Tutup</button>
@@ -413,11 +417,11 @@
         </div>
     </div>
 
-    <!-- Modal Raw Restore (Paste from Clipboard) -->
+    <!-- Modal Raw Restore -->
     <div id="raw-restore-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-restore-sheet">
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-res-title">Pulihkan Data</h3>
-            <p class="text-xs text-m3-onSurfaceVariant mb-4" id="str-raw-res-desc">Paste teks mentah (JSON) backup lu di kotak ini, ATAU pilih file JSON dari perangkat.</p>
+            <p class="text-xs text-m3-onSurfaceVariant mb-4" id="str-raw-res-desc">Paste teks mentah (JSON) backup lu di kotak ini.</p>
             <textarea id="raw-restore-textarea" class="w-full flex-1 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-3 rounded-xl font-mono text-[10px] outline-none resize-none mb-4 min-h-[150px]" placeholder="Paste di sini..."></textarea>
             <div class="flex flex-col gap-2">
                 <div class="flex gap-2">
@@ -448,13 +452,10 @@
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-8 transform scale-75 translate-y-12 border-none" id="edit-sheet">
             <h3 id="str-edit-title" class="text-xl font-bold mb-6 text-m3-onSurface">Edit Detail</h3>
             <input type="hidden" id="edit-book-id">
-            
             <label id="str-edit-book-title" class="text-xs font-bold opacity-70 block mb-2 uppercase tracking-wider">Judul Buku</label>
             <input type="text" id="edit-book-title" class="w-full bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-bold outline-none border border-transparent focus:border-m3-primary">
-            
             <label id="str-edit-book-cover" class="text-xs font-bold opacity-70 block mb-2 uppercase tracking-wider">Gambar Sampul</label>
-            <input type="file" id="edit-book-cover" accept="image/*" class="w-full text-xs mb-5 font-bold file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-m3-primaryContainer file:text-m3-onPrimaryContainer hover:file:bg-m3-primaryContainer/80">
-            
+            <input type="file" id="edit-book-cover" accept="image/*" class="w-full text-xs mb-5">
             <label id="str-edit-book-shape" class="text-xs font-bold opacity-70 block mb-2 uppercase tracking-wider">Bentuk Kartu</label>
             <div class="grid grid-cols-2 gap-2 mb-8">
                 <button onclick="selectShape('default')" id="shape-default" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Dinamis</button>
@@ -462,7 +463,6 @@
                 <button onclick="selectShape('square')" id="shape-square" class="btn-morph p-3 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-xl font-bold text-xs border border-transparent">Kotak</button>
             </div>
             <input type="hidden" id="edit-book-shape" value="square">
-
             <div class="flex gap-2">
                 <button id="str-edit-cancel" onclick="closeEditModal()" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Batal</button>
                 <button id="str-edit-save" onclick="saveBookEdit()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph">Simpan</button>
@@ -475,33 +475,22 @@
         <button onpointerdown="event.preventDefault(); applyAnnotation('yellow')" class="w-8 h-8 rounded-full bg-[#FDE047] flex items-center justify-center btn-morph"><div class="w-4 h-4 bg-[#EAB308] rounded-full"></div></button>
         <button onpointerdown="event.preventDefault(); applyAnnotation('green')" class="w-8 h-8 rounded-full bg-[#86EFAC] flex items-center justify-center btn-morph"><div class="w-4 h-4 bg-[#22C55E] rounded-full"></div></button>
         <button onpointerdown="event.preventDefault(); applyAnnotation('pink')" class="w-8 h-8 rounded-full bg-[#F9A8D4] flex items-center justify-center btn-morph"><div class="w-4 h-4 bg-[#EC4899] rounded-full"></div></button>
-        
         <div class="w-[1px] h-6 bg-m3-onSurfaceVariant/30 mx-1"></div>
-        
-        <button onpointerdown="event.preventDefault(); openNoteInput()" class="p-2 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors text-m3-onSurfaceVariant btn-morph">
-            <i data-lucide="message-square-plus" class="w-5 h-5"></i>
-        </button>
-        
+        <button onpointerdown="event.preventDefault(); openNoteInput()" class="p-2 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors text-m3-onSurfaceVariant btn-morph"><i data-lucide="message-square-plus" class="w-5 h-5"></i></button>
         <div class="w-[1px] h-6 bg-m3-onSurfaceVariant/30 mx-1"></div>
-        
-        <button onpointerdown="event.preventDefault(); lookupDictionary()" class="px-3 py-1.5 rounded-full hover:bg-m3-surface text-xs font-bold flex items-center gap-1 transition-colors text-m3-primary btn-morph">
-            <i data-lucide="search" class="w-4 h-4"></i> AI
-        </button>
+        <button onpointerdown="event.preventDefault(); lookupDictionary()" class="px-3 py-1.5 rounded-full hover:bg-m3-surface text-xs font-bold flex items-center gap-1 transition-colors text-m3-primary btn-morph"><i data-lucide="search" class="w-4 h-4"></i> AI</button>
     </div>
 
-    <!-- Note Create/Edit Modal -->
+    <!-- Note Modal -->
     <div id="note-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-6 transform scale-75 translate-y-12 border-none" id="note-sheet">
             <h3 id="str-note-title" class="text-lg font-bold mb-4 text-m3-onSurface flex items-center gap-2"><i data-lucide="notebook-pen" class="w-5 h-5"></i> Catatan</h3>
-            
             <div class="flex gap-4 justify-center mb-4">
                  <button onclick="setNoteColor('yellow')" id="nc-yellow" class="w-8 h-8 rounded-full bg-[#FDE047] ring-2 ring-offset-2 ring-transparent transition-all btn-morph"></button>
                  <button onclick="setNoteColor('green')" id="nc-green" class="w-8 h-8 rounded-full bg-[#86EFAC] ring-2 ring-offset-2 ring-transparent transition-all btn-morph"></button>
                  <button onclick="setNoteColor('pink')" id="nc-pink" class="w-8 h-8 rounded-full bg-[#F9A8D4] ring-2 ring-offset-2 ring-transparent transition-all btn-morph"></button>
             </div>
-
             <textarea id="note-input-text" class="w-full h-32 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-bold outline-none border border-transparent focus:border-m3-primary resize-none" placeholder="Tuliskan catatan..."></textarea>
-            
             <div class="flex gap-2">
                 <button id="btn-delete-note" onclick="deleteNoteInsideModal()" class="py-3 px-5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold rounded-full btn-morph flex items-center justify-center hidden"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                 <button id="str-note-cancel" onclick="_closeModalAction('note-modal', 'note-sheet', true)" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Batal</button>
@@ -518,9 +507,7 @@
                 <h3 id="str-ai-title" class="text-lg font-bold text-m3-onSurface flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-m3-primary"></i> Penjelasan</h3>
                 <button onclick="closeAiModal()" class="w-8 h-8 rounded-full bg-m3-surfaceVariant flex items-center justify-center btn-morph"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
-            
             <h4 id="ai-term" class="text-xl font-black mb-4 break-words text-m3-primary"></h4>
-            
             <div class="flex-1 overflow-y-auto min-h-[150px] relative rounded-2xl bg-m3-surfaceVariant p-4 mb-4">
                 <div id="ai-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-m3-surfaceVariant z-10 rounded-2xl">
                     <div class="w-8 h-8 border-4 border-m3-primary border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -531,19 +518,15 @@
         </div>
     </div>
 
-    <!-- CUSTOM DIALOG MODAL -->
+    <!-- Custom Dialog Modal -->
     <div id="custom-dialog" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform" id="custom-dialog-sheet">
             <div class="flex items-center gap-3 mb-4">
-                <div id="dialog-icon-container" class="w-10 h-10 rounded-full bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center shrink-0">
-                    <i id="dialog-icon" data-lucide="info" class="w-5 h-5"></i>
-                </div>
+                <div id="dialog-icon-container" class="w-10 h-10 rounded-full bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center shrink-0"><i id="dialog-icon" data-lucide="info" class="w-5 h-5"></i></div>
                 <h3 id="dialog-title" class="text-lg font-bold text-m3-onSurface">Info</h3>
             </div>
             <p id="dialog-message" class="text-m3-onSurfaceVariant text-sm mb-6 font-medium leading-relaxed"></p>
-            <div class="flex gap-2 justify-end" id="dialog-actions">
-                <!-- Tombol dinamis dirender via JS -->
-            </div>
+            <div class="flex gap-2 justify-end" id="dialog-actions"></div>
         </div>
     </div>
 
@@ -570,11 +553,7 @@
             topSection: document.getElementById('continue-reading-section'), topSlider: document.getElementById('top-books-slider'),
             load: document.getElementById('loading-state'), loadTxt: document.getElementById('loading-text'), loadBar: document.getElementById('loading-bar'), loadPct: document.getElementById('loading-percent'),
             file: document.getElementById('doc-upload'), 
-            
-            backBtn: document.getElementById('btn-back'),
-            tocBtn: document.getElementById('btn-toc'), 
-            setBtn: document.getElementById('btn-settings'),
-            
+            backBtn: document.getElementById('btn-back'), tocBtn: document.getElementById('btn-toc'), setBtn: document.getElementById('btn-settings'),
             inner: document.getElementById('reader-inner'), title: document.getElementById('reader-title'), count: document.getElementById('library-count'),
             tocPanel: document.getElementById('toc-panel'), tocList: document.getElementById('toc-list'),
             setPanel: document.getElementById('settings-panel'),
@@ -595,10 +574,8 @@
         DOM.readContent.addEventListener('scroll', () => {
             const bottomBar = document.getElementById('reader-bottom-bar');
             if (bottomBar.classList.contains('hidden')) return;
-
             const currentScroll = DOM.readContent.scrollTop;
             const header = document.getElementById('reader-floating-header');
-            
             if (currentScroll > lastScrollTop && currentScroll > 50) {
                 header.classList.add('-translate-y-[150%]', 'opacity-0');
                 header.classList.remove('translate-y-0', 'opacity-100');
@@ -630,28 +607,23 @@
         document.addEventListener('click', (e) => {
             const searchArea = document.getElementById('search-area');
             if (searchArea && searchArea.classList.contains('search-active')) {
-                if (!searchArea.contains(e.target)) {
-                    closeSearch(false);
-                }
+                if (!searchArea.contains(e.target)) { closeSearch(false); }
             }
         });
 
         const searchArea = document.getElementById('search-area');
         const searchCapsule = document.querySelector('.search-capsule');
-        
         DOM.globalSearch.addEventListener('focus', () => {
             if (!searchArea.classList.contains('search-active')) {
                 searchArea.classList.add('search-active');
                 if (window.location.hash !== '#search') pushAppHistory('search');
             }
         });
-
         searchCapsule.addEventListener('click', (e) => {
             if (searchArea.classList.contains('search-active')) {
                 if (e.target !== DOM.globalSearch) { closeSearch(false); }
             } else { DOM.globalSearch.focus(); }
         });
-
         window.closeSearch = function(fromHistory = false) {
             if (searchArea.classList.contains('search-active')) {
                 searchArea.classList.remove('search-active');
@@ -662,30 +634,9 @@
 
         let library = []; let activeBookId = null; let observer = null; let activePanel = null;
         let activeOptsId = null; let currentSelection = { text: "", nodeIdx: -1 }; 
+        let isBatchDeleteMode = false; let selectedForDelete = [];
+        let activeNoteColor = 'yellow'; let editingAnnotId = null;
         
-        let isBatchDeleteMode = false;
-        let selectedForDelete = [];
-        let activeNoteColor = 'yellow';
-        let editingAnnotId = null;
-        
-        window.addEventListener('popstate', (e) => {
-            if (!document.getElementById('raw-backup-modal').classList.contains('opacity-0')) { _closeModalAction('raw-backup-modal', 'raw-backup-sheet', true, true); }
-            else if (!document.getElementById('raw-restore-modal').classList.contains('opacity-0')) { _closeModalAction('raw-restore-modal', 'raw-restore-sheet', true, true); }
-            else if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) { window.closeDialog(true); }
-            else if (!document.getElementById('ai-modal').classList.contains('opacity-0')) { closeAiModal(true); }
-            else if (!document.getElementById('note-modal').classList.contains('opacity-0')) { _closeModalAction('note-modal', 'note-sheet', true, true); }
-            else if (!document.getElementById('b-opt-modal').classList.contains('opacity-0')) { _closeModalAction('b-opt-modal', 'b-opt-sheet', false, true); }
-            else if (!document.getElementById('edit-modal').classList.contains('opacity-0')) { _closeModalAction('edit-modal', 'edit-sheet', true, true); }
-            else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) { _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true); }
-            else if (!document.getElementById('welcome-modal').classList.contains('opacity-0')) { closeWelcome(true); }
-            else if (isBatchDeleteMode) { window.toggleBatchDelete(true); }
-            else if (activePanel) { _closeSidePanelsAction(true); } 
-            else if (document.getElementById('search-area').classList.contains('search-active')) { closeSearch(true); }
-            else if (!DOM.readView.classList.contains('translate-y-full')) { _closeReaderAction(true); }
-        });
-
-        function pushAppHistory(stateName) { history.pushState({ state: stateName }, '', `#${stateName}`); }
-
         let isDark = localStorage.getItem('theme') !== 'light'; 
         let currentThemeKey = localStorage.getItem('m3-key') || 'purple';
         let isAmoled = localStorage.getItem('amoled') === 'true';
@@ -714,8 +665,9 @@
                 aiTitle: "Penjelasan", aiLoading: "Mencari referensi...", noInternet: "Koneksi internet bermasalah.",
                 deleteNoteConfirm: "Hapus catatan/sorotan ini?",
                 editTitle: "Edit Detail", editBookTitle: "Judul Buku", editBookCover: "Gambar Sampul", editBookShape: "Bentuk Kartu", editCancel: "Batal", editSave: "Simpan", optCancel: "Batal", themeLight: "Mode Terang", themeDark: "Mode Gelap", amoledLabel: "AMOLED (Hitam Pekat)",
-                rawBakTitle: "Data Backup Mentah", rawBakDesc: "Karena batasan sistem perangkat, silakan salin teks di bawah ini dan simpan ke dalam Note/Pesan WhatsApp/File teks dengan aman.", rawBakCopy: "Salin Teks", rawBakClose: "Tutup",
-                rawResTitle: "Pulihkan Data", rawResDesc: "Paste teks mentah (JSON) backup lu di kotak ini, ATAU pilih file JSON dari perangkat.", rawResFile: "Pilih File", rawResProcess: "Proses Teks", rawResClose: "Batal"
+                rawBakTitle: "Data Backup Mentah", rawBakDesc: "Salin teks ini.", rawBakCopy: "Salin Teks", rawBakClose: "Tutup",
+                rawResTitle: "Pulihkan Data", rawResDesc: "Paste teks backup lu di sini.", rawResFile: "Pilih File", rawResProcess: "Proses Teks", rawResClose: "Batal",
+                geminiTitle: "Gemini AI (Pintar)", geminiKeyLabel: "API Key Gemini", geminiSave: "Simpan", geminiGetKey: "Dapatkan API Key Gratis", geminiKeySaved: "Kunci Berhasil Disimpan!", geminiNoKey: "Masukkan API Key di Pengaturan untuk menggunakan Gemini AI."
             },
             en: {
                 libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
@@ -739,8 +691,9 @@
                 aiTitle: "Definition", aiLoading: "Looking for references...", noInternet: "Internet connection issue.",
                 deleteNoteConfirm: "Delete this note/highlight?",
                 editTitle: "Edit Details", editBookTitle: "Book Title", editBookCover: "Cover Image", editBookShape: "Card Shape", editCancel: "Cancel", editSave: "Save", optCancel: "Cancel", themeLight: "Light Mode", themeDark: "Dark Mode", amoledLabel: "AMOLED (Pitch Black)",
-                rawBakTitle: "Raw Backup Data", rawBakDesc: "Due to device restrictions, please copy the text below and save it safely in your Notes or a text file.", rawBakCopy: "Copy Text", rawBakClose: "Close",
-                rawResTitle: "Restore Data", rawResDesc: "Paste your raw backup JSON text here, OR choose a JSON file from your device.", rawResFile: "Select File", rawResProcess: "Process Text", rawResClose: "Cancel"
+                rawBakTitle: "Raw Backup Data", rawBakDesc: "Copy this text.", rawBakCopy: "Copy Text", rawBakClose: "Close",
+                rawResTitle: "Restore Data", rawResDesc: "Paste backup text here.", rawResFile: "Select File", rawResProcess: "Process Text", rawResClose: "Cancel",
+                geminiTitle: "Gemini AI (Smart)", geminiKeyLabel: "Gemini API Key", geminiSave: "Save", geminiGetKey: "Get Free API Key", geminiKeySaved: "Key Saved Successfully!", geminiNoKey: "Enter your API Key in Settings to use Gemini AI."
             }
         };
 
@@ -753,1415 +706,379 @@
             setElementText('btn-batch-cancel', d.cancel); setElementText('btn-batch-exec', d.delete);
             setElementText('str-opt-select', d.optSelect); setElementText('str-opt-edit', d.optEdit);
             setElementText('str-opt-delete', d.optDelete); setElementText('str-opt-cancel', d.optCancel);
-            
             setElementText('str-wel-title', d.welcomeTitle); setElementText('str-wel-desc', d.welcomeDesc);
             setElementText('str-wel-backup', d.welBackup); document.getElementById('str-wel-backup-desc').innerHTML = d.welBackupDesc;
             setElementText('str-wel-format', d.welFormat); document.getElementById('str-wel-format-desc').innerHTML = d.welFormatDesc;
             setElementText('str-wel-privacy', d.welPrivacy); setElementText('str-wel-privacy-desc', d.welPrivacyDesc);
             setElementText('str-wel-btn', d.welBtn);
-            
             setElementText('str-set-main-title', d.setMainTitle); setElementText('str-set-palette', d.setPalette);
             setElementText('str-set-lang', d.setLang); setElementText('str-set-info', d.setInfo);
             setElementText('str-set-data', d.setData); setElementText('str-btn-backup', d.btnBackup); setElementText('str-btn-restore', d.btnRestore);
             setElementText('str-btn-info', d.btnInfo); setElementText('str-btn-donate', d.btnDonate);
             setElementText('str-btn-close', d.btnClose);
-            
             setElementText('str-nav-back', d.navBack); setElementText('str-nav-toc', d.navToc);
             setElementText('str-nav-text', d.navText); setElementText('str-nav-full', d.navFull);
             setElementText('str-set-search', d.navSearch);
-            
             setElementText('str-reader-loading', d.readerLoading); setElementText('str-toc-title', d.tocTitle);
             setElementText('str-set-title', d.setTitle); setElementText('str-set-theme', d.setTheme);
             setElementText('str-set-size', d.setSize); setElementText('str-set-align', d.setAlign);
             setElementText('str-set-font', d.setFont);
-            
             setElementText('str-note-title', d.noteTitle); setElementText('str-note-cancel', d.noteCancel);
             setElementText('str-note-save', d.noteSave);
-            
             setElementText('str-ai-title', d.aiTitle); setElementText('str-ai-loading', d.aiLoading);
-            
             setElementText('str-edit-title', d.editTitle); setElementText('str-edit-book-title', d.editBookTitle);
             setElementText('str-edit-book-cover', d.editBookCover); setElementText('str-edit-book-shape', d.editBookShape);
             setElementText('str-edit-cancel', d.editCancel); setElementText('str-edit-save', d.editSave);
             setElementText('str-amoled-label', d.amoledLabel);
-            
-            setElementText('str-raw-bak-title', d.rawBakTitle); setElementText('str-raw-bak-desc', d.rawBakDesc);
-            setElementText('str-raw-bak-btn-close', d.rawBakClose); setElementText('str-raw-bak-btn-copy', d.rawBakCopy);
-            setElementText('str-raw-res-title', d.rawResTitle); setElementText('str-raw-res-desc', d.rawResDesc);
-            setElementText('str-raw-res-btn-file', d.rawResFile); setElementText('str-raw-res-btn-process', d.rawResProcess);
-            setElementText('str-raw-res-btn-close', d.rawResClose);
-
-            if(document.getElementById('global-search')) document.getElementById('global-search').placeholder = d.searchBooks;
-            if(document.getElementById('inbook-search-input')) document.getElementById('inbook-search-input').placeholder = d.searchPlaceholder;
-            if(document.getElementById('note-input-text')) document.getElementById('note-input-text').placeholder = d.notePlaceholder;
+            setElementText('str-set-gemini', d.geminiTitle); setElementText('str-gemini-key-label', d.geminiKeyLabel);
+            setElementText('str-gemini-save', d.geminiSave); setElementText('str-gemini-get-key', d.geminiGetKey);
+            if(document.getElementById('gemini-api-key')) document.getElementById('gemini-api-key').value = localStorage.getItem('gemini_api_key') || '';
             if(document.getElementById('library-count')) document.getElementById('library-count').textContent = `${(library.length)} ${d.booksCount}`;
-            
             const themeLabel = document.getElementById('theme-label-text');
             if (themeLabel) themeLabel.textContent = isDark ? d.themeDark : d.themeLight;
-
             updateBatchSelectionUI();
         };
 
-        // Custom Dialog System
+        window.saveGeminiKey = function() {
+            const key = document.getElementById('gemini-api-key').value.trim();
+            localStorage.setItem('gemini_api_key', key);
+            const d = i18n[wikiLang] || i18n['id'];
+            showDialog("Gemini AI", d.geminiKeySaved, "check-circle", [{text: "OK", primary: true}]);
+        };
+
         window.showDialog = function(title, message, iconStr, buttons) {
-            pushAppHistory('custom-dialog');
-            const m = document.getElementById('custom-dialog');
-            const s = document.getElementById('custom-dialog-sheet');
-            
-            document.getElementById('dialog-title').innerText = title;
-            document.getElementById('dialog-message').innerText = message;
-            
-            const iconEl = document.getElementById('dialog-icon');
-            iconEl.setAttribute('data-lucide', iconStr);
-            
-            const actionsContainer = document.getElementById('dialog-actions');
-            actionsContainer.innerHTML = '';
-            
+            pushAppHistory('custom-dialog'); const m = document.getElementById('custom-dialog'); const s = document.getElementById('custom-dialog-sheet');
+            document.getElementById('dialog-title').innerText = title; document.getElementById('dialog-message').innerText = message;
+            const iconEl = document.getElementById('dialog-icon'); iconEl.setAttribute('data-lucide', iconStr);
+            const actionsContainer = document.getElementById('dialog-actions'); actionsContainer.innerHTML = '';
             buttons.forEach(btn => {
-                const b = document.createElement('button');
-                b.innerText = btn.text;
-                if (btn.primary) {
-                    b.className = "px-6 py-2 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph tracking-wide";
-                } else {
-                    b.className = "px-4 py-2 bg-transparent text-m3-onSurfaceVariant font-bold rounded-full btn-morph tracking-wide";
-                }
-                b.onclick = () => {
-                    if(btn.action) btn.action();
-                    else window.closeDialog();
-                };
+                const b = document.createElement('button'); b.innerText = btn.text;
+                b.className = btn.primary ? "px-6 py-2 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph tracking-wide" : "px-4 py-2 bg-transparent text-m3-onSurfaceVariant font-bold rounded-full btn-morph tracking-wide";
+                b.onclick = () => { if(btn.action) btn.action(); else window.closeDialog(); };
                 actionsContainer.appendChild(b);
             });
-            
             if(window.lucide) window.lucide.createIcons();
-
-            m.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                m.classList.remove('opacity-0');
-                s.classList.remove('scale-75');
-            });
+            m.classList.remove('hidden'); requestAnimationFrame(() => { m.classList.remove('opacity-0'); s.classList.remove('scale-75'); });
         };
-
         window.closeDialog = function(isFromHistory = false) {
             if (!isFromHistory) { history.back(); return; }
-            const m = document.getElementById('custom-dialog');
-            const s = document.getElementById('custom-dialog-sheet');
-            
-            s.classList.add('scale-75');
-            m.classList.add('opacity-0');
-            setTimeout(() => m.classList.add('hidden'), 300);
+            const m = document.getElementById('custom-dialog'); const s = document.getElementById('custom-dialog-sheet');
+            s.classList.add('scale-75'); m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300);
         };
 
-                // FITUR BACKUP HYBRID (Capacitor File System + Fallback Raw Tanpa Gambar)
         window.exportData = async function() {
             try {
                 const data = await localforage.getItem('pdf_epub_master');
-                if (!data || data.length === 0) {
-                    showDialog("Info", wikiLang === 'id' ? "Ga ada buku untuk di-backup." : "No books to backup.", "info", [{ text: "Oke", primary: true }]);
-                    return;
-                }
-
-                // PLAN A: CEK JIKA BERJALAN DI DALAM APK CAPACITOR (ANDROID)
-                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
-                    const d = new Date();
-                    const fileName = `Baca_Backup_${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}_${d.getTime()}.json`;
-                    
-                    // Backup Full (beserta gambar)
-                    const fullDataStr = JSON.stringify(data);
-                    
-                    try {
-                        // Tembus batas WebView: Tulis file langsung ke folder Documents
-                        await window.Capacitor.Plugins.Filesystem.writeFile({
-                            path: fileName,
-                            data: fullDataStr,
-                            directory: 'DOCUMENTS',
-                            encoding: 'utf8'
-                        });
-                        
-                        showDialog(
-                            wikiLang === 'id' ? "Backup Sukses" : "Backup Success", 
-                            wikiLang === 'id' ? `File backup berhasil disimpan di folder Documents HP lu.\nNama file: ${fileName}` : `Backup file saved in your device's Documents folder.\nFile name: ${fileName}`, 
-                            "check-circle", 
-                            [{ text: "Mantap", primary: true }]
-                        );
-                        return; // Stop di sini, proses sukses 100%
-                    } catch (fsError) {
-                        console.log("Capacitor write gagal, beralih ke teks raw.", fsError);
-                    }
-                }
-                
-                // PLAN B: FALLBACK COPY TEXT (Jika Plan A gagal / jalan di Browser)
-                // LOGIKA: Hapus coverBase64 dari JSON biar ukuran gak bengkak dan aman di clipboard
-                const textOnlyData = data.map(book => {
-                    let strippedBook = { ...book };
-                    delete strippedBook.coverBase64; // BUANG GAMBAR
-                    return strippedBook;
-                });
-                
-                const rawStr = JSON.stringify(textOnlyData);
-                document.getElementById('raw-backup-textarea').value = rawStr;
+                if (!data || data.length === 0) return;
+                const textOnlyData = data.map(book => { let stripped = { ...book }; delete stripped.coverBase64; return stripped; });
+                document.getElementById('raw-backup-textarea').value = JSON.stringify(textOnlyData);
                 openModal('raw-backup-modal', 'raw-backup-sheet', true);
-                
-                // Kasih tau user kalo sampulnya dikorbanin
-                setTimeout(() => {
-                     showDialog("Info Fallback", 
-                        wikiLang === 'id' ? 
-                        "Simpan file native gagal. Ini adalah teks mentahnya.\n\nCATATAN: Demi menghindari error sistem (ukuran file terlalu besar), data Sampul Buku otomatis DIHAPUS pada versi ini. Data teks buku tetap aman." : 
-                        "Native file save failed. This is the raw text.\n\nNOTE: To prevent system memory errors, Book Covers are REMOVED in this version. Text data is safe.", 
-                        "info", [{ text: "Mengerti", primary: true }]);
-                }, 400);
-                
-            } catch (err) {
-                console.error("Backup failed:", err);
-                showDialog("Error", "Backup gagal: " + err.message, "alert-triangle", [{ text: "Tutup", primary: true }]);
-            }
+            } catch (err) { console.error(err); }
         };
 
-        window.copyRawBackup = function() {
-            const textarea = document.getElementById('raw-backup-textarea');
-            textarea.select();
-            textarea.setSelectionRange(0, 9999999); 
-            
+        window.openRestoreOptions = function() { document.getElementById('raw-restore-textarea').value = ''; openModal('raw-restore-modal', 'raw-restore-sheet', true); };
+        window.processRawRestore = function() { executeRestoreLogic(document.getElementById('raw-restore-textarea').value.trim()); };
+        window.importDataFile = function(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => executeRestoreLogic(ev.target.result); r.readAsText(f); };
+        function executeRestoreLogic(str) {
             try {
-                document.execCommand('copy');
-                const btnSpan = document.getElementById('str-raw-bak-btn-copy');
-                const originalText = btnSpan.innerText;
-                btnSpan.innerText = wikiLang === 'id' ? "Berhasil Disalin!" : "Copied!";
-                setTimeout(() => { btnSpan.innerText = originalText; }, 2000);
-            } catch (err) {
-                showDialog("Error", "Gagal menyalin otomatis. Silakan blok semua teks secara manual dan salin.", "alert-circle", [{ text: "Tutup", primary: true }]);
-            }
-        };
-
-        // FITUR RESTORE
-        window.openRestoreOptions = function() {
-            document.getElementById('raw-restore-textarea').value = '';
-            openModal('raw-restore-modal', 'raw-restore-sheet', true);
-        };
-
-        window.processRawRestore = function() {
-            const val = document.getElementById('raw-restore-textarea').value.trim();
-            if(!val) {
-                showDialog("Info", wikiLang === 'id' ? "Kotak teks masih kosong." : "Text box is empty.", "info", [{ text: "Oke", primary: true }]);
-                return;
-            }
-            executeRestoreLogic(val);
-        };
-
-        window.importDataFile = function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                executeRestoreLogic(e.target.result);
-                event.target.value = ''; // Reset input
-            };
-            reader.readAsText(file);
-        };
-
-        function executeRestoreLogic(jsonString) {
-            try {
-                const parsedData = JSON.parse(jsonString);
-                if (!Array.isArray(parsedData)) throw new Error("Format file/teks tidak valid.");
-                
-                const isValid = parsedData.every(b => b.id && b.title && b.nodes);
-                if (!isValid) throw new Error("Data backup rusak atau tidak kompatibel.");
-                
-                showDialog(
-                    wikiLang === 'id' ? "Konfirmasi Restore" : "Confirm Restore",
-                    wikiLang === 'id' ? "PERINGATAN: Semua data buku saat ini akan ketimpa total. Yakin mau lanjut?" : "WARNING: Current books will be completely replaced. Continue?",
-                    "alert-triangle",
-                    [
-                        { text: "Batal", primary: false },
-                        { text: "Lanjut", primary: true, action: async () => {
-                            window.closeDialog();
-                            await localforage.setItem('pdf_epub_master', parsedData);
-                            library = parsedData;
-                            renderLibrary(DOM.globalSearch.value);
-                            
-                            // Tutup semua modal terkait
-                            if (!document.getElementById('raw-restore-modal').classList.contains('hidden')) history.back();
-                            setTimeout(() => {
-                                if (!document.getElementById('global-settings-modal').classList.contains('hidden')) history.back();
-                            }, 300);
-                            
-                            setTimeout(() => {
-                                showDialog(
-                                    wikiLang === 'id' ? "Restore Berhasil!" : "Restore Success!",
-                                    wikiLang === 'id' ? "Data aplikasi lu udah berhasil dipulihin." : "Your data has been successfully restored.",
-                                    "check-circle",
-                                    [{ text: "Oke", primary: true }]
-                                );
-                            }, 700);
-                        }}
-                    ]
-                );
-
-            } catch (err) {
-                console.error("Restore failed:", err);
-                showDialog("Error", (wikiLang === 'id' ? "Gagal memulihkan: " : "Failed to restore: ") + err.message, "alert-circle", [{ text: "Tutup", primary: true }]);
-            }
-        }
-
-        window.triggerSelectMode = function() {
-            if(!activeOptsId) return;
-            const targetId = activeOptsId;
-            history.back(); 
-            setTimeout(() => { toggleBatchDelete(false, targetId); }, 350); 
+                const d = JSON.parse(str); if(!Array.isArray(d)) throw new Error("Invalid format.");
+                showDialog("Restore Data", "Timpa data saat ini?", "alert-triangle", [{text: "Batal", primary: false}, {text: "Lanjut", primary: true, action: async () => {
+                    window.closeDialog(); await localforage.setItem('pdf_epub_master', d); library = d; renderLibrary();
+                    if(!document.getElementById('raw-restore-modal').classList.contains('hidden')) history.back();
+                }}]);
+            } catch(e) { showDialog("Error", "Gagal: " + e.message, "alert-circle", [{text: "Tutup", primary: true}]); }
         }
 
         window.toggleBatchDelete = function(isFromHistory = false, initialSelectId = null) {
-            if(library.length === 0 && !isBatchDeleteMode) return;
-            isBatchDeleteMode = !isBatchDeleteMode;
-            
-            if (!isBatchDeleteMode) {
-                selectedForDelete = [];
-            } else {
-                selectedForDelete = [];
-                if (initialSelectId) selectedForDelete.push(initialSelectId);
-            }
-            
-            const bar = document.getElementById('batch-delete-bar');
-            const fab = document.getElementById('fab-container');
-            
-            if (isBatchDeleteMode) {
-                if(!isFromHistory) pushAppHistory('batch-delete');
-                bar.classList.remove('translate-y-32');
-                fab.classList.add('translate-y-32', 'opacity-0');
-            } else {
-                if(!isFromHistory && window.location.hash === '#batch-delete') history.back();
-                bar.classList.add('translate-y-32');
-                fab.classList.remove('translate-y-32', 'opacity-0');
-            }
-            
+            isBatchDeleteMode = !isBatchDeleteMode; selectedForDelete = isBatchDeleteMode && initialSelectId ? [initialSelectId] : [];
+            const bar = document.getElementById('batch-delete-bar'); const fab = document.getElementById('fab-container');
+            if (isBatchDeleteMode) { if(!isFromHistory) pushAppHistory('batch-delete'); bar.classList.remove('translate-y-32'); fab.classList.add('translate-y-32', 'opacity-0'); }
+            else { if(!isFromHistory && window.location.hash === '#batch-delete') history.back(); bar.classList.add('translate-y-32'); fab.classList.remove('translate-y-32', 'opacity-0'); }
             updateBatchSelectionUI();
         };
-
         window.updateBatchSelectionUI = function() {
-            const countEl = document.getElementById('batch-delete-count');
-            const d = i18n[wikiLang] || i18n['id'];
+            const countEl = document.getElementById('batch-delete-count'); const d = i18n[wikiLang] || i18n['id'];
             if(countEl) countEl.textContent = `${selectedForDelete.length} ${d.selected}`;
-
             document.querySelectorAll('.batch-overlay').forEach(el => {
-                const id = el.dataset.bookId;
-                const idx = selectedForDelete.indexOf(id);
-                const icBox = el.querySelector('.batch-icon-box');
-                
+                const id = el.dataset.bookId; const idx = selectedForDelete.indexOf(id); const icBox = el.querySelector('.batch-icon-box');
                 if (isBatchDeleteMode) {
                     el.style.display = 'block';
-                    if (idx > -1) {
-                        el.style.opacity = '1';
-                        el.style.backgroundColor = 'rgba(0, 0, 0, 0.4)';
-                        icBox.className = 'batch-icon-box absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center transition-colors bg-m3-primary text-m3-onPrimary font-bold text-xs shadow-md border-2 border-m3-surface';
-                        icBox.innerHTML = (idx + 1);
-                    } else {
-                        el.style.opacity = '1';
-                        el.style.backgroundColor = 'transparent';
-                        icBox.className = 'batch-icon-box absolute top-3 left-3 w-7 h-7 rounded-full border-2 border-white/50 flex items-center justify-center transition-colors bg-black/20 shadow-sm font-bold text-xs text-transparent';
-                        icBox.innerHTML = '';
-                    }
-                } else {
-                    el.style.opacity = '0';
-                    setTimeout(() => el.style.display = 'none', 300);
-                }
+                    if (idx > -1) { el.style.opacity = '1'; el.style.backgroundColor = 'rgba(0, 0, 0, 0.4)'; icBox.className = 'batch-icon-box absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center bg-m3-primary text-m3-onPrimary font-bold text-xs shadow-md border-2 border-m3-surface'; icBox.innerHTML = (idx + 1); }
+                    else { el.style.opacity = '1'; el.style.backgroundColor = 'transparent'; icBox.className = 'batch-icon-box absolute top-3 left-3 w-7 h-7 rounded-full border-2 border-white/50 flex items-center justify-center bg-black/20 font-bold text-xs text-transparent'; icBox.innerHTML = ''; }
+                } else { el.style.opacity = '0'; setTimeout(() => el.style.display = 'none', 300); }
             });
         };
-
         window.executeBatchDelete = async function() {
             if(selectedForDelete.length === 0) return;
-            const d = i18n[wikiLang] || i18n['id'];
-            
-            showDialog(
-                "Hapus Buku",
-                d.deleteConfirm,
-                "trash-2",
-                [
-                    { text: "Batal", primary: false },
-                    { text: "Hapus", primary: true, action: async () => {
-                        window.closeDialog();
-                        const toDeleteSet = new Set(selectedForDelete);
-                        library = library.filter(b => !toDeleteSet.has(b.id));
-                        await localforage.setItem('pdf_epub_master', library);
-                        toggleBatchDelete(); 
-                        renderLibrary(DOM.globalSearch.value); 
-                    }}
-                ]
-            );
+            showDialog("Hapus Buku", i18n[wikiLang].deleteConfirm, "trash-2", [{text: "Batal", primary: false}, {text: "Hapus", primary: true, action: async () => {
+                window.closeDialog(); const set = new Set(selectedForDelete); library = library.filter(b => !set.has(b.id));
+                await localforage.setItem('pdf_epub_master', library); toggleBatchDelete(); renderLibrary();
+            }}]);
         };
 
         function renderNodeText(text, annots) {
-            if (!text) return "";
-            let augmentedText = text;
-            if (annots && annots.length > 0) {
-                [...annots].sort((a,b) => b.text.length - a.text.length).forEach(a => {
-                    const esc = a.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    augmentedText = augmentedText.replace(new RegExp(esc, ''), `|||HL|${a.id}|||${a.text}|||ENDHL|||`);
-                });
-            }
-            let html = augmentedText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            html = html.replace(/"([^"]+)"/g, '<i class="italic font-serif opacity-90">"$1"</i>');
-            if (annots && annots.length > 0) {
-                html = html.replace(/\|\|\|HL\|(.*?)\|\|\|/g, (match, id) => {
-                    const a = annots.find(x => x.id === id);
-                    if (!a) return '<mark class="hl-yellow rounded px-1">';
-                    const noteAttr = a.note ? ` data-hasnote="true"` : '';
-                    return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer transition-all hover:brightness-95 mx-0.5" data-id="${id}"${noteAttr} onclick="window.showAnnotationDetails('${id}')">`;
-                }).replace(/\|\|\|ENDHL\|\|\|/g, '</mark>');
-            }
-            html = html.replace(/data-hasnote="true">/g, 'data-hasnote="true" style="border-bottom: 2px underline dotted currentColor">');
+            if (!text) return ""; let aug = text;
+            if (annots && annots.length > 0) { [...annots].sort((a,b) => b.text.length - a.text.length).forEach(a => { aug = aug.replace(new RegExp(a.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), ''), `|||HL|${a.id}|||${a.text}|||ENDHL|||`); }); }
+            let html = aug.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"([^"]+)"/g, '<i class="italic font-serif opacity-90">"$1"</i>');
+            if (annots && annots.length > 0) { html = html.replace(/\|\|\|HL\|(.*?)\|\|\|/g, (m, id) => { const a = annots.find(x => x.id === id); return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer mx-0.5" data-id="${id}" ${a.note?'style="border-bottom:2px underline dotted currentColor"':''} onclick="window.showAnnotationDetails('${id}')">`; }).replace(/\|\|\|ENDHL\|\|\|/g, '</mark>'); }
             return html;
         }
 
         function applyThemeToDOM() {
             document.documentElement.classList.toggle('dark', isDark);
-            
             let rootVars = M3_PALETTES[currentThemeKey][isDark ? 'dark' : 'light'];
-            if (isDark && isAmoled) {
-                rootVars += `--md-sys-color-background:#000000;--md-sys-color-surface:#000000;`;
-            }
+            if (isDark && isAmoled) rootVars += `--md-sys-color-background:#000000;--md-sys-color-surface:#000000;`;
             document.getElementById('dynamic-theme').innerHTML = `:root { ${rootVars} }`;
-            
-            const metaTheme = document.querySelector('meta[name="theme-color"]');
-            if(metaTheme) {
-                if(isDark && isAmoled) metaTheme.setAttribute("content", "#000000");
-                else if (isDark) metaTheme.setAttribute("content", "#111318");
-                else metaTheme.setAttribute("content", "#F9F9FF");
-            }
-
-            const bg = document.getElementById('theme-switch-bg');
-            const knob = document.getElementById('theme-switch-knob');
-            const icon = document.getElementById('theme-switch-icon');
-            const dLabel = document.getElementById('theme-label-text');
-            const d = i18n[wikiLang] || i18n['id'];
-            
-            if (bg && knob && icon && dLabel) {
-                dLabel.textContent = isDark ? d.themeDark : d.themeLight;
-                if (isDark) {
-                    bg.classList.replace('bg-m3-onSurfaceVariant/20', 'bg-m3-primary');
-                    knob.classList.add('translate-x-[32px]');
-                    icon.setAttribute('data-lucide', 'moon');
-                    icon.classList.replace('text-m3-onSurface', 'text-m3-primary');
-                } else {
-                    bg.classList.replace('bg-m3-primary', 'bg-m3-onSurfaceVariant/20');
-                    knob.classList.remove('translate-x-[32px]');
-                    icon.setAttribute('data-lucide', 'sun');
-                    icon.classList.replace('text-m3-primary', 'text-m3-onSurface');
-                }
-            }
-
-            const amoContainer = document.getElementById('amoled-toggle-container');
-            const amoBg = document.getElementById('amoled-switch-bg');
-            const amoKnob = document.getElementById('amoled-switch-knob');
-            if (isDark) {
-                if (amoContainer) amoContainer.classList.remove('hidden');
-                if (isAmoled) {
-                    amoBg.classList.replace('border-m3-onSurfaceVariant/30', 'border-transparent');
-                    amoBg.classList.add('bg-m3-primary');
-                    amoKnob.classList.add('translate-x-[32px]');
-                    amoKnob.classList.replace('bg-m3-onSurface', 'bg-m3-onPrimary');
-                } else {
-                    amoBg.classList.remove('bg-m3-primary');
-                    amoBg.classList.replace('border-transparent', 'border-m3-onSurfaceVariant/30');
-                    amoKnob.classList.remove('translate-x-[32px]');
-                    amoKnob.classList.replace('bg-m3-onPrimary', 'bg-m3-onSurface');
-                }
-            } else {
-                if (amoContainer) amoContainer.classList.add('hidden');
-            }
-
-            const tl = document.getElementById('theme-btn-light');
-            const td = document.getElementById('theme-btn-dark');
-            const ta = document.getElementById('theme-btn-amoled');
-            if (tl && td && ta) {
-                [tl, td, ta].forEach(el => {
-                    el.classList.remove('bg-m3-primary', 'text-m3-onPrimary');
-                    el.classList.add('text-m3-onSurfaceVariant');
-                });
-                if (!isDark) { tl.classList.add('bg-m3-primary', 'text-m3-onPrimary'); tl.classList.remove('text-m3-onSurfaceVariant'); }
-                else if (isDark && !isAmoled) { td.classList.add('bg-m3-primary', 'text-m3-onPrimary'); td.classList.remove('text-m3-onSurfaceVariant'); }
-                else if (isDark && isAmoled) { ta.classList.add('bg-m3-primary', 'text-m3-onPrimary'); ta.classList.remove('text-m3-onSurfaceVariant'); }
-            }
-
-            if(window.lucide) window.lucide.createIcons();
-            localStorage.setItem('theme', isDark ? 'dark' : 'light'); 
-            localStorage.setItem('m3-key', currentThemeKey);
-            localStorage.setItem('amoled', isAmoled);
+            const bg = document.getElementById('theme-switch-bg'), knob = document.getElementById('theme-switch-knob'), icon = document.getElementById('theme-switch-icon'), dLabel = document.getElementById('theme-label-text'), d = i18n[wikiLang] || i18n['id'];
+            if(bg && knob && icon && dLabel) { dLabel.textContent = isDark ? d.themeDark : d.themeLight; if (isDark) { bg.classList.replace('bg-m3-onSurfaceVariant/20', 'bg-m3-primary'); knob.classList.add('translate-x-[32px]'); icon.setAttribute('data-lucide', 'moon'); icon.classList.replace('text-m3-onSurface', 'text-m3-primary'); } else { bg.classList.replace('bg-m3-primary', 'bg-m3-onSurfaceVariant/20'); knob.classList.remove('translate-x-[32px]'); icon.setAttribute('data-lucide', 'sun'); icon.classList.replace('text-m3-primary', 'text-m3-onSurface'); } }
+            if(window.lucide) window.lucide.createIcons(); localStorage.setItem('theme', isDark ? 'dark' : 'light'); localStorage.setItem('m3-key', currentThemeKey); localStorage.setItem('amoled', isAmoled);
         }
+        window.setTheme = (k) => { currentThemeKey = k; applyThemeToDOM(); };
+        window.toggleThemeState = () => { isDark = !isDark; applyThemeToDOM(); };
+        window.toggleAmoled = () => { isAmoled = !isAmoled; applyThemeToDOM(); };
+        window.setReaderTheme = (m) => { if (m === 'light') { isDark = false; isAmoled = false; } else if (m === 'dark') { isDark = true; isAmoled = false; } else if (m === 'amoled') { isDark = true; isAmoled = true; } applyThemeToDOM(); };
+        window.setWikiLang = (l) => { wikiLang = l; localStorage.setItem('wiki_lang', l); applyLanguage(); };
 
-        window.setTheme = function(key) { currentThemeKey = key; applyThemeToDOM(); };
-        window.toggleThemeState = function() { isDark = !isDark; applyThemeToDOM(); };
-        window.toggleAmoled = function() { isAmoled = !isAmoled; applyThemeToDOM(); };
-        window.setReaderTheme = function(mode) {
-            if (mode === 'light') { isDark = false; isAmoled = false; }
-            else if (mode === 'dark') { isDark = true; isAmoled = false; }
-            else if (mode === 'amoled') { isDark = true; isAmoled = true; }
-            applyThemeToDOM();
-        };
+        window.openModal = (mId, sId, sc = false) => { pushAppHistory(`modal-${mId}`); const m = document.getElementById(mId), s = document.getElementById(sId); m.classList.remove('hidden'); requestAnimationFrame(() => { m.classList.remove('opacity-0'); if(sc) s.classList.remove('scale-75', 'translate-y-12'); else s.classList.remove('translate-y-full'); }); };
+        function _closeModalAction(mId, sId, sc = false, hist = false) { if (!hist) { history.back(); return; } const m = document.getElementById(mId), s = document.getElementById(sId); if(sc) s.classList.add('scale-75', 'translate-y-12'); else s.classList.add('translate-y-full'); m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300); }
 
-        window.setWikiLang = function(lang) {
-            wikiLang = lang; localStorage.setItem('wiki_lang', lang); syncWikiLangUI(); applyLanguage();
-        };
-        
-        function syncWikiLangUI() {
-            const wid = document.getElementById('wiki-lang-id');
-            const wen = document.getElementById('wiki-lang-en');
-            if(wid && wen) {
-                [wid, wen].forEach(el => { el.classList.remove('bg-m3-primary', 'text-m3-onPrimary'); el.classList.add('text-m3-onSurfaceVariant'); });
-                if (wikiLang === 'id') { wid.classList.add('bg-m3-primary', 'text-m3-onPrimary'); wid.classList.remove('text-m3-onSurfaceVariant'); }
-                else { wen.classList.add('bg-m3-primary', 'text-m3-onPrimary'); wen.classList.remove('text-m3-onSurfaceVariant'); }
-            }
-        }
-        document.addEventListener("DOMContentLoaded", () => { syncWikiLangUI(); applyLanguage(); });
-
-        window.toggleFullscreenReading = function() {
-            const bottomBar = document.getElementById('reader-bottom-bar');
-            const progContainer = document.getElementById('progress-container');
-            const exitBtn = document.getElementById('btn-exit-fullscreen');
-            
-            const floatHeader = document.getElementById('reader-floating-header');
-            
-            if (bottomBar.classList.contains('hidden')) {
-                bottomBar.classList.remove('hidden'); 
-                progContainer.classList.remove('hidden');
-                exitBtn.classList.add('hidden');
-                floatHeader.classList.remove('-translate-y-[150%]', 'opacity-0');
-                floatHeader.classList.add('translate-y-0', 'opacity-100');
-            } else {
-                bottomBar.classList.add('hidden'); 
-                floatHeader.classList.add('-translate-y-[150%]', 'opacity-0');
-                floatHeader.classList.remove('translate-y-0', 'opacity-100');
-                progContainer.classList.add('hidden');
-                exitBtn.classList.remove('hidden');
-                updateBottomNavUI(null);
-                if(activePanel) { _closeSidePanelsAction(); } 
-            }
-        };
-
-        window.openModal = function(modalId, sheetId, isScale = false) {
-            pushAppHistory(`modal-${modalId}`);
-            const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
-            m.classList.remove('hidden'); requestAnimationFrame(() => { m.classList.remove('opacity-0'); if(isScale) { s.classList.remove('scale-75', 'translate-y-12'); } else { s.classList.remove('translate-y-full'); } });
-        }
-        function _closeModalAction(modalId, sheetId, isScale = false, isFromHistory = false) {
-            if (!isFromHistory) { history.back(); return; }
-            const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
-            if(isScale) { s.classList.add('scale-75', 'translate-y-12'); } else { s.classList.add('translate-y-full'); }
-            m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300);
-        }
-
-        // SWIPE TO DISMISS UNTUK MODAL SETTINGS
-        const settingsSheet = document.getElementById('global-settings-sheet');
-        let touchStartY = 0;
-        let initialScrollTop = 0;
-        let isPulling = false;
-
-        settingsSheet.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-            initialScrollTop = settingsSheet.scrollTop;
-            settingsSheet.style.transition = 'none'; 
-        }, { passive: true });
-
-        settingsSheet.addEventListener('touchmove', (e) => {
-            if (initialScrollTop <= 0) {
-                const touchCurrentY = e.touches[0].clientY;
-                const deltaY = touchCurrentY - touchStartY;
-
-                if (deltaY > 0) { 
-                    isPulling = true;
-                    if(e.cancelable) e.preventDefault(); 
-                    const pullDistance = deltaY * 0.4;
-                    settingsSheet.style.transform = `translateY(${pullDistance}px)`;
-                }
-            }
-        }, { passive: false });
-
-        settingsSheet.addEventListener('touchend', (e) => {
-            if (!isPulling) return;
-            isPulling = false;
-            
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaY = touchEndY - touchStartY;
-
-            if (deltaY > 80) { 
-                // Fix animasi swipe down
-                settingsSheet.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                settingsSheet.style.transform = 'translateY(100%)'; 
-                setTimeout(() => {
-                    history.back(); // Panggil history.back untuk trigger _closeModalAction agar background overlay hilang
-                    setTimeout(() => { settingsSheet.style.transform = ''; }, 100);
-                }, 100);
-            } else {
-                settingsSheet.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                settingsSheet.style.transform = ''; 
-            }
+        window.addEventListener('popstate', () => {
+            if (!document.getElementById('raw-backup-modal').classList.contains('opacity-0')) _closeModalAction('raw-backup-modal', 'raw-backup-sheet', true, true);
+            else if (!document.getElementById('raw-restore-modal').classList.contains('opacity-0')) _closeModalAction('raw-restore-modal', 'raw-restore-sheet', true, true);
+            else if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) window.closeDialog(true);
+            else if (!document.getElementById('ai-modal').classList.contains('opacity-0')) closeAiModal(true);
+            else if (!document.getElementById('note-modal').classList.contains('opacity-0')) _closeModalAction('note-modal', 'note-sheet', true, true);
+            else if (!document.getElementById('b-opt-modal').classList.contains('opacity-0')) _closeModalAction('b-opt-modal', 'b-opt-sheet', false, true);
+            else if (!document.getElementById('edit-modal').classList.contains('opacity-0')) _closeModalAction('edit-modal', 'edit-sheet', true, true);
+            else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true);
+            else if (isBatchDeleteMode) window.toggleBatchDelete(true);
+            else if (activePanel) _closeSidePanelsAction(true);
+            else if (!DOM.readView.classList.contains('translate-y-full')) _closeReaderAction(true);
         });
-        
-        applyThemeToDOM();
 
-        if (!localStorage.getItem('first_time_seen_v5')) {
-            setTimeout(() => { openModal('welcome-modal', 'welcome-sheet', true); }, 500);
-        }
-        window.closeWelcome = function(isFromHistory = false) {
-            _closeModalAction('welcome-modal', 'welcome-sheet', true, isFromHistory || (window.location.hash !== '#modal-welcome'));
-            localStorage.setItem('first_time_seen_v5', 'true');
-        };
+        function pushAppHistory(n) { history.pushState({ state: n }, '', `#${n}`); }
 
         let typoPrefs = JSON.parse(localStorage.getItem('typo_prefs')) || { size: '1.2rem', align: 'left', font: 'Lora' };
         function applyTypo() {
-            document.documentElement.style.setProperty('--reader-size', typoPrefs.size);
-            document.documentElement.style.setProperty('--reader-align', typoPrefs.align);
-            
-            let fontCss = 'serif';
-            if(typoPrefs.font === 'Merriweather') fontCss = "'Merriweather', serif";
-            else if(typoPrefs.font === 'Playfair Display') fontCss = "'Playfair Display', serif";
-            else if(typoPrefs.font === 'Space Mono') fontCss = "'Space Mono', monospace";
-            else if(typoPrefs.font === 'Inter') fontCss = "'Inter', sans-serif";
-            else fontCss = "'Lora', serif";
-
-            document.documentElement.style.setProperty('--reader-font', fontCss);
-            localStorage.setItem('typo_prefs', JSON.stringify(typoPrefs)); syncTypoUI();
+            document.documentElement.style.setProperty('--reader-size', typoPrefs.size); document.documentElement.style.setProperty('--reader-align', typoPrefs.align);
+            let f = 'serif'; if(typoPrefs.font==='Merriweather') f="'Merriweather',serif"; else if(typoPrefs.font==='Playfair Display') f="'Playfair Display',serif"; else if(typoPrefs.font==='Space Mono') f="'Space Mono',monospace"; else if(typoPrefs.font==='Inter') f="'Inter',sans-serif"; else f="'Lora',serif";
+            document.documentElement.style.setProperty('--reader-font', f); localStorage.setItem('typo_prefs', JSON.stringify(typoPrefs));
         }
-        function syncTypoUI() {
-            const maps = { size: { '1rem': 'typo-sz-sm', '1.2rem': 'typo-sz-md', '1.5rem': 'typo-sz-lg' }, align: { 'left': 'typo-al-left', 'center': 'typo-al-center', 'justify': 'typo-al-justify' }, font: { 'Lora': 'typo-fn-lora','Merriweather':'typo-fn-merri','Playfair Display':'typo-fn-playfair', 'Inter': 'typo-fn-inter', 'Space Mono': 'typo-fn-mono' } };
-            
-            Object.values(maps.size).forEach(id => { document.getElementById(id).classList.remove('bg-m3-primary', 'text-m3-onPrimary'); document.getElementById(id).classList.add('text-m3-onSurfaceVariant'); });
-            Object.values(maps.align).forEach(id => { document.getElementById(id).classList.remove('bg-m3-primary', 'text-m3-onPrimary'); document.getElementById(id).classList.add('text-m3-onSurfaceVariant'); });
-            Object.values(maps.font).forEach(id => { document.getElementById(id).classList.remove('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer'); });
-            
-            document.getElementById(maps.size[typoPrefs.size]).classList.add('bg-m3-primary', 'text-m3-onPrimary');
-            document.getElementById(maps.size[typoPrefs.size]).classList.remove('text-m3-onSurfaceVariant');
-            document.getElementById(maps.align[typoPrefs.align]).classList.add('bg-m3-primary', 'text-m3-onPrimary');
-            document.getElementById(maps.align[typoPrefs.align]).classList.remove('text-m3-onSurfaceVariant');
-            document.getElementById(maps.font[typoPrefs.font]).classList.add('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer');
-        }
-        window.changeTypo = function(type, value) { typoPrefs[type] = value; applyTypo(); }
-        applyTypo();
+        window.changeTypo = (t, v) => { typoPrefs[t] = v; applyTypo(); }; applyTypo();
 
-        async function loadLibrary() { try { library = await localforage.getItem('pdf_epub_master') || []; renderLibrary(); } catch (e) { console.error(e); } }
-        
-        function createBookCard(book, isSlider = false, index = 0) {
-            const progress = book.progressPct || 0; 
-            const card = document.createElement('div');
-            
-            let shapeClass = "";
-            let shp = book.shape || 'square';
-            if (shp === 'rounded') shapeClass = 'rounded-[24px]';
-            else if (shp === 'square') shapeClass = 'rounded-xl';
-            else shapeClass = index % 2 === 0 ? 'rounded-tl-[32px] rounded-br-[32px] rounded-tr-lg rounded-bl-lg' : 'rounded-tr-[32px] rounded-bl-[32px] rounded-tl-lg rounded-br-lg';
-
-            let bgStyle = ""; let textOverlay = ""; let baseClass = "";
-            if(book.coverBase64) {
-                bgStyle = `background-image: url('${book.coverBase64}'); background-size: cover; background-position: top center;`;
-                baseClass = "text-white border-none outline-none ring-0"; 
-                textOverlay = `<div class="absolute inset-x-0 bottom-0 h-[80%] bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-0 rounded-b-inherit border-none outline-none"></div>`;
-            } else {
-                const colors = ['bg-m3-primaryContainer text-m3-onPrimaryContainer', 'bg-m3-secondaryContainer text-m3-onSecondaryContainer', 'bg-m3-surfaceVariant text-m3-onSurfaceVariant'];
-                baseClass = colors[index % 3];
-            }
-
-            const dimensionClass = isSlider ? "w-64 h-40 shrink-0 snap-start" : "aspect-[3/4.5] w-full";
-
-            let pressTimer = null; let isPressing = false; let hasLongPressed = false;
-            const handleStart = (e) => {
-                if (isBatchDeleteMode) return;
-                isPressing = true; hasLongPressed = false;
-                pressTimer = setTimeout(() => { if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); } }, 400);
-            };
-            const handleEnd = () => { isPressing = false; clearTimeout(pressTimer); };
-            const handleMove = () => { isPressing = false; clearTimeout(pressTimer); };
-
-            card.addEventListener('mousedown', handleStart); card.addEventListener('touchstart', handleStart, {passive: true});
-            card.addEventListener('mouseup', handleEnd); card.addEventListener('touchend', handleEnd);
-            card.addEventListener('mouseleave', handleMove); card.addEventListener('touchmove', handleMove, {passive: true});
-            
-            card.addEventListener('click', (e) => { 
-                if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; } 
-                if (isBatchDeleteMode && !isSlider) {
-                    e.preventDefault(); e.stopPropagation();
-                    const idx = selectedForDelete.indexOf(book.id);
-                    if (idx > -1) {
-                        selectedForDelete.splice(idx, 1);
-                    } else {
-                        selectedForDelete.push(book.id);
-                    }
-                    updateBatchSelectionUI();
-                    return;
-                }
-                openBook(book); 
-            });
-
-            card.className = `${baseClass} ${shapeClass} ${dimensionClass} p-3 relative cursor-pointer card-morph flex flex-col justify-between overflow-hidden border-none outline-none ring-0`;
-            card.style = bgStyle;
-
-            let batchOverlayHTML = '';
-            if (!isSlider) {
-                batchOverlayHTML = `
-                    <div class="batch-overlay absolute inset-0 z-20 transition-all duration-300 pointer-events-none rounded-inherit" data-book-id="${book.id}" style="display: none; opacity: 0; background-color: transparent;">
-                        <div class="batch-icon-box absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center transition-colors"></div>
-                    </div>
-                `;
-            }
-
-            if (isSlider) {
-                card.innerHTML = `
-                    ${textOverlay}
-                    <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none border-none">
-                        <div class="flex justify-between w-full items-start">
-                            <span class="inline-block text-[0.65rem] font-bold px-2 py-0.5 bg-black/40 rounded-full text-white uppercase tracking-widest">${book.type}</span>
-                        </div>
-                        <div class="mt-auto flex flex-col border-none">
-                            <h3 class="font-bold text-sm leading-tight line-clamp-2 drop-shadow-md ${book.coverBase64 ? 'text-white' : ''}">${book.title}</h3>
-                            <div class="w-full mt-2 border-none">
-                                <div class="flex justify-between text-[0.65rem] font-bold opacity-90 mb-1 ${book.coverBase64 ? 'text-white' : ''}"><span>${progress}%</span></div>
-                                <div class="h-1 w-full bg-black/20 dark:bg-white/20 rounded-full overflow-hidden border-none">
-                                    <div class="h-full ${book.coverBase64 ? 'bg-white' : 'bg-m3-primary dark:bg-m3-primaryContainer'} rounded-full border-none" style="width: ${progress}%"></div>
-                                </div>
-                            </div>
+        async function loadLibrary() { library = await localforage.getItem('pdf_epub_master') || []; renderLibrary(); }
+        function createBookCard(b, isS = false, idx = 0) {
+            const p = b.progressPct || 0; const card = document.createElement('div'); let shp = b.shape || 'square', sc = shp==='rounded'?'rounded-[24px]':shp==='square'?'rounded-xl':(idx%2===0?'rounded-tl-[32px] rounded-br-[32px] rounded-tr-lg rounded-bl-lg':'rounded-tr-[32px] rounded-bl-[32px] rounded-tl-lg rounded-br-lg');
+            let st = b.coverBase64?`background-image:url('${b.coverBase64}');background-size:cover;background-position:top center;`:'', bc = b.coverBase64?'text-white border-none':'bg-m3-surfaceVariant text-m3-onSurfaceVariant', dim = isS?"w-64 h-40 shrink-0":"aspect-[3/4.5] w-full";
+            card.className = `${bc} ${sc} ${dim} p-3 relative cursor-pointer card-morph flex flex-col justify-between overflow-hidden`; card.style = st;
+            let timer, isP=false, isL=false;
+            const start = () => { if(isBatchDeleteMode) return; isP=true; isL=false; timer=setTimeout(()=>{if(isP){isL=true;window.openBookOptions(b.id);}},400); };
+            const end = () => { isP=false; clearTimeout(timer); };
+            card.addEventListener('mousedown', start); card.addEventListener('touchstart', start, {passive:true}); card.addEventListener('mouseup', end); card.addEventListener('touchend', end);
+            card.addEventListener('click', (e) => { if(isL) return; if(isBatchDeleteMode && !isS){ const i = selectedForDelete.indexOf(b.id); if(i>-1) selectedForDelete.splice(i,1); else selectedForDelete.push(b.id); updateBatchSelectionUI(); return; } openBook(b); });
+            card.innerHTML = `${b.coverBase64?'<div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-0 rounded-inherit"></div>':''}
+                <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none">
+                    ${isS?'':(b.coverBase64?'':'<i data-lucide="book" class="w-6 h-6 mb-2 opacity-80"></i>')}
+                    <div class="mt-auto flex flex-col">
+                        <h3 class="font-bold text-sm leading-tight line-clamp-3 drop-shadow-md">${b.title}</h3>
+                        <div class="w-full mt-2">
+                            <div class="flex justify-between text-[0.6rem] font-bold opacity-90 mb-1"><span>${p}%</span></div>
+                            <div class="h-1 w-full bg-black/20 dark:bg-white/20 rounded-full overflow-hidden"><div class="h-full bg-m3-primary dark:bg-m3-primaryContainer rounded-full" style="width:${p}%"></div></div>
                         </div>
                     </div>
-                `;
-            } else {
-                card.innerHTML = `
-                    ${batchOverlayHTML}
-                    ${textOverlay}
-                    <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none border-none">
-                        <div class="flex justify-end w-full"></div>
-                        <div class="mt-auto flex flex-col border-none">
-                            ${book.coverBase64 ? '' : '<i data-lucide="book" class="w-6 h-6 mb-2 opacity-80"></i>'}
-                            <h3 class="font-bold text-sm leading-tight mt-1 line-clamp-3 drop-shadow-md ${book.coverBase64 ? 'text-white' : ''}">${book.title}</h3>
-                            <span class="inline-block mt-2 mb-2 text-[0.6rem] font-bold px-2 py-0.5 bg-black/40 rounded-full text-white uppercase tracking-widest self-start">${book.type}</span>
-                            <div class="w-full border-none">
-                                <div class="flex justify-between text-[0.6rem] font-bold opacity-90 mb-1 ${book.coverBase64 ? 'text-white' : ''}">
-                                    <span>${progress}%</span>
-                                </div>
-                                <div class="h-1 w-full bg-black/20 dark:bg-white/20 rounded-full overflow-hidden border-none">
-                                    <div class="h-full ${book.coverBase64 ? 'bg-white' : 'bg-m3-primary dark:bg-m3-primaryContainer'} rounded-full border-none" style="width: ${progress}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
+                </div>
+                ${!isS?`<div class="batch-overlay absolute inset-0 z-20 pointer-events-none rounded-inherit" data-book-id="${b.id}" style="display:none;opacity:0;"><div class="batch-icon-box absolute top-3 left-3 w-7 h-7 rounded-full flex items-center justify-center"></div></div>`:''}`;
             return card;
         }
-
-        function renderLibrary(filterText = "") {
-            DOM.grid.innerHTML = ''; DOM.topSlider.innerHTML = '';
-            
-            let filteredLib = library;
-            if(filterText) filteredLib = library.filter(b => b.title.toLowerCase().includes(filterText.toLowerCase()));
-            DOM.count.textContent = `${filteredLib.length} ${i18n[wikiLang].booksCount}`;
-            
-            let topBooks = [];
-            if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4); }
-
-            if (topBooks.length > 0) {
-                DOM.topSection.classList.remove('hidden');
-                topBooks.forEach((book, idx) => { DOM.topSlider.appendChild(createBookCard(book, true, idx)); });
-                const spacer = document.createElement('div'); spacer.className = "w-2 shrink-0 snap-align-none"; DOM.topSlider.appendChild(spacer);
-            } else { DOM.topSection.classList.add('hidden'); }
-            
-            if (filteredLib.length === 0) { 
-                DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); 
-                if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
-            } else {
-                DOM.empty.classList.add('hidden'); DOM.grid.classList.remove('hidden');
-                if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.remove('hidden');
-                filteredLib.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
-                if(window.lucide) window.lucide.createIcons();
-                updateBatchSelectionUI(); 
-            }
+        function renderLibrary(fText = "") {
+            DOM.grid.innerHTML = ''; DOM.topSlider.innerHTML = ''; let fLib = fText ? library.filter(b => b.title.toLowerCase().includes(fText.toLowerCase())) : library;
+            DOM.count.textContent = `${fLib.length} ${i18n[wikiLang].booksCount}`;
+            let tops = fText ? [] : library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4);
+            if(tops.length > 0) { DOM.topSection.classList.remove('hidden'); tops.forEach((b,i) => DOM.topSlider.appendChild(createBookCard(b,true,i))); } else DOM.topSection.classList.add('hidden');
+            if(fLib.length===0){ DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); } else { DOM.empty.classList.add('hidden'); DOM.grid.classList.remove('hidden'); fLib.forEach((b,i) => DOM.grid.appendChild(createBookCard(b,false,i))); }
+            if(window.lucide) window.lucide.createIcons(); updateBatchSelectionUI();
         }
-        
         DOM.globalSearch.addEventListener('input', (e) => renderLibrary(e.target.value));
 
-        window.openBookOptions = function(id) {
-            activeOptsId = id; const book = library.find(b => b.id === id);
-            document.getElementById('opt-title').textContent = book.title;
-            openModal('b-opt-modal', 'b-opt-sheet');
-        }
+        window.openBookOptions = (id) => { activeOptsId = id; const b = library.find(x => x.id === id); document.getElementById('opt-title').textContent = b.title; openModal('b-opt-modal', 'b-opt-sheet'); };
+        window.triggerDeleteView = () => { showDialog("Hapus Permanen", i18n[wikiLang].deleteConfirm, "trash-2", [{text: "Batal", primary: false}, {text: "Hapus", primary: true, action: async () => { window.closeDialog(); library = library.filter(x => x.id !== activeOptsId); await localforage.setItem('pdf_epub_master', library); history.back(); setTimeout(() => renderLibrary(DOM.globalSearch.value), 350); }}]); };
+        window.triggerEditView = () => { const b = library.find(x => x.id === activeOptsId); document.getElementById('edit-book-id').value = activeOptsId; document.getElementById('edit-book-title').value = b.title; window.selectShape(b.shape || 'square'); history.back(); setTimeout(() => openModal('edit-modal', 'edit-sheet', true), 400); };
+        window.selectShape = (s) => { document.getElementById('edit-book-shape').value = s; document.querySelectorAll('#edit-sheet .btn-morph').forEach(b => { if(b.id && b.id.startsWith('shape-')){ b.classList.remove('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer'); b.classList.add('bg-m3-surfaceVariant', 'text-m3-onSurfaceVariant'); } }); const sel = document.getElementById('shape-'+s); if(sel){ sel.classList.replace('bg-m3-surfaceVariant', 'bg-m3-primaryContainer'); sel.classList.replace('text-m3-onSurfaceVariant', 'text-m3-onPrimaryContainer'); } };
+        window.saveBookEdit = async () => { const id = document.getElementById('edit-book-id').value, title = document.getElementById('edit-book-title').value, cover = document.getElementById('edit-book-cover').files[0], shape = document.getElementById('edit-book-shape').value, idx = library.findIndex(x => x.id === id); if(idx>-1){ library[idx].title = title; library[idx].shape = shape; if(cover){ const r = new FileReader(); r.onload = async (e) => { library[idx].coverBase64 = e.target.result; await localforage.setItem('pdf_epub_master', library); history.back(); renderLibrary(); }; r.readAsDataURL(cover); } else { await localforage.setItem('pdf_epub_master', library); history.back(); renderLibrary(); } } };
 
-        window.triggerDeleteView = async function() {
-            if(!activeOptsId) return;
-            const d = i18n[wikiLang] || i18n['id'];
-            
-            showDialog(
-                "Hapus Permanen",
-                d.deleteConfirm,
-                "trash-2",
-                [
-                    { text: "Batal", primary: false },
-                    { text: "Hapus", primary: true, action: async () => {
-                        window.closeDialog();
-                        library = library.filter(b => b.id !== activeOptsId); 
-                        await localforage.setItem('pdf_epub_master', library); 
-                        history.back(); setTimeout(() => renderLibrary(DOM.globalSearch.value), 350);
-                    }}
-                ]
-            );
-        };
-
-        window.triggerEditView = function() {
-            if(!activeOptsId) return;
-            const book = library.find(b => b.id === activeOptsId);
-            document.getElementById('edit-book-id').value = activeOptsId; 
-            document.getElementById('edit-book-title').value = book.title; 
-            document.getElementById('edit-book-cover').value = '';
-            
-            window.selectShape(book.shape || 'square');
-            history.back(); setTimeout(() => { openModal('edit-modal', 'edit-sheet', true); }, 400); 
-        }
-        
-        window.selectShape = function(shape) {
-            document.getElementById('edit-book-shape').value = shape;
-            const btns = document.querySelectorAll('#edit-sheet .btn-morph');
-            btns.forEach(b => {
-                if(b.id && b.id.startsWith('shape-')) {
-                    b.classList.remove('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer');
-                    b.classList.add('bg-m3-surfaceVariant', 'text-m3-onSurfaceVariant');
-                }
-            });
-            const sel = document.getElementById('shape-' + shape);
-            if(sel) {
-                sel.classList.remove('bg-m3-surfaceVariant', 'text-m3-onSurfaceVariant');
-                sel.classList.add('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer');
-            }
-        }
-
-        window.closeEditModal = function() { history.back(); }
-
-        window.saveBookEdit = async function() {
-            const id = document.getElementById('edit-book-id').value; 
-            const newTitle = document.getElementById('edit-book-title').value; 
-            const coverFile = document.getElementById('edit-book-cover').files[0];
-            const newShape = document.getElementById('edit-book-shape').value;
-            const bookIndex = library.findIndex(b => b.id === id);
-            
-            if(bookIndex > -1) {
-                library[bookIndex].title = newTitle; library[bookIndex].shape = newShape;
-                if (coverFile) { 
-                    const reader = new FileReader(); 
-                    reader.onload = async function(e) { 
-                        library[bookIndex].coverBase64 = e.target.result; await localforage.setItem('pdf_epub_master', library); 
-                        history.back(); renderLibrary(); 
-                    }; 
-                    reader.readAsDataURL(coverFile); 
-                } else { await localforage.setItem('pdf_epub_master', library); history.back(); renderLibrary(); }
-            }
-        }
-
-        function openBook(book) {
-            activeBookId = book.id; pushAppHistory(`reader-${book.id}`);
-            DOM.libView.style.transform = 'scale(0.95)'; DOM.readView.classList.remove('translate-y-full');
-            DOM.title.textContent = book.title; 
-            
-            const loader = document.getElementById('reader-loading-overlay');
-            loader.classList.remove('hidden'); requestAnimationFrame(() => loader.classList.remove('opacity-0'));
-            
-            DOM.inner.innerHTML = ''; DOM.tocList.innerHTML = '';
-            if (observer) observer.disconnect();
-
-            DOM.progBar.style.width = `${book.progressPct || 0}%`; DOM.progTxt.textContent = `${book.progressPct || 0}%`;
-
+        function openBook(b) {
+            activeBookId = b.id; pushAppHistory(`reader-${b.id}`); DOM.libView.style.transform = 'scale(0.95)'; DOM.readView.classList.remove('translate-y-full'); DOM.title.textContent = b.title; 
+            const l = document.getElementById('reader-loading-overlay'); l.classList.remove('hidden'); requestAnimationFrame(() => l.classList.remove('opacity-0'));
+            DOM.inner.innerHTML = ''; DOM.tocList.innerHTML = ''; if (observer) observer.disconnect();
+            DOM.progBar.style.width = `${b.progressPct || 0}%`; DOM.progTxt.textContent = `${b.progressPct || 0}%`;
             setTimeout(() => {
-                let hCounter = 0; const fragment = document.createDocumentFragment(); let currentHeadingId = null;
-
-                book.nodes.forEach((node, i) => {
-                    let el; const annots = (book.annotations || []).filter(a => a.nodeIdx === i);
-
-                    if (node.tag === 'img') {
-                        el = document.createElement('img'); el.src = node.src; el.id = `node-${i}`;
-                        el.className = "w-full max-w-lg mx-auto rounded-2xl my-8 object-contain shadow-sm"; el.loading = "lazy";
-                    } else {
-                        el = document.createElement(node.tag); el.innerHTML = renderNodeText(node.text, annots); el.id = `node-${i}`;
-                        if (node.tag === 'h1' || node.tag === 'h2') {
-                            hCounter++; currentHeadingId = el.id; 
-                            el.className = node.tag === 'h1' ? "text-3xl font-bold tracking-tight mt-12 mb-6 text-m3-primary leading-snug break-words" : "text-xl font-bold mt-10 mb-4 text-m3-onSurfaceVariant border-b border-m3-surfaceVariant pb-2 break-words";
-                            const tocItem = document.createElement('button'); tocItem.id = `toc-btn-${el.id}`;
-                            tocItem.className = `text-left text-sm p-3 rounded-2xl hover:bg-m3-surface transition-all duration-300 ${node.tag==='h1'?'font-bold text-m3-primary':'ml-4 opacity-80'}`;
-                            tocItem.textContent = node.text;
-                            tocItem.onclick = () => { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); history.back(); };
-                            DOM.tocList.appendChild(tocItem);
-                        } else { el.className = "text-m3-onSurface opacity-90 mb-5 tracking-wide"; }
-                    }
-                    el.dataset.headingId = currentHeadingId; fragment.appendChild(el);
+                let hC = 0, frag = document.createDocumentFragment(), curH = null;
+                b.nodes.forEach((n, i) => {
+                    let el; const ans = (b.annotations || []).filter(a => a.nodeIdx === i);
+                    if (n.tag === 'img') { el = document.createElement('img'); el.src = n.src; el.className = "w-full max-w-lg mx-auto rounded-2xl my-8 object-contain"; } 
+                    else { el = document.createElement(n.tag); el.innerHTML = renderNodeText(n.text, ans);
+                        if (n.tag === 'h1' || n.tag === 'h2') { hC++; curH = `node-${i}`; el.className = n.tag === 'h1' ? "text-3xl font-bold mt-12 mb-6 text-m3-primary" : "text-xl font-bold mt-10 mb-4 text-m3-onSurfaceVariant border-b border-m3-surfaceVariant pb-2"; const ti = document.createElement('button'); ti.className = `text-left text-sm p-3 rounded-2xl ${n.tag==='h1'?'font-bold text-m3-primary':'ml-4 opacity-80'}`; ti.textContent = n.text; ti.onclick = () => { el.scrollIntoView({ behavior: 'smooth' }); history.back(); }; DOM.tocList.appendChild(ti); } 
+                        else el.className = "text-m3-onSurface opacity-90 mb-5 tracking-wide";
+                    } el.id = `node-${i}`; el.dataset.headingId = curH; frag.appendChild(el);
                 });
-                DOM.inner.appendChild(fragment);
-                
-                if(hCounter === 0) DOM.tocList.innerHTML = "<p class='text-sm opacity-50 block p-3'>No Table of Contents.</p>";
-                DOM.searchRes.classList.add('hidden'); DOM.searchInput.value = '';
-
-                const header = document.getElementById('reader-floating-header');
-                header.classList.remove('-translate-y-[150%]', 'opacity-0');
-                header.classList.add('translate-y-0', 'opacity-100');
-
-                loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
-
-                setTimeout(() => {
-                    if (book.lastReadId) { const target = document.getElementById(book.lastReadId); if (target) target.scrollIntoView({ behavior: 'auto', block: 'center' }); } 
-                    else { DOM.readContent.scrollTo(0,0); }
-                    setTimeout(() => { setupIntersectionObserver(); }, 300);
-                }, 100); 
-            }, 600); 
+                DOM.inner.appendChild(frag); l.classList.add('opacity-0'); setTimeout(() => l.classList.add('hidden'), 300);
+                if(b.lastReadId){ const t = document.getElementById(b.lastReadId); if(t) t.scrollIntoView({ behavior: 'auto', block: 'center' }); }
+                setTimeout(() => setupIntersectionObserver(), 300);
+            }, 600);
         }
 
-        function _closeReaderAction(isFromHistory = false) {
-            if (!isFromHistory) { history.back(); return; }
-            DOM.readView.classList.add('translate-y-full'); DOM.libView.style.transform = 'scale(1)';
-            if(observer) observer.disconnect(); renderLibrary(DOM.globalSearch.value); activeBookId = null;
-            window.getSelection().removeAllRanges();
-            const menu = document.getElementById('selection-menu');
-            if(menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
-            updateBottomNavUI(null);
-        }
-        DOM.backBtn.addEventListener('click', () => history.back());
-
-        function _closeSidePanelsAction(isFromHistory = false) { 
-            if (!isFromHistory) { history.back(); return; }
-            DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); DOM.setPanel.classList.add('translate-x-full', 'opacity-0'); 
-            const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.add('hidden');
-            activePanel = null;
-            updateBottomNavUI(null);
-        }
-
-        function togglePanel(panelEl, name, btnId) { 
-            if(activePanel === name) { history.back(); return; } 
-            
-            if(activePanel) { 
-                _closeSidePanelsAction(true); 
-                history.replaceState({ state: `panel-${name}` }, '', `#panel-${name}`); 
-            } else { 
-                pushAppHistory(`panel-${name}`); 
-            }
-            
-            panelEl.classList.remove('translate-x-full', 'opacity-0'); 
-            const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.remove('hidden');
-            activePanel = name; 
-            updateBottomNavUI(btnId);
-        }
-
-        DOM.tocBtn.onclick = () => togglePanel(DOM.tocPanel, 'toc', 'btn-toc'); 
-        DOM.setBtn.onclick = () => togglePanel(DOM.setPanel, 'set', 'btn-settings');
-        
-        let inbookSearchTimeout;
-        DOM.searchInput.addEventListener('input', (e) => {
-            clearTimeout(inbookSearchTimeout);
-            inbookSearchTimeout = setTimeout(() => executeSearch(), 300);
-        });
-
-        window.executeSearch = function() {
-            const query = DOM.searchInput.value.toLowerCase().trim(); DOM.searchRes.innerHTML = '';
-            const d = i18n[wikiLang] || i18n['id'];
-            if(!query) { 
-                DOM.searchRes.classList.add('hidden');
-                return; 
-            }
-            
-            document.querySelectorAll('mark.search-hl').forEach(m => m.outerHTML = m.innerHTML);
-
-            const book = library.find(b => b.id === activeBookId); let results = [];
-            book.nodes.forEach((node, idx) => {
-                if(node.tag === 'img') return; 
-                if(node.text.toLowerCase().includes(query)) {
-                    let snippet = node.text;
-                    if(snippet.length > 60) {
-                        const matchIdx = snippet.toLowerCase().indexOf(query); const start = Math.max(0, matchIdx - 20);
-                        snippet = "..." + snippet.substring(start, start + 60) + "...";
-                    }
-                    results.push({ id: `node-${idx}`, text: snippet, isTitle: node.tag === 'h1' || node.tag === 'h2' });
-                }
-            });
-            
-            if(results.length === 0) {
-                DOM.searchRes.innerHTML = `<p class="p-3 text-center opacity-60 text-xs">${d.searchNotFound}</p>`;
-            } else {
-                results.forEach(res => {
-                    const btn = document.createElement('button');
-                    btn.className = `w-full text-left p-3 hover:bg-m3-onSurfaceVariant/10 rounded-xl transition-colors ${res.isTitle ? 'font-bold text-m3-primary' : ''}`;
-                    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const regexUI = new RegExp(`(${escapedQuery})`, 'gi');
-                    btn.innerHTML = res.text.replace(regexUI, `<mark class="bg-m3-primary/20 text-m3-primary rounded px-1 font-bold">$1</mark>`);
-                    
-                    btn.onclick = () => {
-                        const target = document.getElementById(res.id);
-                        if(target) {
-                            const nodeIdx = parseInt(res.id.split('-')[1]); const activeBook = library.find(b => b.id === activeBookId);
-                            const nodeText = activeBook.nodes[nodeIdx].text; const currentAnnots = (activeBook.annotations || []).filter(a => a.nodeIdx === nodeIdx);
-                            
-                            let hlText = nodeText.replace(regexUI, `|||SRCMARK|||$1|||ENDSRCMARK|||`);
-                            let hlHtml = renderNodeText(hlText, currentAnnots);
-                            hlHtml = hlHtml.replace(/\|\|\|SRCMARK\|\|\|/g, '<mark class="search-hl">').replace(/\|\|\|ENDSRCMARK\|\|\|/g, '</mark>');
-                            
-                            target.innerHTML = hlHtml;
-                            const markEl = target.querySelector('mark.search-hl');
-                            if(markEl) markEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); else target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            
-                            setTimeout(() => { 
-                                target.querySelectorAll('mark.search-hl').forEach(m => { m.style.backgroundColor = 'transparent'; m.style.color = 'inherit'; m.style.boxShadow = 'none'; }); 
-                                setTimeout(() => { target.innerHTML = renderNodeText(nodeText, currentAnnots); }, 1500); 
-                            }, 2000);
-                        }
-                        history.back();
-                    };
-                    DOM.searchRes.appendChild(btn);
-                });
-            }
-            DOM.searchRes.classList.remove('hidden');
-        }
+        function _closeReaderAction(h = false) { if (!h) { history.back(); return; } DOM.readView.classList.add('translate-y-full'); DOM.libView.style.transform = 'scale(1)'; if(observer) observer.disconnect(); renderLibrary(DOM.globalSearch.value); activeBookId = null; }
+        function _closeSidePanelsAction(h = false) { if (!h) { history.back(); return; } DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); DOM.setPanel.classList.add('translate-x-full', 'opacity-0'); document.getElementById('side-panel-overlay').classList.add('hidden'); activePanel = null; }
+        function togglePanel(p, n, b) { if(activePanel === n) { history.back(); return; } if(activePanel) { _closeSidePanelsAction(true); history.replaceState({ state: `panel-${n}` }, '', `#panel-${n}`); } else pushAppHistory(`panel-${n}`); p.classList.remove('translate-x-full', 'opacity-0'); document.getElementById('side-panel-overlay').classList.remove('hidden'); activePanel = n; updateBottomNavUI(b); }
+        DOM.tocBtn.onclick = () => togglePanel(DOM.tocPanel, 'toc', 'btn-toc'); DOM.setBtn.onclick = () => togglePanel(DOM.setPanel, 'set', 'btn-settings');
+        DOM.backBtn.onclick = () => history.back();
 
         function setupIntersectionObserver() {
-            if (observer) observer.disconnect(); const totalNodes = DOM.inner.children.length;
-            observer = new IntersectionObserver((entries) => {
-                let visibleEntry = entries.find(e => e.isIntersecting);
-                if (visibleEntry) {
-                    const el = visibleEntry.target; const id = el.id; const index = parseInt(id.split('-')[1]);
-                    const pct = Math.round(((index + 1) / totalNodes) * 100);
-                    DOM.progBar.style.width = `${pct}%`; DOM.progTxt.textContent = `${pct}%`;
-
-                    const activeHeadingId = el.dataset.headingId;
-                    Array.from(DOM.tocList.children).forEach(btn => { btn.classList.remove('bg-m3-primaryContainer', 'text-m3-onPrimaryContainer', 'font-bold', 'translate-x-2', '!opacity-100', '!text-m3-onPrimaryContainer'); });
-                    if(activeHeadingId) { 
-                        const tocActiveBtn = document.getElementById(`toc-btn-${activeHeadingId}`); 
-                        if (tocActiveBtn) { tocActiveBtn.classList.add('bg-m3-primaryContainer', '!text-m3-onPrimaryContainer', 'font-bold', 'translate-x-2', '!opacity-100'); }
-                    }
-                    updateBookProgress(activeBookId, id, pct);
-                }
+            if (observer) observer.disconnect(); const nodes = DOM.inner.children.length;
+            observer = new IntersectionObserver((es) => {
+                let v = es.find(e => e.isIntersecting); if (v) { const el = v.target, id = el.id, idx = parseInt(id.split('-')[1]), pct = Math.round(((idx+1)/nodes)*100); DOM.progBar.style.width = `${pct}%`; DOM.progTxt.textContent = `${pct}%`; updateBookProgress(activeBookId, id, pct); }
             }, { root: DOM.readContent, rootMargin: '-10% 0px -50% 0px', threshold: 0.1 });
             Array.from(DOM.inner.children).forEach(el => observer.observe(el));
         }
+        async function updateBookProgress(id, lId, p) { let idx = library.findIndex(x => x.id === id); if(idx>-1){ library[idx].lastReadId = lId; library[idx].progressPct = p; localforage.setItem('pdf_epub_master', library); } }
 
-        let progressSaveTimeout = null;
-        async function updateBookProgress(bookId, lastNodeId, pct) {
-            let bookIndex = library.findIndex(b => b.id === bookId);
-            if(bookIndex > -1) { 
-                library[bookIndex].lastReadId = lastNodeId; library[bookIndex].progressPct = pct; 
-                if (progressSaveTimeout) clearTimeout(progressSaveTimeout);
-                progressSaveTimeout = setTimeout(() => { localforage.setItem('pdf_epub_master', library); }, 1500);
-            }
-        }
-
-        // Annotations
         document.addEventListener('selectionchange', () => {
-            if(!activeBookId) return;
-            const sel = window.getSelection(); const text = sel.toString().trim(); const menu = document.getElementById('selection-menu');
-            
-            if (text.length > 0 && sel.rangeCount > 0) {
-                const range = sel.getRangeAt(0);
-                if (!DOM.inner.contains(range.commonAncestorContainer)) return;
-
-                let curr = range.commonAncestorContainer;
-                if (curr.nodeType === 3) curr = curr.parentNode; 
-                const nodeEl = curr.closest('[id^="node-"]'); if (!nodeEl) return;
-                
-                const nodeIdx = parseInt(nodeEl.id.split('-')[1]);
-                currentSelection = { text: text, nodeIdx: nodeIdx };
-                menu.classList.remove('hidden');
-
-                const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 260; const padding = 16;
-                let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
-                if (targetLeft < padding) targetLeft = padding;
-                if (targetLeft + menuWidth > window.innerWidth - padding) targetLeft = window.innerWidth - menuWidth - padding;
-                let targetTop = rect.top - 55;
-                if (targetTop < 80) targetTop = rect.bottom + 15; 
-
-                menu.style.top = `${targetTop}px`; menu.style.left = `${targetLeft}px`;
-                requestAnimationFrame(() => { menu.classList.remove('opacity-0', 'scale-75'); });
-            } else { hideSelectionMenu(); }
+            if(!activeBookId) return; const sel = window.getSelection(), txt = sel.toString().trim(), menu = document.getElementById('selection-menu');
+            if (txt.length > 0 && sel.rangeCount > 0) {
+                const r = sel.getRangeAt(0); if (!DOM.inner.contains(r.commonAncestorContainer)) return;
+                let cur = r.commonAncestorContainer; if (cur.nodeType === 3) cur = cur.parentNode; const nEl = cur.closest('[id^="node-"]'); if (!nEl) return;
+                currentSelection = { text: txt, nodeIdx: parseInt(nEl.id.split('-')[1]) }; menu.classList.remove('hidden');
+                const rect = r.getBoundingClientRect(), mWidth = menu.offsetWidth || 260, pad = 16;
+                let tL = rect.left + (rect.width/2) - (mWidth/2); tL = Math.max(pad, Math.min(tL, window.innerWidth - mWidth - pad));
+                let tT = rect.top - 55; if (tT < 80) tT = rect.bottom + 15;
+                menu.style.top = `${tT}px`; menu.style.left = `${tL}px`; requestAnimationFrame(() => menu.classList.remove('opacity-0', 'scale-75'));
+            } else hideSelectionMenu();
         });
-
-        DOM.readContent.addEventListener('mousedown', (e) => { if(!window.getSelection().toString().trim()) { hideSelectionMenu(); } });
-
-        function hideSelectionMenu() {
-            const menu = document.getElementById('selection-menu');
-            if (menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
-        }
-
-        async function registerAnnotation(annotObj) {
-            hideSelectionMenu(); const bookIndex = library.findIndex(b => b.id === activeBookId); if(bookIndex === -1) return;
-            const book = library[bookIndex]; if(!book.annotations) book.annotations = [];
-            book.annotations.push(annotObj); await localforage.setItem('pdf_epub_master', library);
-            
-            const nodeEl = document.getElementById(`node-${annotObj.nodeIdx}`);
-            if(nodeEl && book.nodes[annotObj.nodeIdx]) {
-                const currentAnnots = book.annotations.filter(a => a.nodeIdx === annotObj.nodeIdx);
-                nodeEl.innerHTML = renderNodeText(book.nodes[annotObj.nodeIdx].text, currentAnnots);
-            }
-            window.getSelection().removeAllRanges();
-        }
-
-        window.applyAnnotation = function(color) {
-            if(currentSelection.nodeIdx === -1) return;
-            const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: color, note: "" };
-            registerAnnotation(newAnnot);
-        };
-
-        window.setNoteColor = function(color) {
-            activeNoteColor = color;
-            ['yellow', 'green', 'pink'].forEach(c => {
-                document.getElementById('nc-'+c).classList.remove('ring-m3-primary');
-                document.getElementById('nc-'+c).classList.add('ring-transparent');
-            });
-            document.getElementById('nc-'+color).classList.add('ring-m3-primary');
-            document.getElementById('nc-'+color).classList.remove('ring-transparent');
-        };
-
-        window.openNoteInput = function() {
-            if(currentSelection.nodeIdx === -1) return;
-            editingAnnotId = null;
-            document.getElementById('note-input-text').value = '';
-            setNoteColor('yellow');
-            document.getElementById('btn-delete-note').classList.add('hidden');
-            openModal('note-modal', 'note-sheet', true);
-        };
-
-        window.showAnnotationDetails = function(annotId) {
-            event.preventDefault(); event.stopPropagation();
-            const book = library.find(b => b.id === activeBookId); if(!book || !book.annotations) return;
-            const annot = book.annotations.find(a => a.id === annotId); if(!annot) return;
-            
-            editingAnnotId = annotId;
-            currentSelection = { nodeIdx: annot.nodeIdx, text: annot.text };
-            
-            document.getElementById('note-input-text').value = annot.note || '';
-            setNoteColor(annot.color || 'yellow');
-            document.getElementById('btn-delete-note').classList.remove('hidden');
-            
-            openModal('note-modal', 'note-sheet', true);
-        };
-
-        window.saveNoteAnnotation = function() {
-            const val = document.getElementById('note-input-text').value.trim();
-            history.back();
-            
-            if(editingAnnotId) {
-                const bookIndex = library.findIndex(b => b.id === activeBookId);
-                if(bookIndex > -1) {
-                    const annotIndex = library[bookIndex].annotations.findIndex(a => a.id === editingAnnotId);
-                    if(annotIndex > -1) {
-                        library[bookIndex].annotations[annotIndex].note = val;
-                        library[bookIndex].annotations[annotIndex].color = activeNoteColor;
-                        localforage.setItem('pdf_epub_master', library).then(() => {
-                            const nodeIdx = library[bookIndex].annotations[annotIndex].nodeIdx;
-                            const nodeEl = document.getElementById(`node-${nodeIdx}`);
-                            if(nodeEl) nodeEl.innerHTML = renderNodeText(library[bookIndex].nodes[nodeIdx].text, library[bookIndex].annotations.filter(a => a.nodeIdx === nodeIdx));
-                        });
-                    }
-                }
-            } else {
-                const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: activeNoteColor, note: val };
-                setTimeout(() => { registerAnnotation(newAnnot); }, 300);
-            }
-        };
-
-        window.deleteNoteInsideModal = function() {
-            const d = i18n[wikiLang] || i18n['id'];
-            
-            showDialog(
-                "Hapus Catatan",
-                d.deleteNoteConfirm,
-                "trash-2",
-                [
-                    { text: "Batal", primary: false },
-                    { text: "Hapus", primary: true, action: () => {
-                        window.closeDialog();
-                        activeAnnotationId = editingAnnotId;
-                        deleteAnnotationById();
-                        history.back(); // close note modal
-                    }}
-                ]
-            );
-        }
-
-        window.deleteAnnotationById = async function() {
-            if(!activeAnnotationId || !activeBookId) return; 
-            const bookIndex = library.findIndex(b => b.id === activeBookId); if(bookIndex === -1) return;
-            const book = library[bookIndex]; const annotIndex = book.annotations.findIndex(a => a.id === activeAnnotationId); if(annotIndex === -1) return;
-            
-            const nodeIdx = book.annotations[annotIndex].nodeIdx; book.annotations.splice(annotIndex, 1);
-            await localforage.setItem('pdf_epub_master', library);
-            
-            const nodeEl = document.getElementById(`node-${nodeIdx}`);
-            if(nodeEl && book.nodes[nodeIdx]) {
-                const currentAnnots = book.annotations.filter(a => a.nodeIdx === nodeIdx);
-                nodeEl.innerHTML = renderNodeText(book.nodes[nodeIdx].text, currentAnnots);
-            }
-        };
+        function hideSelectionMenu() { const m = document.getElementById('selection-menu'); if(m){ m.classList.add('opacity-0', 'scale-75'); setTimeout(()=>m.classList.add('hidden'), 200); } }
 
         window.lookupDictionary = async function() {
             if(currentSelection.nodeIdx === -1) return; const term = currentSelection.text; hideSelectionMenu();
             const d = i18n[wikiLang] || i18n['id'];
-            
             document.getElementById('ai-term').textContent = term;
-            document.getElementById('ai-loading').classList.remove('hidden'); document.getElementById('ai-content').innerHTML = '';
-            
+            document.getElementById('ai-loading').classList.remove('hidden');
+            document.getElementById('ai-content').innerHTML = '';
             pushAppHistory(`ai-modal`);
-            const m = document.getElementById('ai-modal'); const s = document.getElementById('ai-sheet');
+            const m = document.getElementById('ai-modal'), s = document.getElementById('ai-sheet');
             m.classList.remove('hidden'); requestAnimationFrame(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full', 'scale-75'); });
             
+            const gemKey = localStorage.getItem('gemini_api_key');
+            const q = encodeURIComponent(term);
+            
             try {
-                const q = encodeURIComponent(term); let wikiHtml = ''; let dictHtml = '';
-                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-                const [resWiki, resSearch, resDict, resWiktionary] = await Promise.allSettled([
-                    fetch(`https://${wikiLang}.wikipedia.org/api/rest_v1/page/summary/${q}`, { signal: controller.signal }),
-                    fetch(`https://${wikiLang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${q}&utf8=&format=json&origin=*`, { signal: controller.signal }),
-                    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${q}`, { signal: controller.signal }),
-                    fetch(`https://${wikiLang}.wiktionary.org/api/rest_v1/page/definition/${q}`, { signal: controller.signal })
+                const results = await Promise.allSettled([
+                    fetch(`https://${wikiLang}.wikipedia.org/api/rest_v1/page/summary/${q}`),
+                    fetch(`https://${wikiLang}.wiktionary.org/api/rest_v1/page/definition/${q}`),
+                    gemKey ? getGeminiExplanation(term, wikiLang, gemKey) : Promise.reject("No Key")
                 ]);
-                clearTimeout(timeoutId);
 
-                if (resWiki.status === 'fulfilled' && resWiki.value.ok) {
-                    const data = await resWiki.value.json();
-                    wikiHtml = `<p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Wikipedia (${wikiLang.toUpperCase()})</p><p class="mb-4 text-sm">${data.extract}</p>`;
-                } else if (resSearch.status === 'fulfilled' && resSearch.value.ok) {
-                    const dataSearch = await resSearch.value.json();
-                    if(dataSearch.query && dataSearch.query.search.length > 0) {
-                        const topHit = dataSearch.query.search[0];
-                        wikiHtml = `<p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Wikipedia: ${topHit.title}</p><p class="mb-4 text-sm">${topHit.snippet}...</p>`;
-                    }
+                let wikiHtml = '', wiktHtml = '', geminiHtml = '';
+
+                // Gemini Result
+                if(results[2].status === 'fulfilled') {
+                    geminiHtml = `<div class="bg-m3-primaryContainer text-m3-onPrimaryContainer p-4 rounded-3xl mb-4 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2 opacity-70"><i data-lucide="sparkles" class="w-4 h-4"></i><span class="text-[10px] font-bold uppercase tracking-widest">Gemini AI</span></div>
+                        <p class="text-sm leading-relaxed">${results[2].value}</p>
+                    </div>`;
+                } else if(gemKey) {
+                    geminiHtml = `<div class="p-3 mb-4 border-2 border-dashed border-m3-onSurfaceVariant/20 rounded-3xl text-[10px] font-medium opacity-50 text-center italic">Gemini AI Gagal: ${results[2].reason}</div>`;
                 }
 
-                if (resDict.status === 'fulfilled' && resDict.value.ok) {
-                    try {
-                        const dataDict = await resDict.value.json();
-                        if (dataDict && dataDict.length > 0) {
-                            const meanings = dataDict[0].meanings;
-                            let meaningsHtml = meanings.slice(0, 2).map(m => {
-                                const defs = m.definitions.slice(0, 2).map(def => `<li class="mb-1">${def.definition}</li>`).join('');
-                                return `<div class="mb-2"><span class="italic text-xs font-bold text-m3-primary">${m.partOfSpeech}</span><ul class="list-disc pl-4 mt-1 text-sm">${defs}</ul></div>`;
-                            }).join('');
-                            dictHtml += `<div class="mt-4 pt-4 border-t border-m3-onSurfaceVariant/10"><p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Dictionary (EN)</p>${meaningsHtml}</div>`;
-                        }
-                    } catch(e) {}
+                // Wikipedia Result
+                if(results[0].status === 'fulfilled' && results[0].value.ok) {
+                    const data = await results[0].value.json();
+                    wikiHtml = `<div class="mb-4"><span class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1 block pl-1">Wikipedia</span><p class="text-sm opacity-90">${data.extract}</p></div>`;
                 }
 
-                if (resWiktionary.status === 'fulfilled' && resWiktionary.value.ok) {
-                    try {
-                        const dataWikt = await resWiktionary.value.json(); let wiktMeanings = '';
-                        Object.keys(dataWikt).forEach(langCode => {
-                            const entries = dataWikt[langCode];
-                            entries.slice(0, 2).forEach(entry => {
-                                if(entry.definitions && entry.definitions.length > 0) {
-                                    const defs = entry.definitions.slice(0, 2).map(def => { let text = def.definition.replace(/<[^>]*>?/gm, ''); return `<li class="mb-1">${text}</li>`; }).join('');
-                                    wiktMeanings += `<div class="mb-2"><span class="italic text-xs font-bold text-m3-primary">${entry.partOfSpeech || 'Word'}</span><ul class="list-disc pl-4 mt-1 text-sm">${defs}</ul></div>`;
-                                }
-                            });
+                // Wiktionary Result
+                if(results[1].status === 'fulfilled' && results[1].value.ok) {
+                    const data = await results[1].value.json();
+                    let meanings = '';
+                    Object.keys(data).forEach(lang => {
+                        data[lang].slice(0,1).forEach(e => {
+                            if(e.definitions) meanings += e.definitions.slice(0,2).map(df => `<li class="mb-1">${df.definition.replace(/<[^>]*>?/gm, '')}</li>`).join('');
                         });
-                        if(wiktMeanings) { dictHtml += `<div class="mt-4 pt-4 border-t border-m3-onSurfaceVariant/10"><p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Wiktionary (${wikiLang.toUpperCase()})</p>${wiktMeanings}</div>`; }
-                    } catch(e) {}
+                    });
+                    if(meanings) wiktHtml = `<div class="mb-4 pt-4 border-t border-m3-onSurfaceVariant/10"><span class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1 block pl-1">Wiktionary</span><ul class="list-disc pl-5 text-sm opacity-90">${meanings}</ul></div>`;
                 }
 
-                const extLinks = `
-                    <div class="mt-4 pt-4 border-t border-m3-onSurfaceVariant/10 flex gap-2 flex-wrap items-center">
-                        <span class="text-xs font-bold opacity-50 uppercase tracking-wider w-full mb-1">External Search:</span>
-                        <a href="https://${wikiLang}.wikipedia.org/wiki/Special:Search?search=${q}" target="_blank" class="text-m3-primary/90 hover:text-m3-primary font-bold inline-flex items-center gap-1 text-xs bg-m3-primary/10 hover:bg-m3-primary/20 transition-all px-3 py-1.5 rounded-full">Wiki <i data-lucide="external-link" class="w-3 h-3"></i></a>
-                        <a href="https://kbbi.web.id/${q}" target="_blank" class="text-m3-primary/90 hover:text-m3-primary font-bold inline-flex items-center gap-1 text-xs bg-m3-primary/10 hover:bg-m3-primary/20 transition-all px-3 py-1.5 rounded-full">KBBI <i data-lucide="external-link" class="w-3 h-3"></i></a>
-                    </div>
-                `;
+                const extLinks = `<div class="flex gap-2 mt-4 pt-4 border-t border-m3-onSurfaceVariant/10">
+                    <a href="https://${wikiLang}.wikipedia.org/wiki/${q}" target="_blank" class="text-xs font-bold text-m3-primary bg-m3-primary/10 px-3 py-2 rounded-full flex items-center gap-1">Wiki <i data-lucide="external-link" class="w-3 h-3"></i></a>
+                    <a href="https://www.google.com/search?q=${q}" target="_blank" class="text-xs font-bold text-m3-primary bg-m3-primary/10 px-3 py-2 rounded-full flex items-center gap-1">Google <i data-lucide="external-link" class="w-3 h-3"></i></a>
+                </div>`;
 
-                if(!wikiHtml && !dictHtml) {
-                    document.getElementById('ai-content').innerHTML = `
-                        <div class="flex flex-col items-center justify-center p-4 opacity-50 mb-2">
-                            <i data-lucide="ghost" class="w-10 h-10 mb-3"></i>
-                            <p class="text-center font-medium">${d.searchNotFound}</p>
-                        </div>
-                        ${extLinks}
-                    `;
+                if(!geminiHtml && !wikiHtml && !wiktHtml) {
+                    document.getElementById('ai-content').innerHTML = `<p class="text-center py-10 opacity-50">${d.searchNotFound}</p>` + extLinks;
                 } else {
-                    document.getElementById('ai-content').innerHTML = wikiHtml + dictHtml + extLinks;
+                    document.getElementById('ai-content').innerHTML = geminiHtml + wikiHtml + wiktHtml + extLinks;
                 }
                 if(window.lucide) window.lucide.createIcons();
             } catch(e) {
-                document.getElementById('ai-content').innerHTML = `<p class="text-red-500 font-bold">${d.noInternet}</p>`;
+                document.getElementById('ai-content').innerHTML = `<p class="text-red-500">${d.noInternet}</p>`;
             } finally {
-                window.getSelection().removeAllRanges(); document.getElementById('ai-loading').classList.add('hidden');
+                document.getElementById('ai-loading').classList.add('hidden'); window.getSelection().removeAllRanges();
             }
         };
 
-        window.closeAiModal = function(isFromHistory = false) {
-            if (!isFromHistory) { history.back(); return; }
-            const m = document.getElementById('ai-modal'); const s = document.getElementById('ai-sheet');
-            s.classList.add('translate-y-full', 'scale-75'); m.classList.add('opacity-0'); 
-            setTimeout(() => m.classList.add('hidden'), 300);
-        };
-
-        DOM.file.addEventListener('change', async (e) => {
-            const file = e.target.files[0]; if (!file) return;
-            const originalFilename = file.name; const ext = originalFilename.split('.').pop().toLowerCase(); const bookTitle = originalFilename.replace(/\.[^/.]+$/, "");
-            DOM.load.classList.remove('hidden'); DOM.loadBar.style.width = '0%'; DOM.loadPct.textContent = '0%';
-
-            try {
-                if (ext === 'pdf') await handlePdf(file, bookTitle);
-                else if (ext === 'epub') await handleEpub(file, bookTitle);
-                else throw new Error("Hanya PDF/EPUB.");
-            } catch (err) { 
-                showDialog("Gagal Buka Buku", err.message, "alert-triangle", [{text: "Tutup", primary: true}]);
-                console.error(err); 
-            } 
-            finally { setTimeout(() => { DOM.load.classList.add('hidden'); DOM.file.value = ''; }, 500); }
-        });
-
-        async function handlePdf(file, bookTitle) {
-            const d = i18n[wikiLang] || i18n['id'];
-            DOM.loadTxt.textContent = "Opening PDF...";
-            const arrayBuffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise; const numPages = pdf.numPages;
-            if(numPages === 0) throw new Error("Document is empty.");
-            let allItems = []; let coverBase64 = null;
+        async function getGeminiExplanation(term, lang, key) {
+            const prompt = lang === 'id' ? 
+                `Jelaskan istilah "${term}" dengan bahasa yang sangat awam dan mudah dimengerti, seolah-olah kamu sedang menjelaskan kepada orang yang sama sekali tidak tahu atau kepada anak kecil. Berikan penjelasan yang singkat, padat, dan jelas.` :
+                `Explain the term "${term}" in very simple, layman's terms as if you were explaining it to a child or someone with no background knowledge. Keep it concise and clear.`;
             
-            try {
-                DOM.loadTxt.textContent = d.extractingCover;
-                const page1 = await pdf.getPage(1); const viewport = page1.getViewport({ scale: 0.8 });
-                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                canvas.height = viewport.height; canvas.width = viewport.width;
-                await page1.render({ canvasContext: ctx, viewport: viewport }).promise; coverBase64 = canvas.toDataURL('image/jpeg', 0.6);
-            } catch(e) {}
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await resp.json();
+            if(data.candidates && data.candidates[0].content) return data.candidates[0].content.parts[0].text;
+            throw new Error(data.error?.message || "Gemini Error");
+        }
 
-            for (let i = 1; i <= numPages; i++) {
-                const pct = Math.round((i / numPages) * 100);
-                if(i % 5 === 0 || i === numPages) await new Promise(r => setTimeout(r, 0));
-                DOM.loadBar.style.width = `${pct}%`; DOM.loadPct.textContent = `${pct}%`; DOM.loadTxt.textContent = `${d.readingPage} ${i}`;
+        window.closeAiModal = (h = false) => { if (!h) { history.back(); return; } const m = document.getElementById('ai-modal'), s = document.getElementById('ai-sheet'); s.classList.add('translate-y-full', 'scale-75'); m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300); };
 
-                const page = await pdf.getPage(i); const viewport = page.getViewport({ scale: 1.0 }); const pageHeight = viewport.height;
-                const textContent = await page.getTextContent();
-                textContent.items.forEach(item => {
-                    const str = item.str.trim(); if (str === '') return;
-                    const yPos = item.transform[5];
-                    if (yPos < pageHeight * 0.10 || yPos > pageHeight * 0.90) return;
-                    if (/^\d+$/.test(str) || str.toLowerCase() === bookTitle.toLowerCase()) return;
-                    allItems.push({ text: item.str, height: item.transform[0], y: yPos });
-                });
+        DOM.file.onchange = async (e) => {
+            const f = e.target.files[0]; if(!f) return; const t = f.name.replace(/\.[^/.]+$/, ""), ext = f.name.split('.').pop().toLowerCase();
+            DOM.load.classList.remove('hidden'); try { if(ext==='pdf') await handlePdf(f,t); else if(ext==='epub') await handleEpub(f,t); } catch(err){ showDialog("Error", err.message, "alert-circle", [{text:"OK", primary:true}]); }
+            DOM.load.classList.add('hidden'); DOM.file.value = '';
+        };
+
+        async function handlePdf(f, t) {
+            const array = await f.arrayBuffer(), pdf = await pdfjsLib.getDocument({data:array}).promise; let nodes = [], cover = null;
+            try { const p1 = await pdf.getPage(1), v = p1.getViewport({scale:0.6}), c = document.createElement('canvas'), ctx = c.getContext('2d'); c.height=v.height; c.width=v.width; await p1.render({canvasContext:ctx, viewport:v}).promise; cover = c.toDataURL('image/jpeg', 0.6); } catch(e){}
+            for(let i=1; i<=pdf.numPages; i++){
+                const p = await pdf.getPage(i), txt = await p.getTextContent();
+                txt.items.forEach(it => { if(it.str.trim()) nodes.push({tag:'p', text:it.str.trim()}); });
+                DOM.loadBar.style.width = `${Math.round((i/pdf.numPages)*100)}%`;
             }
-            DOM.loadTxt.textContent = d.formattingText; await new Promise(r => setTimeout(r, 50));
-            if(allItems.length === 0) throw new Error("This PDF only contains images.");
-
-            const avgHeight = allItems.reduce((acc, i) => acc + i.height, 0) / allItems.length;
-            let parsedNodes = [], currentPar = "", lastY = -1;
-
-            allItems.forEach(item => {
-                if (lastY !== -1 && Math.abs(item.y - lastY) > avgHeight * 1.5) {
-                    if (currentPar.trim() !== "") { 
-                        const lastChar = currentPar.trim().slice(-1);
-                        if (['.', '?', '!', '"', '”', '’', ':'].includes(lastChar)) { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; } 
-                        else { currentPar += " "; }
-                    }
-                }
-                if (item.height > avgHeight * 1.4) {
-                    if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
-                    parsedNodes.push({ tag: 'h1', text: item.text.trim() });
-                } else if (item.height > avgHeight * 1.15) {
-                    if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
-                    parsedNodes.push({ tag: 'h2', text: item.text.trim() });
-                } else { currentPar += item.text + " "; }
-                lastY = item.y;
-            });
-            if (currentPar.trim() !== "") parsedNodes.push({ tag: 'p', text: currentPar.trim() });
-
-            let cleanedNodes = [];
-            parsedNodes.forEach(curr => {
-                if (cleanedNodes.length > 0) {
-                    let prev = cleanedNodes[cleanedNodes.length-1];
-                    if (curr.tag === prev.tag && (curr.tag === 'h1' || curr.tag === 'h2')) { prev.text += " " + curr.text; return; }
-                }
-                cleanedNodes.push(curr);
-            });
-            library.push({ id: Date.now().toString(), type: 'pdf', title: bookTitle, nodes: cleanedNodes, pages: numPages, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'square' });
+            library.push({id:Date.now().toString(), type:'pdf', title:t, nodes:nodes, progressPct:0, coverBase64:cover, shape:'square'});
             await localforage.setItem('pdf_epub_master', library); renderLibrary();
         }
 
-        async function handleEpub(file, bookTitle) {
-            const d = i18n[wikiLang] || i18n['id'];
-            DOM.loadTxt.textContent = d.extractingEpub; DOM.loadBar.style.width = '10%'; DOM.loadPct.textContent = '10%';
-            const zip = await JSZip.loadAsync(file);
-            const containerData = await zip.file("META-INF/container.xml").async("string");
-            const containerDom = new DOMParser().parseFromString(containerData, "text/xml");
-            const rootfile = containerDom.querySelector("rootfile"); if (!rootfile) throw new Error("Invalid or corrupted EPUB file.");
-            const opfPath = rootfile.getAttribute("full-path"); const basePath = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
-
-            DOM.loadTxt.textContent = d.analyzingStruct;
-            const opfData = await zip.file(opfPath).async("string"); const opfDom = new DOMParser().parseFromString(opfData, "text/xml");
-            const manifest = {}; opfDom.querySelectorAll("manifest > item").forEach(item => { manifest[item.getAttribute("id")] = item.getAttribute("href"); });
-            const spine = []; opfDom.querySelectorAll("spine > itemref").forEach(ref => { spine.push(manifest[ref.getAttribute("idref")]); });
-
-            let coverBase64 = null; const coverMeta = opfDom.querySelector("meta[name='cover']");
-            if (coverMeta && manifest[coverMeta.getAttribute("content")]) {
-                const coverPath = basePath + manifest[coverMeta.getAttribute("content")]; const coverFile = zip.file(coverPath);
-                if (coverFile) { const base64Str = await coverFile.async("base64"); coverBase64 = "data:image/jpeg;base64," + base64Str; }
-            }
-
-            let parsedNodes = [];
-            for (let i = 0; i < spine.length; i++) {
-                const pct = Math.round(((i+1) / spine.length) * 80) + 20;
-                DOM.loadBar.style.width = `${pct}%`; DOM.loadPct.textContent = `${pct}%`; DOM.loadTxt.textContent = `${d.extractingChapter} ${i+1}/${spine.length}`;
-                await new Promise(r => setTimeout(r, 0));
-
-                const htmlPath = basePath + spine[i]; const htmlFile = zip.file(htmlPath); if(!htmlFile) continue;
-                const htmlString = await htmlFile.async("string"); const doc = new DOMParser().parseFromString(htmlString, "text/html");
-                const elements = doc.body.querySelectorAll('h1, h2, h3, p, img');
-                for (const el of elements) {
+        async function handleEpub(f, t) {
+            const zip = await JSZip.loadAsync(f), cont = await zip.file("META-INF/container.xml").async("string"), opfP = new DOMParser().parseFromString(cont,"text/xml").querySelector("rootfile").getAttribute("full-path"), base = opfP.includes('/')?opfP.substring(0,opfP.lastIndexOf('/')+1):'';
+            const opf = await zip.file(opfP).async("string"), oDom = new DOMParser().parseFromString(opf,"text/xml"), mani={}, spine=[];
+            oDom.querySelectorAll("manifest > item").forEach(i => mani[i.getAttribute("id")]=i.getAttribute("href"));
+            oDom.querySelectorAll("spine > itemref").forEach(r => spine.push(mani[r.getAttribute("idref")]));
+            let cover = null, cM = oDom.querySelector("meta[name='cover']");
+            if(cM && mani[cM.getAttribute("content")]){ const cF = zip.file(base+mani[cM.getAttribute("content")]); if(cF) cover = "data:image/jpeg;base64," + await cF.async("base64"); }
+            let nodes = [];
+            for(let i=0; i<spine.length; i++){
+                const hS = await zip.file(base+spine[i]).async("string"), hD = new DOMParser().parseFromString(hS,"text/html");
+                hD.body.querySelectorAll('h1,h2,h3,p,img').forEach(el => {
                     const tag = el.tagName.toLowerCase();
-                    if (tag === 'img' || tag === 'image') {
-                        let src = el.getAttribute('src') || el.getAttribute('href');
-                        if (src && !src.startsWith('http')) {
-                            let absPath = resolveRelativePath(htmlPath, src); const imgFile = zip.file(absPath);
-                            if (imgFile) { const b64 = await imgFile.async("base64"); parsedNodes.push({ tag: 'img', src: "data:image/jpeg;base64," + b64 }); }
-                        }
-                    } else {
-                        const text = el.textContent.trim();
-                        if (text) { let cleanTag = tag; if (tag === 'h3') cleanTag = 'h2'; parsedNodes.push({ tag: cleanTag, text: text }); }
-                    }
-                }
+                    if(tag==='img'){ /* handle img if needed */ } else if(el.textContent.trim()) nodes.push({tag:tag.startsWith('h')?tag:'p', text:el.textContent.trim()});
+                });
+                DOM.loadBar.style.width = `${Math.round(((i+1)/spine.length)*100)}%`;
             }
-            library.push({ id: Date.now().toString(), type: 'epub', title: bookTitle, nodes: parsedNodes, pages: spine.length, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'square' });
+            library.push({id:Date.now().toString(), type:'epub', title:t, nodes:nodes, progressPct:0, coverBase64:cover, shape:'square'});
             await localforage.setItem('pdf_epub_master', library); renderLibrary();
         }
 
-        function resolveRelativePath(base, relative) {
-            const stack = base.split('/'); stack.pop(); const parts = relative.split('/');
-            for (const part of parts) { if (part === '.') continue; if (part === '..') stack.pop(); else stack.push(part); }
-            return stack.join('/');
-        }
-
-        if ('serviceWorker' in navigator) {
-            const swCode = `
-            const CACHE_NAME = 'baca-pwa-v5';
-            self.addEventListener('install', (e) => {
-                self.skipWaiting();
-                e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll([
-                    '/', 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'https://unpkg.com/lucide@latest'
-                ])));
-            });
-            self.addEventListener('fetch', (e) => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
-            `;
-            const blob = new Blob([swCode], {type: 'application/javascript'});
-            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(err => console.log("SW Error:", err));
-        }
-
-        loadLibrary();
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            setTimeout(() => {
-                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-                    window.Capacitor.Plugins.App.addListener('backButton', () => {
-                        window.history.back();
-                    });
-                }
-            }, 500);
-        });
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            setTimeout(() => {
-                if (window.Capacitor && window.Capacitor.Plugins) {
-                    const capApp = window.Capacitor.Plugins.App;
-                    const capStatusBar = window.Capacitor.Plugins.StatusBar;
-                    if (capApp) {
-                        capApp.addListener('backButton', () => { window.history.back(); });
-                    }
-                    if (capStatusBar) {
-                        capStatusBar.hide().catch(()=>{});
-                    }
-                }
-            }, 500);
-        });
+        applyThemeToDOM(); applyLanguage(); loadLibrary();
     </script>
 </body>
 </html>
