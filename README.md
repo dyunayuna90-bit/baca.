@@ -1,4 +1,9 @@
 # Baca. 📖
+
+[![GitHub stars](https://img.shields.io/github/stars/dyunayuna90-bit/baca.?style=for-the-badge)](https://github.com/dyunayuna90-bit/baca./stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Download Latest Release](https://img.shields.io/github/v/release/dyunayuna90-bit/baca.?style=for-the-badge&logo=android&color=3DDC84&label=DOWNLOAD%20APK)](https://github.com/dyunayuna90-bit/baca./releases/latest)
+
 **Baca.** is a revolutionary web-based e-book reader (EPUB & PDF) designed with a strong emphasis on user privacy and interface aesthetics. Built entirely on web native technologies without any third-party server mediation—all your documents are processed and stored locally on your device.
 Release
 
@@ -27,6 +32,10 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
 
 
 ## 🛠️ Tech Stack
+![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
+![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+
  * **HTML5, CSS3, Vanilla JavaScript** (Zero framework bloat for the core logic).
  * **Tailwind CSS** (Utility-first styling via CDN).
  * **PDF.js** (PDF rendering and text extraction).
