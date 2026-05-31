@@ -2214,23 +2214,16 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             setTimeout(() => {
-                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-                    window.Capacitor.Plugins.App.addListener('backButton', () => {
-                        window.history.back();
-                    });
-                }
-            }, 500);
-        });
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            setTimeout(() => {
                 if (window.Capacitor && window.Capacitor.Plugins) {
                     const capApp = window.Capacitor.Plugins.App;
                     const capStatusBar = window.Capacitor.Plugins.StatusBar;
+                    
+                    // Cukup 1 listener aja buat tombol back, biar nggak double-trigger bablas ke menu
                     if (capApp) {
                         capApp.addListener('backButton', () => { window.history.back(); });
                     }
+                    
+                    // Sembunyiin status bar
                     if (capStatusBar) {
                         capStatusBar.hide().catch(()=>{});
                     }
