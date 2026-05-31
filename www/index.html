@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+eh<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Mono&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+    
     <style id="dynamic-theme"></style>
 
     <script>
@@ -39,12 +40,12 @@
                         }
                     },
                     borderRadius: { '4xl': '32px', '5xl': '48px', 'inherit': 'inherit' },
-                    fontFamily: { 
-                        sans: ['Inter', 'system-ui', 'sans-serif'], 
-                        serif: ['Lora', 'Georgia', 'serif'], 
+                    fontFamily: {     
+                        
                         merriweather: ['Merriweather', 'serif'],
                         playfair: ['"Playfair Display"', 'serif'],
-                        mono: ['"Space Mono"', 'monospace'] 
+                        mono: ['"Space Mono"', 'monospace'],
+                        google: ['"Google Sans Flex"', 'sans-serif']
                     }
                 }
             }
@@ -261,6 +262,7 @@
                             <button id="typo-fn-playfair" onclick="changeTypo('font', 'Playfair Display')" class="btn-morph py-3 px-4 bg-m3-surface rounded-2xl text-left font-playfair font-bold text-sm">Playfair</button>
                             <button id="typo-fn-inter" onclick="changeTypo('font', 'Inter')" class="btn-morph py-3 px-4 bg-m3-surface rounded-2xl text-left font-sans font-bold text-sm">Inter</button>
                             <button id="typo-fn-mono" onclick="changeTypo('font', 'Space Mono')" class="btn-morph py-3 px-4 bg-m3-surface rounded-2xl text-left font-mono font-bold text-sm">Mono</button>
+                            <button id="typo-fn-google" onclick="changeTypo('font', 'Google Sans Flex')" class="btn-morph py-3 px-4 bg-m3-surface rounded-2xl text-left font-google font-bold text-sm">Google Sans Flex</button>
                         </div>
                     </div>
                 </div>
@@ -1391,13 +1393,14 @@
             else if(typoPrefs.font === 'Playfair Display') fontCss = "'Playfair Display', serif";
             else if(typoPrefs.font === 'Space Mono') fontCss = "'Space Mono', monospace";
             else if(typoPrefs.font === 'Inter') fontCss = "'Inter', sans-serif";
+            else if(typoPrefs.font === 'Google Sans Flex') fontCss = "'Google Sans Flex', sans-serif";
             else fontCss = "'Lora', serif";
 
             document.documentElement.style.setProperty('--reader-font', fontCss);
             localStorage.setItem('typo_prefs', JSON.stringify(typoPrefs)); syncTypoUI();
         }
-        function syncTypoUI() {
-            const maps = { size: { '1rem': 'typo-sz-sm', '1.2rem': 'typo-sz-md', '1.5rem': 'typo-sz-lg' }, align: { 'left': 'typo-al-left', 'center': 'typo-al-center', 'justify': 'typo-al-justify' }, font: { 'Lora': 'typo-fn-lora','Merriweather':'typo-fn-merri','Playfair Display':'typo-fn-playfair', 'Inter': 'typo-fn-inter', 'Space Mono': 'typo-fn-mono' } };
+                function syncTypoUI() {
+            const maps = { size: { '1rem': 'typo-sz-sm', '1.2rem': 'typo-sz-md', '1.5rem': 'typo-sz-lg' }, align: { 'left': 'typo-al-left', 'center': 'typo-al-center', 'justify': 'typo-al-justify' }, font: { 'Lora': 'typo-fn-lora','Merriweather':'typo-fn-merri','Playfair Display':'typo-fn-playfair', 'Inter': 'typo-fn-inter', 'Space Mono': 'typo-fn-mono', 'Google Sans Flex': 'typo-fn-google' } };
             
             Object.values(maps.size).forEach(id => { document.getElementById(id).classList.remove('bg-m3-primary', 'text-m3-onPrimary'); document.getElementById(id).classList.add('text-m3-onSurfaceVariant'); });
             Object.values(maps.align).forEach(id => { document.getElementById(id).classList.remove('bg-m3-primary', 'text-m3-onPrimary'); document.getElementById(id).classList.add('text-m3-onSurfaceVariant'); });
