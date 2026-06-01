@@ -7,7 +7,8 @@
 **Baca.** is a lightweight, local-first e-book reader (EPUB & PDF) built because I wanted a beautiful reading experience without the bloat. It runs entirely on web-native tech with zero backend. No servers, no tracking, no cloud uploads. Your books are processed and stored 100% locally on your device for absolute privacy.
 
 ## Logo
-<img width="1920" height="1051" alt="TV and Film Press Kit Presentation in Blue Black White Dark and Moody Style_20260531_135911_0000" src="https://github.com/user-attachments/assets/0d692c21-a109-458f-837d-959ba5d81867" />
+<img width="1920" height="1080" alt="1_20260601_232909_0000" src="https://github.com/user-attachments/assets/bbfff3df-8edc-43be-8813-873ccfd07e92" />
+
 
 
 ## ✨ Material 3 Expressive Design
@@ -18,7 +19,16 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
  * **True AMOLED Dark Mode:** Features a pitch-black dark mode optimized for OLED/AMOLED screens to save battery, complete with perfectly symmetrical and satisfying toggle switches.
 
 ## 📷 Screenshot
-<img width="100%" alt="Baca Screenshot" src="https://github.com/user-attachments/assets/fd49fca3-5340-4e44-bf2d-8f84d834000e" />
+## 📷 Screenshot
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/46109d7f-68fe-45d4-8166-ff65abb60273" width="300"><br><br>
+  <img src="https://github.com/user-attachments/assets/18dabd4d-ce9a-45b5-95aa-64ebc904d128" width="300"><br><br>
+  <img src="https://github.com/user-attachments/assets/d5815600-e48c-4498-967c-39dac65612cc" width="300">
+</p>
+
+
+
 
 ## 🚀 Key Features
  * **Privacy-Focused:** Zero cloud uploads. We utilize localforage (IndexedDB) to parse, render, and save your books and reading progress locally. Your data belongs to you.
