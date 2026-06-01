@@ -52,6 +52,10 @@
     </script>
     
     <style>
+        * {
+            outline: none !important;
+        }
+
         /* Fix text selection color (blok teks) */
         ::selection {
             background-color: var(--md-sys-color-primary) !important;
@@ -97,8 +101,8 @@
         .search-active .btn-settings { width: 0px !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; transform: scale(0.5); border: none; }
 
         .modal-overlay { transition: opacity 0.3s ease; }
-        .modal-content { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; transform-origin: bottom; }
-        .side-panel { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), border-radius 0.3s ease; transform-origin: bottom; }
+        .side-panel { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease; }
 
         .reader-text-container { column-gap: 2rem; column-rule: 1px solid var(--md-sys-color-surface-variant); }
         @media (min-width: 768px) { .reader-text-container { column-count: 2; } }
@@ -1386,14 +1390,14 @@
 
             if (deltaY > 80) { 
                 // Fix animasi swipe down
-                settingsSheet.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                settingsSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
                 settingsSheet.style.transform = 'translateY(100%)'; 
                 setTimeout(() => {
-                    history.back(); // Panggil history.back untuk trigger _closeModalAction agar background overlay hilang
+                    history.back(); 
                     setTimeout(() => { settingsSheet.style.transform = ''; }, 100);
                 }, 100);
             } else {
-                settingsSheet.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                settingsSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
                 settingsSheet.style.transform = ''; 
             }
         });
