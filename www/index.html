@@ -305,11 +305,7 @@
                 </button>
             </div>
         </div>
-        
-        <button id="btn-exit-fullscreen" onclick="toggleFullscreenReading()" class="hidden fixed bottom-8 right-8 z-[60] fab-capsule flex items-center justify-center bg-m3-primaryContainer text-m3-onPrimaryContainer opacity-80 hover:opacity-100 transition-opacity">
-            <i data-lucide="minimize" class="w-6 h-6 shrink-0"></i>
-        </button>
-        
+         
     </div>
 
     <!-- Welcome Modal -->
@@ -761,6 +757,7 @@
             else if (isBatchDeleteMode) { window.toggleBatchDelete(true); }
             else if (activePanel) { _closeSidePanelsAction(true); } 
             else if (document.getElementById('search-area').classList.contains('search-active')) { closeSearch(true); }
+            else if (document.getElementById('reader-bottom-bar') && document.getElementById('reader-bottom-bar').classList.contains('hidden')) { window.toggleFullscreenReading(true); }
             else if (!DOM.readView.classList.contains('translate-y-full')) { _closeReaderAction(true); }
         });
 
@@ -1318,25 +1315,25 @@
             applyThemeToDOM();
         };
 
-        window.toggleFullscreenReading = function() {
+        window.toggleFullscreenReading = function(isFromHistory = false) {
             const bottomBar = document.getElementById('reader-bottom-bar');
             const progContainer = document.getElementById('progress-container');
-            const exitBtn = document.getElementById('btn-exit-fullscreen');
-            
             const floatHeader = document.getElementById('reader-floating-header');
             
             if (bottomBar.classList.contains('hidden')) {
+                // Keluar dari Immersive
+                if (!isFromHistory && window.location.hash === '#immersive') { history.back(); }
                 bottomBar.classList.remove('hidden'); 
                 progContainer.classList.remove('hidden');
-                exitBtn.classList.add('hidden');
                 floatHeader.classList.remove('-translate-y-[150%]', 'opacity-0');
                 floatHeader.classList.add('translate-y-0', 'opacity-100');
             } else {
+                // Masuk Immersive
+                if (!isFromHistory) { pushAppHistory('immersive'); }
                 bottomBar.classList.add('hidden'); 
                 floatHeader.classList.add('-translate-y-[150%]', 'opacity-0');
                 floatHeader.classList.remove('translate-y-0', 'opacity-100');
                 progContainer.classList.add('hidden');
-                exitBtn.classList.remove('hidden');
                 updateBottomNavUI(null);
                 if(activePanel) { _closeSidePanelsAction(); } 
             }
