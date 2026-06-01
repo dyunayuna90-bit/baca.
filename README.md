@@ -19,7 +19,6 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
  * **True AMOLED Dark Mode:** Features a pitch-black dark mode optimized for OLED/AMOLED screens to save battery, complete with perfectly symmetrical and satisfying toggle switches.
 
 ## 📷 Screenshot
-## 📷 Screenshot
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/46109d7f-68fe-45d4-8166-ff65abb60273" width="300"><br><br>
