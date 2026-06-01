@@ -1140,7 +1140,7 @@
                 selectedForDelete = [];
             } else {
                 selectedForDelete = [];
-                if (initialSelectId) selectedForDelete.push(initialSelectId);
+                if (initialSelectId) selectedForDelete.push(String(initialSelectId));
             }
             
             const bar = document.getElementById('batch-delete-bar');
@@ -1165,8 +1165,8 @@
             if(countEl) countEl.textContent = `${selectedForDelete.length} ${d.selected}`;
 
             document.querySelectorAll('.batch-overlay').forEach(el => {
-                const id = el.dataset.bookId;
-                const idx = selectedForDelete.indexOf(id);
+                const id = String(el.dataset.bookId);
+                const idx = selectedForDelete.findIndex(selId => String(selId) === id);
                 const icBox = el.querySelector('.batch-icon-box');
                 
                 if (isBatchDeleteMode) {
@@ -1201,8 +1201,8 @@
                     { text: "Batal", primary: false },
                     { text: "Hapus", primary: true, action: async () => {
                         window.closeDialog();
-                        const toDeleteSet = new Set(selectedForDelete);
-                        library = library.filter(b => !toDeleteSet.has(b.id));
+                        const toDeleteSet = new Set(selectedForDelete.map(String));
+                        library = library.filter(b => !toDeleteSet.has(String(b.id)));
                         await localforage.setItem('pdf_epub_master', library);
                         toggleBatchDelete(); 
                         renderLibrary(DOM.globalSearch.value); 
@@ -1490,11 +1490,12 @@
                 if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; } 
                 if (isBatchDeleteMode && !isSlider) {
                     e.preventDefault(); e.stopPropagation();
-                    const idx = selectedForDelete.indexOf(book.id);
+                    const strId = String(book.id);
+                    const idx = selectedForDelete.findIndex(id => String(id) === strId);
                     if (idx > -1) {
                         selectedForDelete.splice(idx, 1);
                     } else {
-                        selectedForDelete.push(book.id);
+                        selectedForDelete.push(strId);
                     }
                     updateBatchSelectionUI();
                     return;
