@@ -1,5 +1,5 @@
 // --- APP LOGIC ---
-// Mengurus semua interaksi UI, State, Tema, Render Rak Buku, & Fitur Backup
+// Mengurus interaksi UI, Tema, Render Library, & Fitur In-Book Bookmark
 
 // 1. GLOBAL STATE & DOM REFERENCES
 let library = []; 
@@ -12,7 +12,6 @@ let isBatchDeleteMode = false;
 let selectedForDelete = [];
 let activeNoteColor = 'yellow';
 let editingAnnotId = null;
-let currentTab = 'all'; // State untuk tab navigasi (all atau bookmark)
 
 let isDark = localStorage.getItem('theme') !== 'light'; 
 let currentThemeKey = localStorage.getItem('m3-key') || 'orchid';
@@ -22,7 +21,7 @@ let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 const DOM = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Inisialisasi DOM Elements setelah HTML dimuat
+    // Inisialisasi DOM Elements
     Object.assign(DOM, {
         libView: document.getElementById('library-view'), 
         readView: document.getElementById('reader-view'),
@@ -45,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
         tocPanel: document.getElementById('toc-panel'), 
         tocList: document.getElementById('toc-list'),
         setPanel: document.getElementById('settings-panel'),
+        bookmarkPanel: document.getElementById('bookmark-panel'),
+        bookmarkList: document.getElementById('bookmark-list'),
         readContent: document.getElementById('reader-content'), 
         progBar: document.getElementById('reading-progress-bar'), 
         progTxt: document.getElementById('reader-progress-text'),
@@ -55,26 +56,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setupScrollListeners();
     setupSearchListeners();
-    setupSwipeGestures();
     syncWikiLangUI();
     applyLanguage();
     applyTypo();
     applyThemeToDOM();
     loadLibrary();
 
-    // Check Welcome Modal
     if (!localStorage.getItem('first_time_seen_v5')) {
         setTimeout(() => { openModal('welcome-modal', 'welcome-sheet', true); }, 500);
     }
     
-    // Setup API Keys
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey && document.getElementById('gemini-api-key')) document.getElementById('gemini-api-key').value = savedKey;
     const savedModel = localStorage.getItem('gemini_model');
     if(savedModel && document.getElementById('gemini-model-select')) document.getElementById('gemini-model-select').value = savedModel;
 });
 
-// 2. SCROLL, SWIPE & NAVIGATION LISTENERS
+// 2. SCROLL & NAVIGATION LISTENERS
 function setupScrollListeners() {
     const libScroll = document.getElementById('library-content-scroll');
     if(libScroll && DOM.mainHeader) {
@@ -105,87 +103,8 @@ function setupScrollListeners() {
     }
 }
 
-// FUNGSI GESTURE SWIPE & TAB SWITCHING
-function setupSwipeGestures() {
-    const swipeContainer = document.getElementById('swipe-container');
-    if(!swipeContainer) return;
-    
-    let startX = 0, startY = 0, currentX = 0;
-    let isSwiping = false, isVerticalScroll = false;
-
-    swipeContainer.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        isSwiping = true;
-        isVerticalScroll = false;
-        swipeContainer.style.transition = 'none'; // Hilangkan durasi saat di-drag
-    }, {passive: true});
-
-    swipeContainer.addEventListener('touchmove', (e) => {
-        if(!isSwiping) return;
-        let moveX = e.touches[0].clientX;
-        let moveY = e.touches[0].clientY;
-        let diffX = moveX - startX;
-        let diffY = moveY - startY;
-
-        // Jika scroll vertikal lebih dominan, batalkan swipe horizontal
-        if (Math.abs(diffY) > Math.abs(diffX) && !isVerticalScroll && Math.abs(diffY) > 10) {
-            isVerticalScroll = true;
-            isSwiping = false; 
-            swipeContainer.style.transform = currentTab === 'all' ? 'translateX(0)' : 'translateX(-100%)';
-            return;
-        }
-
-        if(!isVerticalScroll) {
-            if (currentTab === 'all' && diffX < 0) { 
-                swipeContainer.style.transform = `translateX(${diffX}px)`; // Geser ke kiri
-            } else if (currentTab === 'bookmark' && diffX > 0) { 
-                swipeContainer.style.transform = `translateX(calc(-100% + ${diffX}px))`; // Geser ke kanan
-            }
-        }
-    }, {passive: true});
-
-    swipeContainer.addEventListener('touchend', (e) => {
-        if(!isSwiping || isVerticalScroll) return;
-        isSwiping = false;
-        let endX = e.changedTouches[0].clientX;
-        let diffX = endX - startX;
-        
-        swipeContainer.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'; // Animasi snap back
-
-        if (currentTab === 'all' && diffX < -50) {
-            switchLibraryTab('bookmark');
-        } else if (currentTab === 'bookmark' && diffX > 50) {
-            switchLibraryTab('all');
-        } else {
-            // Snap back kalau gesernya nanggung
-            swipeContainer.style.transform = currentTab === 'all' ? 'translateX(0)' : 'translateX(-100%)';
-        }
-    });
-}
-
-window.switchLibraryTab = function(tabName, isFromHistory = false) {
-    if (currentTab === tabName) return;
-    const container = document.getElementById('swipe-container');
-    const btnAll = document.getElementById('tab-all-books');
-    const btnBookmark = document.getElementById('tab-bookmarks');
-    
-    if (tabName === 'bookmark') {
-        container.style.transform = 'translateX(-100%)';
-        btnAll.classList.replace('nav-active', 'text-m3-onSurfaceVariant');
-        btnBookmark.classList.replace('text-m3-onSurfaceVariant', 'nav-active');
-        if(!isFromHistory) pushAppHistory('tab-bookmark');
-    } else {
-        container.style.transform = 'translateX(0)';
-        btnBookmark.classList.replace('nav-active', 'text-m3-onSurfaceVariant');
-        btnAll.classList.replace('text-m3-onSurfaceVariant', 'nav-active');
-        if(!isFromHistory && window.location.hash === '#tab-bookmark') history.back();
-    }
-    currentTab = tabName;
-};
-
 function updateBottomNavUI(activeId) {
-    const btns = ['btn-toc', 'btn-settings'];
+    const btns = ['btn-toc', 'btn-bookmarks', 'btn-settings'];
     btns.forEach(id => {
         const b = document.getElementById(id);
         if(b) {
@@ -216,7 +135,6 @@ window.addEventListener('popstate', (e) => {
     else if (isBatchDeleteMode) { window.toggleBatchDelete(true); }
     else if (activePanel) { _closeSidePanelsAction(true); } 
     else if (document.getElementById('search-area').classList.contains('search-active')) { closeSearch(true); }
-    else if (currentTab === 'bookmark') { switchLibraryTab('all', true); } // NATIVE BACK UNTUK KELUAR DARI TAB BOOKMARK
     else if (document.getElementById('reader-bottom-bar') && document.getElementById('reader-bottom-bar').classList.contains('hidden')) { window.toggleFullscreenReading(true); }
     else if (DOM.readView && !DOM.readView.classList.contains('translate-y-full')) { _closeReaderAction(true); }
 });
@@ -271,12 +189,18 @@ function applyLanguage() {
     setElementText('str-lib-empty', d.libEmpty); setElementText('str-continue-reading', d.continueReading);
     setElementText('str-book-collection', d.bookCollection); setElementText('loading-text', d.loadingDocs);
     setElementText('btn-batch-cancel', d.cancel); setElementText('btn-batch-exec', d.delete);
-    
-    // Teks baru untuk Tab, Pin, & Bookmark
-    setElementText('tab-all-books', d.tabAllBooks); setElementText('tab-bookmarks', d.tabBookmarks);
-    setElementText('str-pinned-books', d.pinnedBooks); setElementText('str-lib-bookmark-empty', d.libBookmarkEmpty);
     setElementText('str-opt-select', d.optSelect); setElementText('str-opt-edit', d.optEdit);
     setElementText('str-opt-delete', d.optDelete); setElementText('str-opt-cancel', d.optCancel);
+    
+    // Teks Pin
+    setElementText('str-pinned-books', d.pinnedBooks);
+
+    // Teks Bookmark Panel
+    setElementText('str-nav-bookmark', d.navBookmark);
+    if (document.getElementById('str-bookmark-title')) {
+        document.getElementById('str-bookmark-title').innerHTML = `<i data-lucide="bookmark"></i> ${d.bookmarkTitle}`;
+    }
+    setElementText('str-bookmark-empty', d.bookmarkEmpty);
     
     setElementText('str-wel-title', d.welcomeTitle); setElementText('str-wel-desc', d.welcomeDesc);
     setElementText('str-wel-backup', d.welBackup); 
@@ -328,7 +252,6 @@ function applyLanguage() {
     if(DOM.globalSearch) DOM.globalSearch.placeholder = d.searchBooks;
     if(DOM.searchInput) DOM.searchInput.placeholder = d.searchPlaceholder;
     if(document.getElementById('note-input-text')) document.getElementById('note-input-text').placeholder = d.notePlaceholder;
-    if(DOM.count) DOM.count.textContent = `${(library.length)} ${d.booksCount}`;
     
     const themeLabel = document.getElementById('theme-label-text');
     if (themeLabel) themeLabel.textContent = isDark ? d.themeDark : d.themeLight;
@@ -338,6 +261,7 @@ function applyLanguage() {
 
 window.setWikiLang = function(lang) {
     wikiLang = lang; localStorage.setItem('wiki_lang', lang); syncWikiLangUI(); applyLanguage();
+    if(activeBookId) renderBookmarkPanel(); // Refresh text panel bookmark 
 };
 
 window.saveGeminiModel = function() {
@@ -439,7 +363,7 @@ window.closeWelcome = function(isFromHistory = false) {
     localStorage.setItem('first_time_seen_v5', 'true');
 };
 
-// 6. BACKUP & RESTORE DATA (HYBRID CAPACITOR / WEB)
+// 6. BACKUP & RESTORE DATA
 window.exportData = async function() {
     try {
         const data = await localforage.getItem('pdf_epub_master');
@@ -596,8 +520,6 @@ function renderLibrary(filterText = "") {
     DOM.topSlider.innerHTML = '';
     const pinnedGrid = document.getElementById('pinned-book-grid');
     if(pinnedGrid) pinnedGrid.innerHTML = '';
-    const bookmarkGrid = document.getElementById('bookmark-grid');
-    if(bookmarkGrid) bookmarkGrid.innerHTML = '';
     
     let filteredLib = library;
     if(filterText) filteredLib = library.filter(b => b.title.toLowerCase().includes(filterText.toLowerCase()));
@@ -607,10 +529,9 @@ function renderLibrary(filterText = "") {
     
     // Klasifikasi Data Buku
     const pinnedBooks = filteredLib.filter(b => b.isPinned);
-    const bookmarkedBooks = filteredLib.filter(b => b.isBookmarked);
-    const regularBooks = filteredLib.filter(b => !b.isPinned); // Buku reguler = Buku yg ga di pin
+    const regularBooks = filteredLib.filter(b => !b.isPinned);
 
-    // Render 1: Top Books (Lanjutkan Membaca) - Ga kefilter PIN, ngurut dari progress
+    // Render 1: Top Books (Lanjutkan Membaca) - ngurut dari progress
     let topBooks = [];
     if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4); }
     if (topBooks.length > 0) {
@@ -628,16 +549,7 @@ function renderLibrary(filterText = "") {
         if(pinnedSection) pinnedSection.classList.add('hidden');
     }
 
-    // Render 3: Bookmark Books
-    const bookmarkEmpty = document.getElementById('bookmark-empty-state');
-    if (bookmarkedBooks.length > 0) {
-        if(bookmarkEmpty) bookmarkEmpty.classList.add('hidden');
-        bookmarkedBooks.forEach((book, idx) => { if(bookmarkGrid) bookmarkGrid.appendChild(createBookCard(book, false, idx)); });
-    } else {
-        if(bookmarkEmpty) bookmarkEmpty.classList.remove('hidden');
-    }
-
-    // Render 4: Regular Books (Koleksi Utama)
+    // Render 3: Regular Books (Koleksi Utama)
     if (regularBooks.length === 0) { 
         DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); 
         if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
@@ -723,11 +635,10 @@ function createBookCard(book, isSlider = false, index = 0) {
     const titleShadow = book.coverBase64 ? 'text-white' : '';
     const barBase = book.coverBase64 ? 'bg-white' : 'bg-m3-primary dark:bg-m3-primaryContainer';
 
-    // Label Indicator untuk Pinned & Bookmark status
+    // Label Indicator untuk Pinned
     let indicators = '';
     if(!isSlider) {
         if(book.isPinned) indicators += `<i data-lucide="pin" class="w-3.5 h-3.5 opacity-90 fill-current"></i>`;
-        if(book.isBookmarked) indicators += `<i data-lucide="bookmark" class="w-3.5 h-3.5 opacity-90 fill-current"></i>`;
     }
 
     if (isSlider) {
@@ -778,12 +689,9 @@ window.openBookOptions = function(id) {
     activeOptsId = id; const book = library.find(b => b.id === id);
     document.getElementById('opt-title').textContent = book.title;
 
-    // Dinamis teks Pin dan Bookmark berdasarkan state buku
     const d = i18n[wikiLang] || i18n['id'];
     const pinIcon = document.getElementById('icon-opt-pin');
     const pinText = document.getElementById('str-opt-pin');
-    const bkmIcon = document.getElementById('icon-opt-bookmark');
-    const bkmText = document.getElementById('str-opt-bookmark');
 
     if(book.isPinned) {
         pinText.textContent = d.optUnpin || 'Lepas Sematan';
@@ -791,14 +699,6 @@ window.openBookOptions = function(id) {
     } else {
         pinText.textContent = d.optPin || 'Sematkan Buku';
         pinIcon.setAttribute('data-lucide', 'pin');
-    }
-
-    if(book.isBookmarked) {
-        bkmText.textContent = d.optRemoveBookmark || 'Hapus Tanda';
-        bkmIcon.setAttribute('data-lucide', 'bookmark-minus');
-    } else {
-        bkmText.textContent = d.optBookmark || 'Tandai (Bookmark)';
-        bkmIcon.setAttribute('data-lucide', 'bookmark');
     }
 
     if(window.lucide) window.lucide.createIcons();
@@ -810,17 +710,6 @@ window.togglePinBook = async function() {
     const bookIndex = library.findIndex(b => b.id === activeOptsId);
     if(bookIndex > -1) {
         library[bookIndex].isPinned = !library[bookIndex].isPinned;
-        await localforage.setItem('pdf_epub_master', library);
-        history.back(); 
-        setTimeout(() => renderLibrary(DOM.globalSearch ? DOM.globalSearch.value : ""), 300);
-    }
-}
-
-window.toggleBookmarkBook = async function() {
-    if(!activeOptsId) return;
-    const bookIndex = library.findIndex(b => b.id === activeOptsId);
-    if(bookIndex > -1) {
-        library[bookIndex].isBookmarked = !library[bookIndex].isBookmarked;
         await localforage.setItem('pdf_epub_master', library);
         history.back(); 
         setTimeout(() => renderLibrary(DOM.globalSearch ? DOM.globalSearch.value : ""), 300);
@@ -1144,6 +1033,7 @@ window.openBook = function(book) {
         header.classList.remove('-translate-y-[150%]', 'opacity-0');
         header.classList.add('translate-y-0', 'opacity-100');
 
+        renderBookmarkPanel(); // Refresh list panel
         loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
         setTimeout(() => {
@@ -1172,6 +1062,7 @@ window._closeSidePanelsAction = function(isFromHistory = false) {
     if (!isFromHistory) { history.back(); return; }
     if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); 
     if(DOM.setPanel) DOM.setPanel.classList.add('translate-x-full', 'opacity-0'); 
+    if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('translate-x-full', 'opacity-0');
     const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.add('hidden');
     activePanel = null;
     updateBottomNavUI(null);
@@ -1247,7 +1138,7 @@ async function updateBookProgress(bookId, lastNodeId, pct) {
     }
 }
 
-// 10. ANNOTATIONS LOGIC
+// 10. ANNOTATIONS & IN-BOOK BOOKMARK LOGIC
 window.renderNodeText = function(text, annots) {
     if (!text) return "";
     let augmentedText = text;
@@ -1263,8 +1154,15 @@ window.renderNodeText = function(text, annots) {
         html = html.replace(/\|\|\|HL\|(.*?)\|\|\|/g, (match, id) => {
             const a = annots.find(x => x.id === id);
             if (!a) return '<mark class="hl-yellow rounded px-1">';
-            const noteAttr = a.note ? ` data-hasnote="true"` : '';
-            return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer transition-all hover:brightness-95 mx-0.5" data-id="${id}"${noteAttr} onclick="window.showAnnotationDetails('${id}')">`;
+            
+            if (a.isBookmark) {
+                // Style khusus untuk In-Book Bookmark
+                return `<mark class="annot-hl border-b-2 border-m3-primary border-dashed bg-m3-primary/10 text-m3-primary font-medium cursor-pointer transition-all hover:bg-m3-primary/20 px-1 mx-0.5 rounded-sm" data-id="${id}" onclick="window.showAnnotationDetails('${id}')">`;
+            } else {
+                // Style untuk highlight stabilo biasa
+                const noteAttr = a.note ? ` data-hasnote="true"` : '';
+                return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer transition-all hover:brightness-95 mx-0.5" data-id="${id}"${noteAttr} onclick="window.showAnnotationDetails('${id}')">`;
+            }
         }).replace(/\|\|\|ENDHL\|\|\|/g, '</mark>');
     }
     html = html.replace(/data-hasnote="true">/g, 'data-hasnote="true" style="border-bottom: 2px underline dotted currentColor">');
@@ -1321,12 +1219,107 @@ async function registerAnnotation(annotObj) {
         nodeEl.innerHTML = window.renderNodeText(book.nodes[annotObj.nodeIdx].text, currentAnnots);
     }
     window.getSelection().removeAllRanges();
+    if(annotObj.isBookmark) window.renderBookmarkPanel();
 }
 
 window.applyAnnotation = function(color) {
     if(currentSelection.nodeIdx === -1) return;
-    const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: color, note: "" };
+    const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: color, note: "", isBookmark: false };
     registerAnnotation(newAnnot);
+};
+
+// NEW: Fungsi Engine In-Book Bookmark
+window.applyInBookBookmark = function() {
+    if(currentSelection.nodeIdx === -1 || !activeBookId) return;
+    
+    const book = library.find(b => b.id === activeBookId);
+    if (!book) return;
+
+    // Kalkulasi Persentase posisi saat ini
+    const totalNodes = book.nodes.length;
+    const pct = Math.round(((currentSelection.nodeIdx + 1) / totalNodes) * 100);
+
+    // Track balik buat nyari Bab (Heading 1 / 2) terdekat di atasnya
+    let closestChapterName = "Bagian Buku";
+    let d = i18n[wikiLang] || i18n['id'];
+    if(wikiLang === 'en') closestChapterName = "Book Section";
+
+    for (let i = currentSelection.nodeIdx; i >= 0; i--) {
+        if (book.nodes[i].tag === 'h1' || book.nodes[i].tag === 'h2') {
+            closestChapterName = book.nodes[i].text;
+            break;
+        }
+    }
+
+    const chapterPreview = closestChapterName.length > 25 ? closestChapterName.substring(0,25) + '...' : closestChapterName;
+
+    // isBookmark: true penanda bahwa ini pembatas buku, bukan stabilo biasa
+    const newBookmark = { 
+        id: 'BM_' + Date.now().toString(), 
+        nodeIdx: currentSelection.nodeIdx, 
+        text: currentSelection.text, 
+        color: 'none', 
+        note: `${chapterPreview} — ${pct}%`, 
+        isBookmark: true 
+    };
+
+    registerAnnotation(newBookmark);
+};
+
+window.renderBookmarkPanel = function() {
+    if(!DOM.bookmarkList || !DOM.bookmarkPanel || !activeBookId) return;
+    const book = library.find(b => b.id === activeBookId);
+    if (!book) return;
+
+    DOM.bookmarkList.innerHTML = '';
+    const emptyState = document.getElementById('bookmark-empty');
+    
+    const bookmarks = (book.annotations || []).filter(a => a.isBookmark).sort((a,b) => a.nodeIdx - b.nodeIdx);
+
+    if(bookmarks.length === 0) {
+        if(emptyState) emptyState.classList.remove('hidden');
+    } else {
+        if(emptyState) emptyState.classList.add('hidden');
+        bookmarks.forEach(bm => {
+            const btn = document.createElement('div');
+            btn.className = "group relative flex items-center justify-between p-4 mb-2 rounded-2xl bg-m3-surface hover:bg-m3-surface/80 transition-colors shadow-sm overflow-hidden";
+            
+            // Klik kiri (Mayoritas card) -> Navigasi
+            const clickArea = document.createElement('div');
+            clickArea.className = "flex items-center gap-3 flex-1 cursor-pointer min-w-0";
+            clickArea.onclick = () => {
+                const target = document.getElementById(`node-${bm.nodeIdx}`);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    history.back(); // Tutup panel otomatis
+                }
+            };
+
+            clickArea.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-m3-primary/10 flex items-center justify-center shrink-0 text-m3-primary">
+                    <i data-lucide="bookmark" class="w-4 h-4 fill-current opacity-80"></i>
+                </div>
+                <div class="flex flex-col min-w-0">
+                    <span class="text-sm font-bold text-m3-onSurface truncate">${bm.note}</span>
+                    <span class="text-[10px] font-medium opacity-60 truncate italic mt-0.5">"${bm.text}"</span>
+                </div>
+            `;
+
+            // Klik kanan (Tombol Delete)
+            const delBtn = document.createElement('button');
+            delBtn.className = "w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-red-500 opacity-50 hover:opacity-100 hover:bg-red-500/10 transition-all absolute right-2 translate-x-4 group-hover:translate-x-0";
+            delBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
+            delBtn.onclick = (e) => {
+                e.stopPropagation(); // Biar ga ke-trigger navigasi
+                window.deleteAnnotationById(bm.id);
+            };
+
+            btn.appendChild(clickArea);
+            btn.appendChild(delBtn);
+            DOM.bookmarkList.appendChild(btn);
+        });
+        if(window.lucide) window.lucide.createIcons();
+    }
 };
 
 window.setNoteColor = function(color) {
@@ -1362,6 +1355,20 @@ window.showAnnotationDetails = function(annotId) {
     editingAnnotId = annotId;
     currentSelection = { nodeIdx: annot.nodeIdx, text: annot.text };
     
+    // Kalau yang diklik itu Bookmark (Bukan Note Stabilo)
+    if(annot.isBookmark) {
+        const d = i18n[wikiLang] || i18n['id'];
+        showDialog("Hapus Pembatas Buku", "Hapus pembatas buku (bookmark) ini?", "bookmark-minus", [
+            { text: d.cancel || "Batal", primary: false },
+            { text: d.delete || "Hapus", primary: true, action: () => {
+                window.closeDialog();
+                window.deleteAnnotationById(editingAnnotId);
+            }}
+        ]);
+        return;
+    }
+
+    // Modal Edit Note biasa
     document.getElementById('note-input-text').value = annot.note || '';
     window.setNoteColor(annot.color || 'yellow');
     document.getElementById('btn-delete-note').classList.remove('hidden');
@@ -1388,7 +1395,7 @@ window.saveNoteAnnotation = function() {
             }
         }
     } else {
-        const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: activeNoteColor, note: val };
+        const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: activeNoteColor, note: val, isBookmark: false };
         setTimeout(() => { registerAnnotation(newAnnot); }, 300);
     }
 };
@@ -1411,7 +1418,9 @@ window.deleteAnnotationById = async function(annotId) {
     const book = library[bookIndex]; 
     const annotIndex = book.annotations.findIndex(a => a.id === annotId); if(annotIndex === -1) return;
     
-    const nodeIdx = book.annotations[annotIndex].nodeIdx; book.annotations.splice(annotIndex, 1);
+    const isBM = book.annotations[annotIndex].isBookmark;
+    const nodeIdx = book.annotations[annotIndex].nodeIdx; 
+    book.annotations.splice(annotIndex, 1);
     await localforage.setItem('pdf_epub_master', library);
     
     const nodeEl = document.getElementById(`node-${nodeIdx}`);
@@ -1419,6 +1428,8 @@ window.deleteAnnotationById = async function(annotId) {
         const currentAnnots = book.annotations.filter(a => a.nodeIdx === nodeIdx);
         nodeEl.innerHTML = window.renderNodeText(book.nodes[nodeIdx].text, currentAnnots);
     }
+
+    if(isBM) window.renderBookmarkPanel();
 };
 
 // 11. SWIPE TO DISMISS MODAL SETTINGS
@@ -1499,4 +1510,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
 
