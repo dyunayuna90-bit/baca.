@@ -10,11 +10,11 @@
     <meta name="theme-color" content="#1C1B1E">
     <title>Baca.</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="libs/tailwindcss.js"></script>
+    <script src="libs/pdf.min.js"></script>
+    <script src="libs/localforage.min.js"></script>
+    <script src="libs/jszip.min.js"></script>
+    <script src="libs/lucide.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -597,7 +597,7 @@
     </div>
 
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'libs/pdf.worker.min.js';
 
         // UPDATE: Material 3 Expressive & Highly Curated Color Palettes (Bervariasi, Kontras Tinggi, Tanpa Border, Terinspirasi Gambar)
         const M3_PALETTES = {
@@ -2275,8 +2275,8 @@
             self.addEventListener('install', (e) => {
                 self.skipWaiting();
                 e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll([
-                    '/', 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', 'https://unpkg.com/lucide@latest'
-                ])));
+                    '/', 'libs/tailwindcss.js', 'libs/pdf.min.js', 'libs/pdf.worker.min.js', 'libs/localforage.min.js', 'libs/jszip.min.js', 'libs/lucide.js'
+               ])));
             });
             self.addEventListener('fetch', (e) => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
             `;
