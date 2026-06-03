@@ -1,38 +1,33 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1C1B1E">
     <title>Baca.</title>
     
-    <!-- External Libs -->
     <script src="libs/tailwindcss.js"></script>
     <script src="libs/pdf.min.js"></script>
     <script src="libs/localforage.min.js"></script>
     <script src="libs/jszip.min.js"></script>
     <script src="libs/lucide.js"></script>
 
-    <!-- Konfigurasi Statis (Tailwind, Palet, i18n) -->
     <script src="js/config.js"></script>
 
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
     
-    <!-- CSS Terpisah & Tema Dinamis -->
     <link rel="stylesheet" href="css/style.css">
     <style id="dynamic-theme"></style>
 </head>
 <body class="font-sans flex flex-col relative">
 
-    <!-- VIEW: LIBRARY -->
     <div id="library-view" class="absolute inset-0 flex flex-col overflow-hidden transition-transform duration-500 origin-bottom bg-m3-bg z-10 w-full">
         
         <header id="main-header" class="flex-none sticky top-0 z-40 bg-m3-bg pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] pb-5 px-5 transition-shadow duration-300">
@@ -64,14 +59,12 @@
                 </div>
             </div>
 
-            <!-- VIEW: SEMUA BUKU -->
             <div id="continue-reading-section" class="hidden mb-8 -mx-5 mt-2">
                 <h2 id="str-continue-reading" class="text-base font-bold mb-4 text-m3-onBg px-5 tracking-tight">Lanjutkan Membaca</h2>
                 <div id="top-books-slider" class="flex gap-3 overflow-x-auto snap-x snap-proximity px-5 pb-2 hide-scroll" style="scroll-padding-left: 1.25rem;">
                 </div>
             </div>
 
-            <!-- PINNED BOOKS SECTION -->
             <div id="pinned-books-section" class="hidden mb-8 mt-2">
                 <div class="flex items-center gap-2 mb-4">
                     <i data-lucide="pin" class="w-5 h-5 text-m3-primary fill-m3-primary/20"></i>
@@ -80,7 +73,6 @@
                 <div id="pinned-book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
             </div>
 
-            <!-- REGULAR COLLECTION SECTION -->
             <div id="collection-heading" class="hidden mb-4 mt-2">
                 <h2 class="text-base font-bold text-m3-onBg tracking-tight" id="str-book-collection">Koleksi Buku</h2>
             </div>
@@ -109,7 +101,6 @@
         </div>
     </div>
 
-    <!-- VIEW: READER -->
     <div id="reader-view" class="absolute inset-0 flex flex-col bg-m3-bg text-m3-onBg transform translate-y-full transition-transform duration-500 ease-in-out z-20 w-full overflow-hidden">
         
         <div id="reader-loading-overlay" class="absolute inset-0 z-50 bg-m3-bg flex flex-col items-center justify-center transition-opacity duration-300 hidden opacity-0">
@@ -133,22 +124,18 @@
 
             <div id="side-panel-overlay" class="hidden absolute inset-0 bg-black/20 z-30 transition-opacity" onclick="history.back()"></div>
 
-            <!-- Panel Daftar Isi -->
             <div id="toc-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-toc-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="list-tree"></i> Daftar Isi</h3>
                 <div id="toc-list" class="space-y-2 flex flex-col pb-20"></div>
             </div>
 
-            <!-- Panel Bookmark (Baru) -->
             <div id="bookmark-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
-                <h3 id="str-bookmark-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="bookmark"></i> Panel Bookmark</h3>
+                <h3 id="str-bookmark-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="bookmark"></i> Bookmark</h3>
                 <div id="bookmark-list" class="space-y-2 flex flex-col pb-20">
-                    <!-- List Bookmark di-render dari app.js nanti -->
-                </div>
+                    </div>
                 <div id="bookmark-empty" class="text-sm opacity-50 p-3 text-center hidden font-bold" id="str-bookmark-empty">Belum ada pembatas buku.</div>
             </div>
             
-            <!-- Panel Tampilan & Pencarian -->
             <div id="settings-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-set-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="sliders-horizontal"></i> Tampilan</h3>
                 
@@ -201,12 +188,10 @@
             </div>
         </div>
 
-        <!-- PROGRESS BAR -->
         <div id="progress-container" class="h-1 w-full bg-m3-surfaceVariant shrink-0 z-40 relative">
             <div id="reading-progress-bar" class="h-full bg-m3-primary progress-smooth w-0"></div>
         </div>
 
-        <!-- BOTTOM NAV BAR (Sekarang 5 Tombol, Tambah Bookmark) -->
         <div id="reader-bottom-bar" class="bg-m3-surfaceVariant px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] shrink-0 z-40 relative">
             <div class="capsule-group bg-transparent rounded-full h-[60px]">
                 <button id="btn-back" class="capsule-btn flex-col gap-1 text-m3-onSurfaceVariant transition-all">
@@ -234,7 +219,6 @@
          
     </div>
 
-    <!-- Welcome Modal -->
     <div id="welcome-modal" onclick="if(event.target === this) closeWelcome()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[48px] overflow-hidden flex flex-col scale-75 translate-y-12 border-none" id="welcome-sheet">
             <div class="p-8 overflow-y-auto max-h-[75vh]">
@@ -264,7 +248,6 @@
         </div>
     </div>
 
-    <!-- Global Settings Modal -->
     <div id="global-settings-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-t-[48px] p-6 pb-12 transform translate-y-full border-none max-h-[90dvh] overflow-y-auto hide-scroll will-change-transform" id="global-settings-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 shrink-0 sticky top-0"></div>
@@ -352,7 +335,6 @@
         </div>
     </div>
 
-    <!-- Modal Raw Backup (Copy to Clipboard) -->
     <div id="raw-backup-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-backup-sheet">
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-bak-title">Data Backup Mentah</h3>
@@ -365,7 +347,6 @@
         </div>
     </div>
 
-    <!-- Modal Raw Restore (Paste from Clipboard) -->
     <div id="raw-restore-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-restore-sheet">
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-res-title">Pulihkan Data</h3>
@@ -381,7 +362,6 @@
         </div>
     </div>
 
-    <!-- BOOK OPTIONS MODAL (Bookmark dihapus, sisa Pin) -->
     <div id="b-opt-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0 p-4 pb-8 transition-opacity">
         <div class="modal-content bg-m3-surface shadow-2xl w-full max-w-sm rounded-[32px] p-6 transform translate-y-full border-none" id="b-opt-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
@@ -397,7 +377,6 @@
         </div>
     </div>
 
-    <!-- Edit Book Data Modal -->
     <div id="edit-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-8 transform scale-75 translate-y-12 border-none" id="edit-sheet">
             <h3 id="str-edit-title" class="text-xl font-bold mb-6 text-m3-onSurface">Edit Detail</h3>
@@ -424,55 +403,41 @@
         </div>
     </div>
 
-    <!-- Floating Text Selection Menu -->
     <div id="selection-menu" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" class="hidden fixed z-50 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-full px-2 py-1 flex items-center gap-1 border-none pointer-events-auto transition-all opacity-0 scale-75" style="top: -100px; left: 0px;">
-        <!-- Tombol Stabilo Warna -->
-        <button onpointerdown="event.preventDefault(); applyAnnotation('yellow')" class="w-8 h-8 rounded-full bg-[#FDE047] flex items-center justify-center btn-morph"><div class="w-4 h-4 bg-[#EAB308] rounded-full"></div></button>
-        <button onpointerdown="event.preventDefault(); applyAnnotation('green')" class="w-8 h-8 rounded-full bg-[#86EFAC] flex items-center justify-center btn-morph"><div class="w-4 h-4 bg-[#22C55E] rounded-full"></div></button>
-        <button onpointerdown="event.preventDefault(); applyAnnotation('pink')" class="w-8 h-8 rounded-full bg-[#F9A8D4] flex items-center justify-center btn-morph"><div class="w-4 h-4 bg-[#EC4899] rounded-full"></div></button>
         
-        <div class="w-[1px] h-6 bg-m3-onSurfaceVariant/30 mx-1"></div>
-        
-        <!-- Tombol Bookmark In-Book -->
-        <button onpointerdown="event.preventDefault(); applyInBookBookmark()" class="p-2 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors text-m3-onSurfaceVariant btn-morph">
-            <i data-lucide="bookmark" class="w-5 h-5"></i>
+        <button onpointerdown="event.preventDefault(); openBookmarkModal('yellow')" class="w-10 h-10 rounded-full flex items-center justify-center transition-colors text-[#EAB308] hover:bg-m3-surface btn-morph">
+            <i data-lucide="bookmark" class="w-5 h-5 fill-current"></i>
         </button>
-
-        <!-- Tombol Note -->
-        <button onpointerdown="event.preventDefault(); openNoteInput()" class="p-2 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors text-m3-onSurfaceVariant btn-morph">
-            <i data-lucide="message-square-plus" class="w-5 h-5"></i>
+        <button onpointerdown="event.preventDefault(); openBookmarkModal('green')" class="w-10 h-10 rounded-full flex items-center justify-center transition-colors text-[#22C55E] hover:bg-m3-surface btn-morph">
+            <i data-lucide="bookmark" class="w-5 h-5 fill-current"></i>
+        </button>
+        <button onpointerdown="event.preventDefault(); openBookmarkModal('pink')" class="w-10 h-10 rounded-full flex items-center justify-center transition-colors text-[#EC4899] hover:bg-m3-surface btn-morph">
+            <i data-lucide="bookmark" class="w-5 h-5 fill-current"></i>
         </button>
         
         <div class="w-[1px] h-6 bg-m3-onSurfaceVariant/30 mx-1"></div>
         
-        <!-- Tombol AI -->
         <button onpointerdown="event.preventDefault(); lookupDictionary()" class="px-3 py-1.5 rounded-full hover:bg-m3-surface text-xs font-bold flex items-center gap-1 transition-colors text-m3-primary btn-morph">
             <i data-lucide="search" class="w-4 h-4"></i> AI
         </button>
     </div>
 
-    <!-- Note Create/Edit Modal -->
-    <div id="note-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
-        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-6 transform scale-75 translate-y-12 border-none" id="note-sheet">
-            <h3 id="str-note-title" class="text-lg font-bold mb-4 text-m3-onSurface flex items-center gap-2"><i data-lucide="notebook-pen" class="w-5 h-5"></i> Catatan</h3>
+    <div id="bookmark-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
+        <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-6 transform scale-75 translate-y-12 border-none" id="bookmark-sheet">
+            <h3 id="str-bookmark-modal-title" class="text-lg font-bold mb-5 text-m3-onSurface flex items-center gap-2"><i data-lucide="bookmark" class="w-5 h-5"></i> Bookmark</h3>
             
-            <div class="flex gap-4 justify-center mb-4">
-                 <button onclick="setNoteColor('yellow')" id="nc-yellow" class="w-8 h-8 rounded-full bg-[#FDE047] ring-2 ring-offset-2 ring-transparent transition-all btn-morph"></button>
-                 <button onclick="setNoteColor('green')" id="nc-green" class="w-8 h-8 rounded-full bg-[#86EFAC] ring-2 ring-offset-2 ring-transparent transition-all btn-morph"></button>
-                 <button onclick="setNoteColor('pink')" id="nc-pink" class="w-8 h-8 rounded-full bg-[#F9A8D4] ring-2 ring-offset-2 ring-transparent transition-all btn-morph"></button>
-            </div>
-
-            <textarea id="note-input-text" class="w-full h-32 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-2xl mb-5 font-bold outline-none border border-transparent focus:border-m3-primary resize-none" placeholder="Tuliskan catatan..."></textarea>
+            <input type="text" id="bookmark-input-title" class="w-full bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-t-2xl font-bold outline-none border-b border-m3-surface focus:border-m3-primary text-sm" placeholder="Judul Bookmark...">
+            
+            <textarea id="bookmark-input-text" class="w-full h-28 bg-m3-surfaceVariant text-m3-onSurfaceVariant p-4 rounded-b-2xl mb-5 font-medium outline-none border border-transparent focus:border-m3-primary resize-none text-sm" placeholder="Tulis catatan (opsional)..."></textarea>
             
             <div class="flex gap-2">
-                <button id="btn-delete-note" onclick="deleteNoteInsideModal()" class="py-3 px-5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold rounded-full btn-morph flex items-center justify-center hidden"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                <button id="str-note-cancel" onclick="_closeModalAction('note-modal', 'note-sheet', true)" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Batal</button>
-                <button id="str-note-save" onclick="saveNoteAnnotation()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph">Simpan</button>
+                <button id="btn-delete-bookmark" onclick="deleteBookmarkInsideModal()" class="py-3 px-5 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold rounded-full btn-morph flex items-center justify-center hidden"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                <button id="str-bookmark-cancel" onclick="_closeModalAction('bookmark-modal', 'bookmark-sheet', true)" class="flex-1 py-3 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph">Batal</button>
+                <button id="str-bookmark-save" onclick="saveBookmarkAnnotation()" class="flex-1 py-3 bg-m3-primary text-m3-onPrimary font-bold rounded-full btn-morph">Simpan</button>
             </div>
         </div>
     </div>
 
-    <!-- AI Definition Modal -->
     <div id="ai-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-end sm:items-center justify-center opacity-0 pb-0 sm:pb-0 p-0 sm:p-4">
         <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[48px] rounded-t-[48px] p-6 pb-12 sm:pb-6 transform translate-y-full flex flex-col max-h-[85vh] border-none" id="ai-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 sm:hidden"></div>
@@ -493,7 +458,6 @@
         </div>
     </div>
 
-    <!-- CUSTOM DIALOG MODAL -->
     <div id="custom-dialog" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform" id="custom-dialog-sheet">
             <div class="flex items-center gap-3 mb-4">
@@ -504,12 +468,10 @@
             </div>
             <p id="dialog-message" class="text-m3-onSurfaceVariant text-sm mb-6 font-medium leading-relaxed"></p>
             <div class="flex gap-2 justify-end" id="dialog-actions">
-                <!-- Tombol dinamis dirender via JS -->
-            </div>
+                </div>
         </div>
     </div>
 
-    <!-- Engine & App Logic Scripts -->
     <script src="js/reader.js"></script>
     <script src="js/app.js"></script>
 
@@ -517,3 +479,4 @@
 </html>
 
 
+```
