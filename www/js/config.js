@@ -82,11 +82,17 @@ const i18n = {
         pinnedBooks: "Buku Disematkan",
         optPin: "Sematkan Buku", optUnpin: "Lepas Sematan",
         
-        // --- TEXT BUAT BOOKMARK (DALAM BUKU) ---
+        // --- TEXT BUAT MODAL & PANEL BOOKMARK ---
         navBookmark: "Bookmark",
         bookmarkTitle: "Panel Bookmark",
         bookmarkEmpty: "Belum ada pembatas buku.",
-        addBookmark: "Tambah Bookmark",
+        
+        // Modal Input UI
+        bookmarkModalTitle: "Bookmark",
+        bookmarkTitlePlaceholder: "Judul Bookmark...",
+        bookmarkNotePlaceholder: "Tulis catatan (opsional)...",
+        bookmarkCancel: "Batal",
+        bookmarkSave: "Simpan",
 
         extractingCover: "Mengekstrak Sampul...", readingPage: "Membaca Halaman", formattingText: "Memformat Teks...",
         extractingEpub: "Mengekstrak EPUB...", analyzingStruct: "Menganalisa Struktur...", extractingChapter: "Mengekstrak Bab",
@@ -101,7 +107,6 @@ const i18n = {
         readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
         setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
         searchPlaceholder: "Cari dalam buku...", searchNotFound: "Tidak ditemukan.",
-        noteTitle: "Catatan", noteCancel: "Batal", noteSave: "Simpan", notePlaceholder: "Tuliskan catatan...",
         aiTitle: "Penjelasan", aiLoading: "Mencari referensi...", noInternet: "Koneksi internet bermasalah.",
         deleteNoteConfirm: "Hapus catatan/sorotan ini?",
         editTitle: "Edit Detail", editBookTitle: "Judul Buku", editBookCover: "Gambar Sampul", editBookShape: "Bentuk Kartu", editCancel: "Batal", editSave: "Simpan", optCancel: "Batal", themeLight: "Mode Terang", themeDark: "Mode Gelap", amoledLabel: "AMOLED (Hitam Pekat)",
@@ -120,11 +125,17 @@ const i18n = {
         pinnedBooks: "Pinned Books",
         optPin: "Pin Book", optUnpin: "Unpin Book",
         
-        // --- TEXT BUAT BOOKMARK (DALAM BUKU) ---
+        // --- TEXT BUAT MODAL & PANEL BOOKMARK ---
         navBookmark: "Bookmark",
         bookmarkTitle: "Bookmarks Panel",
         bookmarkEmpty: "No bookmarks yet.",
-        addBookmark: "Add Bookmark",
+        
+        // Modal Input UI
+        bookmarkModalTitle: "Bookmark",
+        bookmarkTitlePlaceholder: "Bookmark Title...",
+        bookmarkNotePlaceholder: "Write a note (optional)...",
+        bookmarkCancel: "Cancel",
+        bookmarkSave: "Save",
 
         extractingCover: "Extracting Cover...", readingPage: "Reading Page", formattingText: "Formatting Text...",
         extractingEpub: "Extracting EPUB...", analyzingStructure: "Analyzing Structure...", extractingChapter: "Extracting Chapter",
@@ -139,7 +150,6 @@ const i18n = {
         readerLoading: "Loading Book...", tocTitle: "Table of Contents", setTitle: "Appearance",
         setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
         searchPlaceholder: "Search in book...", searchNotFound: "Not found.",
-        noteTitle: "Note", noteCancel: "Cancel", noteSave: "Save", notePlaceholder: "Write a note...",
         aiTitle: "Definition", aiLoading: "Looking for references...", noInternet: "Internet connection issue.",
         deleteNoteConfirm: "Delete this note/highlight?",
         editTitle: "Edit Details", editBookTitle: "Book Title", editBookCover: "Cover Image", editBookShape: "Card Shape", editCancel: "Cancel", editSave: "Save", optCancel: "Cancel", themeLight: "Light Mode", themeDark: "Dark Mode", amoledLabel: "AMOLED (Pitch Black)",
