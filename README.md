@@ -30,7 +30,7 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
 
 
 ## 🚀 Key Features
- * **Privacy-Focused:** Zero cloud uploads. We utilize localforage (IndexedDB) to parse, render, and save your books and reading progress locally. Your data belongs to you.
+ * **Privacy-Focused:** 100% offline and Zero cloud uploads. We utilize localforage (IndexedDB) to parse, render, and save your books and reading progress locally. Your data belongs to you.
  * **Smart Annotations & Highlights:** Highlight crucial texts in multiple colors (Yellow, Green, Pink) and attach your personal notes directly inside the book context.
  * **AI Dictionary & Definition Lookup:** Stumbled upon a difficult word? Just select it, and our AI feature will pull definitions seamlessly from Wikipedia, Wiktionary, and real-time dictionaries via the Gemini API.
  * **In-Book Search Engine:** A highly intuitive search bar integrated right into the side panel. Instantly sweeps through the book and auto-scrolls to the exact highlighted paragraph.
