@@ -77,6 +77,15 @@ const i18n = {
         booksCount: "Buku", continueReading: "Lanjutkan Membaca", bookCollection: "Koleksi Buku", 
         selected: "Terpilih", cancel: "Batal", delete: "Hapus", deleteConfirm: "Hapus buku yang dipilih secara permanen?", 
         optSelect: "Pilih Beberapa", optEdit: "Edit Detail", optDelete: "Hapus Permanen",
+        
+        // --- NEW VARIABLES ---
+        tabAllBooks: "Semua Buku", tabBookmarks: "Bookmark",
+        pinnedBooks: "Buku Disematkan",
+        optPin: "Sematkan Buku", optUnpin: "Lepas Sematan",
+        optBookmark: "Tandai (Bookmark)", optRemoveBookmark: "Hapus Tanda",
+        libBookmarkEmpty: "Belum ada Bookmark.",
+        // ---------------------
+
         extractingCover: "Mengekstrak Sampul...", readingPage: "Membaca Halaman", formattingText: "Memformat Teks...",
         extractingEpub: "Mengekstrak EPUB...", analyzingStruct: "Menganalisa Struktur...", extractingChapter: "Mengekstrak Bab",
         welcomeTitle: "Selamat Datang di Baca.", welcomeDesc: "Harap baca instruksi berikut untuk pengalaman membaca yang optimal.",
@@ -104,6 +113,15 @@ const i18n = {
         booksCount: "Books", continueReading: "Continue Reading", bookCollection: "Book Collection", 
         selected: "Selected", cancel: "Cancel", delete: "Delete", deleteConfirm: "Permanently delete selected books?", 
         optSelect: "Select Multiple", optEdit: "Edit Details", optDelete: "Delete Permanently",
+        
+        // --- NEW VARIABLES ---
+        tabAllBooks: "All Books", tabBookmarks: "Bookmarks",
+        pinnedBooks: "Pinned Books",
+        optPin: "Pin Book", optUnpin: "Unpin Book",
+        optBookmark: "Add Bookmark", optRemoveBookmark: "Remove Bookmark",
+        libBookmarkEmpty: "No Bookmarks yet.",
+        // ---------------------
+
         extractingCover: "Extracting Cover...", readingPage: "Reading Page", formattingText: "Formatting Text...",
         extractingEpub: "Extracting EPUB...", analyzingStructure: "Analyzing Structure...", extractingChapter: "Extracting Chapter",
         welcomeTitle: "Welcome to Baca.", welcomeDesc: "Please read these instructions for the optimal reading experience.",
@@ -127,3 +145,4 @@ const i18n = {
         setAiConfig: "AI Configuration", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Add your API Key to get smart definitions from AI. (Optimal setup: use Gemini 2.5 Flash Lite for maximum speed).", keySaved: "API Key saved successfully."
     }
 };
+
