@@ -12,6 +12,7 @@ let isBatchDeleteMode = false;
 let selectedForDelete = [];
 let activeNoteColor = 'yellow';
 let editingAnnotId = null;
+let currentTab = 'all'; // State untuk tab navigasi (all atau bookmark)
 
 let isDark = localStorage.getItem('theme') !== 'light'; 
 let currentThemeKey = localStorage.getItem('m3-key') || 'orchid';
@@ -54,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setupScrollListeners();
     setupSearchListeners();
+    setupSwipeGestures();
     syncWikiLangUI();
     applyLanguage();
     applyTypo();
@@ -72,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(savedModel && document.getElementById('gemini-model-select')) document.getElementById('gemini-model-select').value = savedModel;
 });
 
-// 2. SCROLL & NAVIGATION LISTENERS
+// 2. SCROLL, SWIPE & NAVIGATION LISTENERS
 function setupScrollListeners() {
     const libScroll = document.getElementById('library-content-scroll');
     if(libScroll && DOM.mainHeader) {
@@ -102,6 +104,85 @@ function setupScrollListeners() {
         }, { passive: true });
     }
 }
+
+// FUNGSI GESTURE SWIPE & TAB SWITCHING
+function setupSwipeGestures() {
+    const swipeContainer = document.getElementById('swipe-container');
+    if(!swipeContainer) return;
+    
+    let startX = 0, startY = 0, currentX = 0;
+    let isSwiping = false, isVerticalScroll = false;
+
+    swipeContainer.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isSwiping = true;
+        isVerticalScroll = false;
+        swipeContainer.style.transition = 'none'; // Hilangkan durasi saat di-drag
+    }, {passive: true});
+
+    swipeContainer.addEventListener('touchmove', (e) => {
+        if(!isSwiping) return;
+        let moveX = e.touches[0].clientX;
+        let moveY = e.touches[0].clientY;
+        let diffX = moveX - startX;
+        let diffY = moveY - startY;
+
+        // Jika scroll vertikal lebih dominan, batalkan swipe horizontal
+        if (Math.abs(diffY) > Math.abs(diffX) && !isVerticalScroll && Math.abs(diffY) > 10) {
+            isVerticalScroll = true;
+            isSwiping = false; 
+            swipeContainer.style.transform = currentTab === 'all' ? 'translateX(0)' : 'translateX(-100%)';
+            return;
+        }
+
+        if(!isVerticalScroll) {
+            if (currentTab === 'all' && diffX < 0) { 
+                swipeContainer.style.transform = `translateX(${diffX}px)`; // Geser ke kiri
+            } else if (currentTab === 'bookmark' && diffX > 0) { 
+                swipeContainer.style.transform = `translateX(calc(-100% + ${diffX}px))`; // Geser ke kanan
+            }
+        }
+    }, {passive: true});
+
+    swipeContainer.addEventListener('touchend', (e) => {
+        if(!isSwiping || isVerticalScroll) return;
+        isSwiping = false;
+        let endX = e.changedTouches[0].clientX;
+        let diffX = endX - startX;
+        
+        swipeContainer.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'; // Animasi snap back
+
+        if (currentTab === 'all' && diffX < -50) {
+            switchLibraryTab('bookmark');
+        } else if (currentTab === 'bookmark' && diffX > 50) {
+            switchLibraryTab('all');
+        } else {
+            // Snap back kalau gesernya nanggung
+            swipeContainer.style.transform = currentTab === 'all' ? 'translateX(0)' : 'translateX(-100%)';
+        }
+    });
+}
+
+window.switchLibraryTab = function(tabName, isFromHistory = false) {
+    if (currentTab === tabName) return;
+    const container = document.getElementById('swipe-container');
+    const btnAll = document.getElementById('tab-all-books');
+    const btnBookmark = document.getElementById('tab-bookmarks');
+    
+    if (tabName === 'bookmark') {
+        container.style.transform = 'translateX(-100%)';
+        btnAll.classList.replace('nav-active', 'text-m3-onSurfaceVariant');
+        btnBookmark.classList.replace('text-m3-onSurfaceVariant', 'nav-active');
+        if(!isFromHistory) pushAppHistory('tab-bookmark');
+    } else {
+        container.style.transform = 'translateX(0)';
+        btnBookmark.classList.replace('nav-active', 'text-m3-onSurfaceVariant');
+        btnAll.classList.replace('text-m3-onSurfaceVariant', 'nav-active');
+        if(!isFromHistory && window.location.hash === '#tab-bookmark') history.back();
+    }
+    currentTab = tabName;
+};
 
 function updateBottomNavUI(activeId) {
     const btns = ['btn-toc', 'btn-settings'];
@@ -135,6 +216,7 @@ window.addEventListener('popstate', (e) => {
     else if (isBatchDeleteMode) { window.toggleBatchDelete(true); }
     else if (activePanel) { _closeSidePanelsAction(true); } 
     else if (document.getElementById('search-area').classList.contains('search-active')) { closeSearch(true); }
+    else if (currentTab === 'bookmark') { switchLibraryTab('all', true); } // NATIVE BACK UNTUK KELUAR DARI TAB BOOKMARK
     else if (document.getElementById('reader-bottom-bar') && document.getElementById('reader-bottom-bar').classList.contains('hidden')) { window.toggleFullscreenReading(true); }
     else if (DOM.readView && !DOM.readView.classList.contains('translate-y-full')) { _closeReaderAction(true); }
 });
@@ -189,6 +271,10 @@ function applyLanguage() {
     setElementText('str-lib-empty', d.libEmpty); setElementText('str-continue-reading', d.continueReading);
     setElementText('str-book-collection', d.bookCollection); setElementText('loading-text', d.loadingDocs);
     setElementText('btn-batch-cancel', d.cancel); setElementText('btn-batch-exec', d.delete);
+    
+    // Teks baru untuk Tab, Pin, & Bookmark
+    setElementText('tab-all-books', d.tabAllBooks); setElementText('tab-bookmarks', d.tabBookmarks);
+    setElementText('str-pinned-books', d.pinnedBooks); setElementText('str-lib-bookmark-empty', d.libBookmarkEmpty);
     setElementText('str-opt-select', d.optSelect); setElementText('str-opt-edit', d.optEdit);
     setElementText('str-opt-delete', d.optDelete); setElementText('str-opt-cancel', d.optCancel);
     
@@ -504,31 +590,65 @@ async function loadLibrary() {
 
 function renderLibrary(filterText = "") {
     if(!DOM.grid || !DOM.topSlider) return;
-    DOM.grid.innerHTML = ''; DOM.topSlider.innerHTML = '';
+    
+    // Clear DOM wadah render
+    DOM.grid.innerHTML = ''; 
+    DOM.topSlider.innerHTML = '';
+    const pinnedGrid = document.getElementById('pinned-book-grid');
+    if(pinnedGrid) pinnedGrid.innerHTML = '';
+    const bookmarkGrid = document.getElementById('bookmark-grid');
+    if(bookmarkGrid) bookmarkGrid.innerHTML = '';
     
     let filteredLib = library;
     if(filterText) filteredLib = library.filter(b => b.title.toLowerCase().includes(filterText.toLowerCase()));
-    if(DOM.count) DOM.count.textContent = `${filteredLib.length} ${i18n[wikiLang].booksCount}`;
     
+    const d = i18n[wikiLang] || i18n['id'];
+    if(DOM.count) DOM.count.textContent = `${filteredLib.length} ${d.booksCount}`;
+    
+    // Klasifikasi Data Buku
+    const pinnedBooks = filteredLib.filter(b => b.isPinned);
+    const bookmarkedBooks = filteredLib.filter(b => b.isBookmarked);
+    const regularBooks = filteredLib.filter(b => !b.isPinned); // Buku reguler = Buku yg ga di pin
+
+    // Render 1: Top Books (Lanjutkan Membaca) - Ga kefilter PIN, ngurut dari progress
     let topBooks = [];
     if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4); }
-
     if (topBooks.length > 0) {
         DOM.topSection.classList.remove('hidden');
         topBooks.forEach((book, idx) => { DOM.topSlider.appendChild(createBookCard(book, true, idx)); });
         const spacer = document.createElement('div'); spacer.className = "w-2 shrink-0 snap-align-none"; DOM.topSlider.appendChild(spacer);
     } else { DOM.topSection.classList.add('hidden'); }
     
-    if (filteredLib.length === 0) { 
+    // Render 2: Pinned Books
+    const pinnedSection = document.getElementById('pinned-books-section');
+    if (pinnedBooks.length > 0 && !filterText) {
+        if(pinnedSection) pinnedSection.classList.remove('hidden');
+        pinnedBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(createBookCard(book, false, idx)); });
+    } else {
+        if(pinnedSection) pinnedSection.classList.add('hidden');
+    }
+
+    // Render 3: Bookmark Books
+    const bookmarkEmpty = document.getElementById('bookmark-empty-state');
+    if (bookmarkedBooks.length > 0) {
+        if(bookmarkEmpty) bookmarkEmpty.classList.add('hidden');
+        bookmarkedBooks.forEach((book, idx) => { if(bookmarkGrid) bookmarkGrid.appendChild(createBookCard(book, false, idx)); });
+    } else {
+        if(bookmarkEmpty) bookmarkEmpty.classList.remove('hidden');
+    }
+
+    // Render 4: Regular Books (Koleksi Utama)
+    if (regularBooks.length === 0) { 
         DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); 
         if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
     } else {
         DOM.empty.classList.add('hidden'); DOM.grid.classList.remove('hidden');
         if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.remove('hidden');
-        filteredLib.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
-        if(window.lucide) window.lucide.createIcons();
-        window.updateBatchSelectionUI(); 
+        regularBooks.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
     }
+
+    if(window.lucide) window.lucide.createIcons();
+    window.updateBatchSelectionUI();
 }
 
 function createBookCard(book, isSlider = false, index = 0) {
@@ -603,6 +723,13 @@ function createBookCard(book, isSlider = false, index = 0) {
     const titleShadow = book.coverBase64 ? 'text-white' : '';
     const barBase = book.coverBase64 ? 'bg-white' : 'bg-m3-primary dark:bg-m3-primaryContainer';
 
+    // Label Indicator untuk Pinned & Bookmark status
+    let indicators = '';
+    if(!isSlider) {
+        if(book.isPinned) indicators += `<i data-lucide="pin" class="w-3.5 h-3.5 opacity-90 fill-current"></i>`;
+        if(book.isBookmarked) indicators += `<i data-lucide="bookmark" class="w-3.5 h-3.5 opacity-90 fill-current"></i>`;
+    }
+
     if (isSlider) {
         card.innerHTML = `
             ${textOverlay}
@@ -626,7 +753,7 @@ function createBookCard(book, isSlider = false, index = 0) {
             ${batchOverlayHTML}
             ${textOverlay}
             <div class="relative z-10 flex flex-col h-full justify-between pointer-events-none border-none">
-                <div class="flex justify-end w-full"></div>
+                <div class="flex justify-end w-full gap-1 drop-shadow-md ${titleShadow}">${indicators}</div>
                 <div class="mt-auto flex flex-col border-none">
                     ${book.coverBase64 ? '' : '<i data-lucide="book" class="w-6 h-6 mb-2 opacity-80"></i>'}
                     <h3 class="font-bold text-sm leading-tight mt-1 line-clamp-3 drop-shadow-md ${titleShadow}">${book.title}</h3>
@@ -650,7 +777,54 @@ function createBookCard(book, isSlider = false, index = 0) {
 window.openBookOptions = function(id) {
     activeOptsId = id; const book = library.find(b => b.id === id);
     document.getElementById('opt-title').textContent = book.title;
+
+    // Dinamis teks Pin dan Bookmark berdasarkan state buku
+    const d = i18n[wikiLang] || i18n['id'];
+    const pinIcon = document.getElementById('icon-opt-pin');
+    const pinText = document.getElementById('str-opt-pin');
+    const bkmIcon = document.getElementById('icon-opt-bookmark');
+    const bkmText = document.getElementById('str-opt-bookmark');
+
+    if(book.isPinned) {
+        pinText.textContent = d.optUnpin || 'Lepas Sematan';
+        pinIcon.setAttribute('data-lucide', 'pin-off');
+    } else {
+        pinText.textContent = d.optPin || 'Sematkan Buku';
+        pinIcon.setAttribute('data-lucide', 'pin');
+    }
+
+    if(book.isBookmarked) {
+        bkmText.textContent = d.optRemoveBookmark || 'Hapus Tanda';
+        bkmIcon.setAttribute('data-lucide', 'bookmark-minus');
+    } else {
+        bkmText.textContent = d.optBookmark || 'Tandai (Bookmark)';
+        bkmIcon.setAttribute('data-lucide', 'bookmark');
+    }
+
+    if(window.lucide) window.lucide.createIcons();
     openModal('b-opt-modal', 'b-opt-sheet');
+}
+
+window.togglePinBook = async function() {
+    if(!activeOptsId) return;
+    const bookIndex = library.findIndex(b => b.id === activeOptsId);
+    if(bookIndex > -1) {
+        library[bookIndex].isPinned = !library[bookIndex].isPinned;
+        await localforage.setItem('pdf_epub_master', library);
+        history.back(); 
+        setTimeout(() => renderLibrary(DOM.globalSearch ? DOM.globalSearch.value : ""), 300);
+    }
+}
+
+window.toggleBookmarkBook = async function() {
+    if(!activeOptsId) return;
+    const bookIndex = library.findIndex(b => b.id === activeOptsId);
+    if(bookIndex > -1) {
+        library[bookIndex].isBookmarked = !library[bookIndex].isBookmarked;
+        await localforage.setItem('pdf_epub_master', library);
+        history.back(); 
+        setTimeout(() => renderLibrary(DOM.globalSearch ? DOM.globalSearch.value : ""), 300);
+    }
 }
 
 window.triggerSelectMode = function() {
@@ -1325,3 +1499,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
