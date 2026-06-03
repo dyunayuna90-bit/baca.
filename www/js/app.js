@@ -7,7 +7,7 @@ let activeBookId = null;
 let observer = null; 
 let activePanel = null;
 let activeOptsId = null; 
-let currentSelection = { text: "", nodeIdx: -1 }; 
+let currentSelection = { text: "", nodeIdx: -1, startOff: 0, endOff: 0 }; 
 let isBatchDeleteMode = false;
 let selectedForDelete = [];
 let activeNoteColor = 'yellow';
@@ -21,7 +21,6 @@ let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 const DOM = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Inisialisasi DOM Elements
     Object.assign(DOM, {
         libView: document.getElementById('library-view'), 
         readView: document.getElementById('reader-view'),
@@ -192,13 +191,11 @@ function applyLanguage() {
     setElementText('str-opt-select', d.optSelect); setElementText('str-opt-edit', d.optEdit);
     setElementText('str-opt-delete', d.optDelete); setElementText('str-opt-cancel', d.optCancel);
     
-    // Teks Pin & Bookmark
     setElementText('str-pinned-books', d.pinnedBooks);
     setElementText('str-nav-bookmark', d.navBookmark);
     if (document.getElementById('str-bookmark-title')) { document.getElementById('str-bookmark-title').innerHTML = `<i data-lucide="bookmark"></i> ${d.bookmarkTitle}`; }
     setElementText('str-bookmark-empty', d.bookmarkEmpty);
     
-    // Teks Modal Bookmark Baru
     setElementText('str-bookmark-cancel', d.bookmarkCancel); setElementText('str-bookmark-save', d.bookmarkSave);
     if (document.getElementById('str-bookmark-modal-title')) { document.getElementById('str-bookmark-modal-title').innerHTML = `<i data-lucide="bookmark" class="w-5 h-5"></i> ${d.bookmarkModalTitle}`; }
     if (document.getElementById('bookmark-input-title')) document.getElementById('bookmark-input-title').placeholder = d.bookmarkTitlePlaceholder;
@@ -526,11 +523,9 @@ function renderLibrary(filterText = "") {
     const d = i18n[wikiLang] || i18n['id'];
     if(DOM.count) DOM.count.textContent = `${filteredLib.length} ${d.booksCount}`;
     
-    // Klasifikasi Data Buku (Sekarang cuma Pinned dan Regular)
     const pinnedBooks = filteredLib.filter(b => b.isPinned);
     const regularBooks = filteredLib.filter(b => !b.isPinned);
 
-    // Render 1: Top Books (Lanjutkan Membaca) - ngurut dari progress
     let topBooks = [];
     if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4); }
     if (topBooks.length > 0) {
@@ -539,7 +534,6 @@ function renderLibrary(filterText = "") {
         const spacer = document.createElement('div'); spacer.className = "w-2 shrink-0 snap-align-none"; DOM.topSlider.appendChild(spacer);
     } else { DOM.topSection.classList.add('hidden'); }
     
-    // Render 2: Pinned Books
     const pinnedSection = document.getElementById('pinned-books-section');
     if (pinnedBooks.length > 0 && !filterText) {
         if(pinnedSection) pinnedSection.classList.remove('hidden');
@@ -548,7 +542,6 @@ function renderLibrary(filterText = "") {
         if(pinnedSection) pinnedSection.classList.add('hidden');
     }
 
-    // Render 3: Regular Books (Koleksi Utama)
     if (regularBooks.length === 0) { 
         DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); 
         if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
@@ -683,7 +676,6 @@ function createBookCard(book, isSlider = false, index = 0) {
     return card;
 }
 
-// BATCH DELETE & EDIT OPTIONS
 window.openBookOptions = function(id) {
     activeOptsId = id; const book = library.find(b => b.id === id);
     document.getElementById('opt-title').textContent = book.title;
@@ -1032,7 +1024,7 @@ window.openBook = function(book) {
         header.classList.remove('-translate-y-[150%]', 'opacity-0');
         header.classList.add('translate-y-0', 'opacity-100');
 
-        renderBookmarkPanel(); // Refresh list panel
+        renderBookmarkPanel(); 
         loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
         setTimeout(() => {
@@ -1123,7 +1115,7 @@ window.setupIntersectionObserver = function() {
             }
             updateBookProgress(activeBookId, id, pct);
         }
-    }, { root: DOM.readContent, rootMargin: '-10% 0px -50% 0px', threshold: 0.1 });
+    }, { root: DOM.readContent, rootMargin: '-40% 0px -40% 0px', threshold: 0 }); // UPDATE: Fokus cuma murni di tengah layar
     Array.from(DOM.inner.children).forEach(el => observer.observe(el));
 }
 
@@ -1138,24 +1130,59 @@ async function updateBookProgress(bookId, lastNodeId, pct) {
 }
 
 // 10. ANNOTATIONS & IN-BOOK BOOKMARK LOGIC
+
+// Fungsi Bantuan Cari Titik Offset Jari (Biar Akurat 100%)
+function getAbsoluteOffsets(element) {
+    const sel = window.getSelection();
+    if (sel.rangeCount === 0) return { start: 0, end: 0 };
+    const range = sel.getRangeAt(0);
+    const preCaret = range.cloneRange();
+    preCaret.selectNodeContents(element);
+    preCaret.setEnd(range.startContainer, range.startOffset);
+    const start = preCaret.toString().length;
+    return { start, end: start + range.toString().length };
+}
+
 window.renderNodeText = function(text, annots) {
     if (!text) return "";
-    let augmentedText = text;
+    let html = text;
+    
     if (annots && annots.length > 0) {
-        [...annots].sort((a,b) => b.text.length - a.text.length).forEach(a => {
+        // Logika Baru (Presisi Pake Offsets) - Urut dr belakang biar ga bentrok indeks
+        let validAnnots = [...annots].filter(a => typeof a.startOff !== 'undefined').sort((a,b) => b.startOff - a.startOff);
+        
+        validAnnots.forEach(a => {
+            const s = Math.min(a.startOff, html.length);
+            const e = Math.min(a.endOff, html.length);
+            const before = html.substring(0, s);
+            const middle = html.substring(s, e);
+            const after = html.substring(e);
+            // Kasih token unik dlu sblm html di escape
+            html = before + `|||ST_${a.id}|||` + middle + `|||EN_${a.id}|||` + after;
+        });
+
+        // Fallback untuk data backup lama (Pake Regex Text lawas)
+        let legacyAnnots = [...annots].filter(a => typeof a.startOff === 'undefined').sort((a,b) => b.text.length - a.text.length);
+        legacyAnnots.forEach(a => {
             const esc = a.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            augmentedText = augmentedText.replace(new RegExp(esc, ''), `|||HL|${a.id}|||${a.text}|||ENDHL|||`);
+            html = html.replace(new RegExp(esc, ''), `|||ST_${a.id}|||${a.text}|||EN_${a.id}|||`);
         });
     }
-    let html = augmentedText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     html = html.replace(/"([^"]+)"/g, '<i class="italic font-serif opacity-90">"$1"</i>');
+
     if (annots && annots.length > 0) {
-        html = html.replace(/\|\|\|HL\|(.*?)\|\|\|/g, (match, id) => {
-            const a = annots.find(x => x.id === id);
-            if (!a) return '<mark class="hl-yellow rounded px-1 shadow-sm">';
-            // Murni semua highlight adalah Bookmark Berwarna skrg.
-            return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer transition-all hover:brightness-95 mx-0.5 shadow-sm px-1" data-id="${id}" onclick="window.showAnnotationDetails('${id}')">`;
-        }).replace(/\|\|\|ENDHL\|\|\|/g, '</mark>');
+        annots.forEach(a => {
+            let colorClass = "";
+            if(a.color === 'yellow') colorClass = "text-yellow-600 bg-yellow-400/20 border-yellow-500 dark:text-yellow-400 dark:bg-yellow-400/20";
+            else if(a.color === 'green') colorClass = "text-green-600 bg-green-500/20 border-green-500 dark:text-green-400 dark:bg-green-400/20";
+            else if(a.color === 'pink') colorClass = "text-pink-600 bg-pink-500/20 border-pink-500 dark:text-pink-400 dark:bg-pink-400/20";
+            else colorClass = "text-m3-primary bg-m3-primary/10 border-m3-primary";
+
+            let markHtml = `<mark class="annot-hl border-b-2 border-dashed ${colorClass} font-medium cursor-pointer transition-all hover:opacity-80 px-1 mx-0.5 rounded-sm" data-id="${a.id}" onclick="window.showAnnotationDetails('${a.id}')">`;
+            html = html.replace(`|||ST_${a.id}|||`, markHtml).replace(`|||EN_${a.id}|||`, '</mark>');
+        });
     }
     return html;
 }
@@ -1173,7 +1200,9 @@ document.addEventListener('selectionchange', () => {
         const nodeEl = curr.closest('[id^="node-"]'); if (!nodeEl) return;
         
         const nodeIdx = parseInt(nodeEl.id.split('-')[1]);
-        currentSelection = { text: text, nodeIdx: nodeIdx };
+        const offsets = getAbsoluteOffsets(nodeEl); // Tangkep kordinat murni
+        currentSelection = { text: text, nodeIdx: nodeIdx, startOff: offsets.start, endOff: offsets.end };
+        
         menu.classList.remove('hidden');
 
         const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
@@ -1213,18 +1242,15 @@ async function registerAnnotation(annotObj) {
     window.renderBookmarkPanel();
 }
 
-// BUKA MODAL BOOKMARK DARI CAPSULE
+// BUKA MODAL BOOKMARK DARI CAPSULE WARNA
 window.openBookmarkModal = function(color) {
     if(currentSelection.nodeIdx === -1) return;
     
-    activeNoteColor = color; // Simpan warna yang dipilih
-    editingAnnotId = null; // Menandakan ini bookmark baru
+    activeNoteColor = color; 
+    editingAnnotId = null; 
     
-    // Reset Form Input
     document.getElementById('bookmark-input-title').value = '';
     document.getElementById('bookmark-input-text').value = '';
-    
-    // Sembunyiin tombol delete (karena belum ke-save)
     document.getElementById('btn-delete-bookmark').classList.add('hidden');
     
     openModal('bookmark-modal', 'bookmark-sheet', true);
@@ -1234,32 +1260,27 @@ window.openBookmarkModal = function(color) {
 window.saveBookmarkAnnotation = function() {
     const titleVal = document.getElementById('bookmark-input-title').value.trim();
     const noteVal = document.getElementById('bookmark-input-text').value.trim();
-    history.back(); // Tutup modal
+    history.back(); 
     
     if(editingAnnotId) {
-        // Mode Update / Edit
         const bookIndex = library.findIndex(b => b.id === activeBookId);
         if(bookIndex > -1) {
             const annotIndex = library[bookIndex].annotations.findIndex(a => a.id === editingAnnotId);
             if(annotIndex > -1) {
                 library[bookIndex].annotations[annotIndex].title = titleVal;
                 library[bookIndex].annotations[annotIndex].note = noteVal;
-                // Color ga di-update dari sini karena form ganti warna udah dibuang
-                
                 localforage.setItem('pdf_epub_master', library).then(() => {
-                    window.renderBookmarkPanel(); // Refresh panel biar teksnya ganti
+                    window.renderBookmarkPanel();
                 });
             }
         }
     } else {
-        // Mode Buat Baru: Mesin Kalkulator Bab & Persentase
         const book = library.find(b => b.id === activeBookId);
         if (!book) return;
 
         const totalNodes = book.nodes.length;
         const pct = Math.round(((currentSelection.nodeIdx + 1) / totalNodes) * 100);
 
-        // Track balik nyari h1 / h2 terdekat
         let closestChapterName = wikiLang === 'id' ? "Bagian Buku" : "Book Section";
         for (let i = currentSelection.nodeIdx; i >= 0; i--) {
             if (book.nodes[i].tag === 'h1' || book.nodes[i].tag === 'h2') {
@@ -1272,9 +1293,11 @@ window.saveBookmarkAnnotation = function() {
         const newAnnot = { 
             id: 'BM_' + Date.now().toString(), 
             nodeIdx: currentSelection.nodeIdx, 
+            startOff: currentSelection.startOff, 
+            endOff: currentSelection.endOff,
             text: currentSelection.text, 
             color: activeNoteColor, 
-            title: titleVal || (wikiLang === 'id' ? "Bookmark Baru" : "New Bookmark"), // Default kalau kosong
+            title: titleVal || (wikiLang === 'id' ? "Bookmark Baru" : "New Bookmark"), 
             note: noteVal,
             meta: `${chapterPreview} — ${pct}%`
         };
@@ -1292,11 +1315,8 @@ window.showAnnotationDetails = function(annotId) {
     editingAnnotId = annotId;
     currentSelection = { nodeIdx: annot.nodeIdx, text: annot.text };
     
-    // Isi form dengan data lama
     document.getElementById('bookmark-input-title').value = annot.title || '';
     document.getElementById('bookmark-input-text').value = annot.note || '';
-    
-    // Munculin tombol hapus
     document.getElementById('btn-delete-bookmark').classList.remove('hidden');
     
     openModal('bookmark-modal', 'bookmark-sheet', true);
@@ -1309,7 +1329,7 @@ window.deleteBookmarkInsideModal = function() {
         { text: d.delete || "Hapus", primary: true, action: () => {
             window.closeDialog();
             window.deleteAnnotationById(editingAnnotId);
-            history.back(); // Tutup modal edit
+            history.back(); 
         }}
     ]);
 }
@@ -1333,7 +1353,7 @@ window.deleteAnnotationById = async function(annotId) {
     window.renderBookmarkPanel();
 };
 
-// RENDER PANEL SIDEBAR BOOKMARK
+// RENDER UI PANEL SIDEBAR BOOKMARK YANG ELEGAN
 window.renderBookmarkPanel = function() {
     if(!DOM.bookmarkList || !DOM.bookmarkPanel || !activeBookId) return;
     const book = library.find(b => b.id === activeBookId);
@@ -1342,7 +1362,6 @@ window.renderBookmarkPanel = function() {
     DOM.bookmarkList.innerHTML = '';
     const emptyState = document.getElementById('bookmark-empty');
     
-    // Semua annotasi sekarang adalah Bookmark berwarna
     const bookmarks = (book.annotations || []).sort((a,b) => a.nodeIdx - b.nodeIdx);
 
     if(bookmarks.length === 0) {
@@ -1352,53 +1371,50 @@ window.renderBookmarkPanel = function() {
         
         bookmarks.forEach(bm => {
             const btn = document.createElement('div');
-            btn.className = "group relative flex flex-col p-4 mb-3 rounded-2xl bg-m3-surface shadow-sm overflow-hidden text-left border border-m3-surfaceVariant transition-colors hover:border-m3-primary/30";
-            
-            // Kode warna spesifik buat icon di panel
-            let iconColorCls = "text-yellow-500 bg-yellow-500/10";
-            if (bm.color === 'green') iconColorCls = "text-green-500 bg-green-500/10";
-            else if (bm.color === 'pink') iconColorCls = "text-pink-500 bg-pink-500/10";
-
-            // Tombol Area buat diklik (Navigasi mulus)
-            const clickArea = document.createElement('div');
-            clickArea.className = "cursor-pointer flex flex-col";
-            clickArea.onclick = () => {
+            btn.className = "group relative flex flex-col p-4 mb-3 rounded-2xl bg-m3-surface shadow-sm overflow-hidden text-left border border-m3-surfaceVariant transition-colors hover:border-m3-primary/30 cursor-pointer";
+            btn.onclick = () => {
                 const target = document.getElementById(`node-${bm.nodeIdx}`);
                 if (target) {
                     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    history.back(); // Tutup panel
+                    history.back(); // Auto tutup panel
                 }
             };
-
-            // Struktur UI List Persis Request Lu
-            let noteHtml = bm.note ? `<p class="text-xs font-bold text-m3-onSurfaceVariant/80 mt-2 line-clamp-3">${bm.note}</p>` : '';
             
-            clickArea.innerHTML = `
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="w-8 h-8 rounded-full ${iconColorCls} flex items-center justify-center shrink-0">
-                        <i data-lucide="bookmark" class="w-4 h-4 fill-current opacity-80"></i>
-                    </div>
-                    <div class="flex flex-col min-w-0 flex-1">
-                        <span class="text-sm font-bold text-m3-onSurface truncate">${bm.title}</span>
-                        <span class="text-[10px] font-bold opacity-70 mt-0.5 tracking-wider uppercase flex items-center gap-1">🔖 ${bm.meta || 'Chapter'}</span>
-                    </div>
+            // Logic Warna Label & Border
+            let iconColorCls = "text-yellow-600 bg-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-400/20";
+            let borderCls = "border-yellow-500";
+            if (bm.color === 'green') { iconColorCls = "text-green-600 bg-green-500/20 dark:text-green-400 dark:bg-green-400/20"; borderCls = "border-green-500"; }
+            else if (bm.color === 'pink') { iconColorCls = "text-pink-600 bg-pink-500/20 dark:text-pink-400 dark:bg-pink-400/20"; borderCls = "border-pink-500"; }
+
+            // Kotak Catatan Terpisah
+            let noteHtml = bm.note ? `<div class="mt-2 p-2.5 rounded-xl bg-m3-primaryContainer text-m3-onPrimaryContainer font-bold text-[11px] leading-relaxed">${bm.note}</div>` : '';
+            
+            // Render UI Baru
+            btn.innerHTML = `
+                <div class="flex items-start justify-between gap-2 mb-2 w-full">
+                    <span class="text-sm font-bold text-m3-onSurface leading-tight line-clamp-2 pr-6">${bm.title}</span>
                 </div>
+                <div class="flex items-center gap-1.5 mb-2 w-max px-2 py-0.5 rounded-md ${iconColorCls}">
+                    <i data-lucide="bookmark" class="w-3 h-3 fill-current"></i>
+                    <span class="text-[9px] font-bold uppercase tracking-wider">${bm.meta || 'Chapter'}</span>
+                </div>
+                
                 ${noteHtml}
-                <div class="mt-3 p-3 rounded-xl bg-m3-surfaceVariant/50 border-l-2 border-m3-primary/50">
-                    <span class="text-[11px] font-medium opacity-70 italic line-clamp-4 leading-relaxed">"${bm.text}"</span>
+                
+                <div class="mt-2 p-2.5 rounded-xl bg-m3-surfaceVariant border-l-4 ${borderCls}">
+                    <span class="text-[10px] font-medium opacity-80 italic line-clamp-2 leading-relaxed">"${bm.text}"</span>
                 </div>
             `;
 
-            // Tombol Delete (Muncul pas hover di desktop, atau nangkring di kanan atas)
+            // Tombol Delete 
             const delBtn = document.createElement('button');
-            delBtn.className = "absolute top-4 right-4 w-8 h-8 rounded-full text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center";
+            delBtn.className = "absolute top-4 right-4 w-7 h-7 rounded-full text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center";
             delBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
             delBtn.onclick = (e) => {
                 e.stopPropagation(); 
                 window.deleteAnnotationById(bm.id);
             };
 
-            btn.appendChild(clickArea);
             btn.appendChild(delBtn);
             DOM.bookmarkList.appendChild(btn);
         });
