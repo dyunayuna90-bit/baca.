@@ -78,13 +78,15 @@ const i18n = {
         selected: "Terpilih", cancel: "Batal", delete: "Hapus", deleteConfirm: "Hapus buku yang dipilih secara permanen?", 
         optSelect: "Pilih Beberapa", optEdit: "Edit Detail", optDelete: "Hapus Permanen",
         
-        // --- NEW VARIABLES ---
-        tabAllBooks: "Semua Buku", tabBookmarks: "Bookmark",
+        // --- TEXT BUAT PIN BUKU ---
         pinnedBooks: "Buku Disematkan",
         optPin: "Sematkan Buku", optUnpin: "Lepas Sematan",
-        optBookmark: "Tandai (Bookmark)", optRemoveBookmark: "Hapus Tanda",
-        libBookmarkEmpty: "Belum ada Bookmark.",
-        // ---------------------
+        
+        // --- TEXT BUAT BOOKMARK (DALAM BUKU) ---
+        navBookmark: "Bookmark",
+        bookmarkTitle: "Panel Bookmark",
+        bookmarkEmpty: "Belum ada pembatas buku.",
+        addBookmark: "Tambah Bookmark",
 
         extractingCover: "Mengekstrak Sampul...", readingPage: "Membaca Halaman", formattingText: "Memformat Teks...",
         extractingEpub: "Mengekstrak EPUB...", analyzingStruct: "Menganalisa Struktur...", extractingChapter: "Mengekstrak Bab",
@@ -114,13 +116,15 @@ const i18n = {
         selected: "Selected", cancel: "Cancel", delete: "Delete", deleteConfirm: "Permanently delete selected books?", 
         optSelect: "Select Multiple", optEdit: "Edit Details", optDelete: "Delete Permanently",
         
-        // --- NEW VARIABLES ---
-        tabAllBooks: "All Books", tabBookmarks: "Bookmarks",
+        // --- TEXT BUAT PIN BUKU ---
         pinnedBooks: "Pinned Books",
         optPin: "Pin Book", optUnpin: "Unpin Book",
-        optBookmark: "Add Bookmark", optRemoveBookmark: "Remove Bookmark",
-        libBookmarkEmpty: "No Bookmarks yet.",
-        // ---------------------
+        
+        // --- TEXT BUAT BOOKMARK (DALAM BUKU) ---
+        navBookmark: "Bookmark",
+        bookmarkTitle: "Bookmarks Panel",
+        bookmarkEmpty: "No bookmarks yet.",
+        addBookmark: "Add Bookmark",
 
         extractingCover: "Extracting Cover...", readingPage: "Reading Page", formattingText: "Formatting Text...",
         extractingEpub: "Extracting EPUB...", analyzingStructure: "Analyzing Structure...", extractingChapter: "Extracting Chapter",
