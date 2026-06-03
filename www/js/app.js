@@ -1,5 +1,5 @@
 // --- APP LOGIC ---
-// Mengurus interaksi UI, Tema, Render Library, & Fitur In-Book Bookmark
+// Mengurus interaksi UI, Tema, Render Library, & Fitur In-Book Bookmark Berwarna
 
 // 1. GLOBAL STATE & DOM REFERENCES
 let library = []; 
@@ -127,7 +127,7 @@ window.addEventListener('popstate', (e) => {
     else if (!document.getElementById('raw-restore-modal').classList.contains('opacity-0')) { _closeModalAction('raw-restore-modal', 'raw-restore-sheet', true, true); }
     else if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) { window.closeDialog(true); }
     else if (!document.getElementById('ai-modal').classList.contains('opacity-0')) { closeAiModal(true); }
-    else if (!document.getElementById('note-modal').classList.contains('opacity-0')) { _closeModalAction('note-modal', 'note-sheet', true, true); }
+    else if (!document.getElementById('bookmark-modal').classList.contains('opacity-0')) { _closeModalAction('bookmark-modal', 'bookmark-sheet', true, true); }
     else if (!document.getElementById('b-opt-modal').classList.contains('opacity-0')) { _closeModalAction('b-opt-modal', 'b-opt-sheet', false, true); }
     else if (!document.getElementById('edit-modal').classList.contains('opacity-0')) { _closeModalAction('edit-modal', 'edit-sheet', true, true); }
     else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) { _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true); }
@@ -192,15 +192,17 @@ function applyLanguage() {
     setElementText('str-opt-select', d.optSelect); setElementText('str-opt-edit', d.optEdit);
     setElementText('str-opt-delete', d.optDelete); setElementText('str-opt-cancel', d.optCancel);
     
-    // Teks Pin
+    // Teks Pin & Bookmark
     setElementText('str-pinned-books', d.pinnedBooks);
-
-    // Teks Bookmark Panel
     setElementText('str-nav-bookmark', d.navBookmark);
-    if (document.getElementById('str-bookmark-title')) {
-        document.getElementById('str-bookmark-title').innerHTML = `<i data-lucide="bookmark"></i> ${d.bookmarkTitle}`;
-    }
+    if (document.getElementById('str-bookmark-title')) { document.getElementById('str-bookmark-title').innerHTML = `<i data-lucide="bookmark"></i> ${d.bookmarkTitle}`; }
     setElementText('str-bookmark-empty', d.bookmarkEmpty);
+    
+    // Teks Modal Bookmark Baru
+    setElementText('str-bookmark-cancel', d.bookmarkCancel); setElementText('str-bookmark-save', d.bookmarkSave);
+    if (document.getElementById('str-bookmark-modal-title')) { document.getElementById('str-bookmark-modal-title').innerHTML = `<i data-lucide="bookmark" class="w-5 h-5"></i> ${d.bookmarkModalTitle}`; }
+    if (document.getElementById('bookmark-input-title')) document.getElementById('bookmark-input-title').placeholder = d.bookmarkTitlePlaceholder;
+    if (document.getElementById('bookmark-input-text')) document.getElementById('bookmark-input-text').placeholder = d.bookmarkNotePlaceholder;
     
     setElementText('str-wel-title', d.welcomeTitle); setElementText('str-wel-desc', d.welcomeDesc);
     setElementText('str-wel-backup', d.welBackup); 
@@ -229,9 +231,6 @@ function applyLanguage() {
     setElementText('str-set-size', d.setSize); setElementText('str-set-align', d.setAlign);
     setElementText('str-set-font', d.setFont);
     
-    setElementText('str-note-title', d.noteTitle); setElementText('str-note-cancel', d.noteCancel);
-    setElementText('str-note-save', d.noteSave);
-    
     setElementText('str-ai-title', d.aiTitle); setElementText('str-ai-loading', d.aiLoading);
     
     setElementText('str-edit-title', d.editTitle); setElementText('str-edit-book-title', d.editBookTitle);
@@ -251,7 +250,7 @@ function applyLanguage() {
 
     if(DOM.globalSearch) DOM.globalSearch.placeholder = d.searchBooks;
     if(DOM.searchInput) DOM.searchInput.placeholder = d.searchPlaceholder;
-    if(document.getElementById('note-input-text')) document.getElementById('note-input-text').placeholder = d.notePlaceholder;
+    if(DOM.count) DOM.count.textContent = `${(library.length)} ${d.booksCount}`;
     
     const themeLabel = document.getElementById('theme-label-text');
     if (themeLabel) themeLabel.textContent = isDark ? d.themeDark : d.themeLight;
@@ -261,7 +260,7 @@ function applyLanguage() {
 
 window.setWikiLang = function(lang) {
     wikiLang = lang; localStorage.setItem('wiki_lang', lang); syncWikiLangUI(); applyLanguage();
-    if(activeBookId) renderBookmarkPanel(); // Refresh text panel bookmark 
+    if(activeBookId) renderBookmarkPanel(); 
 };
 
 window.saveGeminiModel = function() {
@@ -527,7 +526,7 @@ function renderLibrary(filterText = "") {
     const d = i18n[wikiLang] || i18n['id'];
     if(DOM.count) DOM.count.textContent = `${filteredLib.length} ${d.booksCount}`;
     
-    // Klasifikasi Data Buku
+    // Klasifikasi Data Buku (Sekarang cuma Pinned dan Regular)
     const pinnedBooks = filteredLib.filter(b => b.isPinned);
     const regularBooks = filteredLib.filter(b => !b.isPinned);
 
@@ -1153,19 +1152,11 @@ window.renderNodeText = function(text, annots) {
     if (annots && annots.length > 0) {
         html = html.replace(/\|\|\|HL\|(.*?)\|\|\|/g, (match, id) => {
             const a = annots.find(x => x.id === id);
-            if (!a) return '<mark class="hl-yellow rounded px-1">';
-            
-            if (a.isBookmark) {
-                // Style khusus untuk In-Book Bookmark
-                return `<mark class="annot-hl border-b-2 border-m3-primary border-dashed bg-m3-primary/10 text-m3-primary font-medium cursor-pointer transition-all hover:bg-m3-primary/20 px-1 mx-0.5 rounded-sm" data-id="${id}" onclick="window.showAnnotationDetails('${id}')">`;
-            } else {
-                // Style untuk highlight stabilo biasa
-                const noteAttr = a.note ? ` data-hasnote="true"` : '';
-                return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer transition-all hover:brightness-95 mx-0.5" data-id="${id}"${noteAttr} onclick="window.showAnnotationDetails('${id}')">`;
-            }
+            if (!a) return '<mark class="hl-yellow rounded px-1 shadow-sm">';
+            // Murni semua highlight adalah Bookmark Berwarna skrg.
+            return `<mark class="annot-hl hl-${a.color} rounded cursor-pointer transition-all hover:brightness-95 mx-0.5 shadow-sm px-1" data-id="${id}" onclick="window.showAnnotationDetails('${id}')">`;
         }).replace(/\|\|\|ENDHL\|\|\|/g, '</mark>');
     }
-    html = html.replace(/data-hasnote="true">/g, 'data-hasnote="true" style="border-bottom: 2px underline dotted currentColor">');
     return html;
 }
 
@@ -1185,7 +1176,7 @@ document.addEventListener('selectionchange', () => {
         currentSelection = { text: text, nodeIdx: nodeIdx };
         menu.classList.remove('hidden');
 
-        const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 260; const padding = 16;
+        const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
         let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
         if (targetLeft < padding) targetLeft = padding;
         if (targetLeft + menuWidth > window.innerWidth - padding) targetLeft = window.innerWidth - menuWidth - padding;
@@ -1219,134 +1210,80 @@ async function registerAnnotation(annotObj) {
         nodeEl.innerHTML = window.renderNodeText(book.nodes[annotObj.nodeIdx].text, currentAnnots);
     }
     window.getSelection().removeAllRanges();
-    if(annotObj.isBookmark) window.renderBookmarkPanel();
+    window.renderBookmarkPanel();
 }
 
-window.applyAnnotation = function(color) {
+// BUKA MODAL BOOKMARK DARI CAPSULE
+window.openBookmarkModal = function(color) {
     if(currentSelection.nodeIdx === -1) return;
-    const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: color, note: "", isBookmark: false };
-    registerAnnotation(newAnnot);
+    
+    activeNoteColor = color; // Simpan warna yang dipilih
+    editingAnnotId = null; // Menandakan ini bookmark baru
+    
+    // Reset Form Input
+    document.getElementById('bookmark-input-title').value = '';
+    document.getElementById('bookmark-input-text').value = '';
+    
+    // Sembunyiin tombol delete (karena belum ke-save)
+    document.getElementById('btn-delete-bookmark').classList.add('hidden');
+    
+    openModal('bookmark-modal', 'bookmark-sheet', true);
 };
 
-// NEW: Fungsi Engine In-Book Bookmark
-window.applyInBookBookmark = function() {
-    if(currentSelection.nodeIdx === -1 || !activeBookId) return;
+// SAVE BOOKMARK (BARU & EDIT)
+window.saveBookmarkAnnotation = function() {
+    const titleVal = document.getElementById('bookmark-input-title').value.trim();
+    const noteVal = document.getElementById('bookmark-input-text').value.trim();
+    history.back(); // Tutup modal
     
-    const book = library.find(b => b.id === activeBookId);
-    if (!book) return;
-
-    // Kalkulasi Persentase posisi saat ini
-    const totalNodes = book.nodes.length;
-    const pct = Math.round(((currentSelection.nodeIdx + 1) / totalNodes) * 100);
-
-    // Track balik buat nyari Bab (Heading 1 / 2) terdekat di atasnya
-    let closestChapterName = "Bagian Buku";
-    let d = i18n[wikiLang] || i18n['id'];
-    if(wikiLang === 'en') closestChapterName = "Book Section";
-
-    for (let i = currentSelection.nodeIdx; i >= 0; i--) {
-        if (book.nodes[i].tag === 'h1' || book.nodes[i].tag === 'h2') {
-            closestChapterName = book.nodes[i].text;
-            break;
+    if(editingAnnotId) {
+        // Mode Update / Edit
+        const bookIndex = library.findIndex(b => b.id === activeBookId);
+        if(bookIndex > -1) {
+            const annotIndex = library[bookIndex].annotations.findIndex(a => a.id === editingAnnotId);
+            if(annotIndex > -1) {
+                library[bookIndex].annotations[annotIndex].title = titleVal;
+                library[bookIndex].annotations[annotIndex].note = noteVal;
+                // Color ga di-update dari sini karena form ganti warna udah dibuang
+                
+                localforage.setItem('pdf_epub_master', library).then(() => {
+                    window.renderBookmarkPanel(); // Refresh panel biar teksnya ganti
+                });
+            }
         }
-    }
-
-    const chapterPreview = closestChapterName.length > 25 ? closestChapterName.substring(0,25) + '...' : closestChapterName;
-
-    // isBookmark: true penanda bahwa ini pembatas buku, bukan stabilo biasa
-    const newBookmark = { 
-        id: 'BM_' + Date.now().toString(), 
-        nodeIdx: currentSelection.nodeIdx, 
-        text: currentSelection.text, 
-        color: 'none', 
-        note: `${chapterPreview} — ${pct}%`, 
-        isBookmark: true 
-    };
-
-    registerAnnotation(newBookmark);
-};
-
-window.renderBookmarkPanel = function() {
-    if(!DOM.bookmarkList || !DOM.bookmarkPanel || !activeBookId) return;
-    const book = library.find(b => b.id === activeBookId);
-    if (!book) return;
-
-    DOM.bookmarkList.innerHTML = '';
-    const emptyState = document.getElementById('bookmark-empty');
-    
-    const bookmarks = (book.annotations || []).filter(a => a.isBookmark).sort((a,b) => a.nodeIdx - b.nodeIdx);
-
-    if(bookmarks.length === 0) {
-        if(emptyState) emptyState.classList.remove('hidden');
     } else {
-        if(emptyState) emptyState.classList.add('hidden');
-        bookmarks.forEach(bm => {
-            const btn = document.createElement('div');
-            btn.className = "group relative flex items-center justify-between p-4 mb-2 rounded-2xl bg-m3-surface hover:bg-m3-surface/80 transition-colors shadow-sm overflow-hidden";
-            
-            // Klik kiri (Mayoritas card) -> Navigasi
-            const clickArea = document.createElement('div');
-            clickArea.className = "flex items-center gap-3 flex-1 cursor-pointer min-w-0";
-            clickArea.onclick = () => {
-                const target = document.getElementById(`node-${bm.nodeIdx}`);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    history.back(); // Tutup panel otomatis
-                }
-            };
+        // Mode Buat Baru: Mesin Kalkulator Bab & Persentase
+        const book = library.find(b => b.id === activeBookId);
+        if (!book) return;
 
-            clickArea.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-m3-primary/10 flex items-center justify-center shrink-0 text-m3-primary">
-                    <i data-lucide="bookmark" class="w-4 h-4 fill-current opacity-80"></i>
-                </div>
-                <div class="flex flex-col min-w-0">
-                    <span class="text-sm font-bold text-m3-onSurface truncate">${bm.note}</span>
-                    <span class="text-[10px] font-medium opacity-60 truncate italic mt-0.5">"${bm.text}"</span>
-                </div>
-            `;
+        const totalNodes = book.nodes.length;
+        const pct = Math.round(((currentSelection.nodeIdx + 1) / totalNodes) * 100);
 
-            // Klik kanan (Tombol Delete)
-            const delBtn = document.createElement('button');
-            delBtn.className = "w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-red-500 opacity-50 hover:opacity-100 hover:bg-red-500/10 transition-all absolute right-2 translate-x-4 group-hover:translate-x-0";
-            delBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
-            delBtn.onclick = (e) => {
-                e.stopPropagation(); // Biar ga ke-trigger navigasi
-                window.deleteAnnotationById(bm.id);
-            };
-
-            btn.appendChild(clickArea);
-            btn.appendChild(delBtn);
-            DOM.bookmarkList.appendChild(btn);
-        });
-        if(window.lucide) window.lucide.createIcons();
-    }
-};
-
-window.setNoteColor = function(color) {
-    activeNoteColor = color;
-    ['yellow', 'green', 'pink'].forEach(c => {
-        const el = document.getElementById('nc-'+c);
-        if(el) {
-            el.classList.remove('ring-m3-primary');
-            el.classList.add('ring-transparent');
+        // Track balik nyari h1 / h2 terdekat
+        let closestChapterName = wikiLang === 'id' ? "Bagian Buku" : "Book Section";
+        for (let i = currentSelection.nodeIdx; i >= 0; i--) {
+            if (book.nodes[i].tag === 'h1' || book.nodes[i].tag === 'h2') {
+                closestChapterName = book.nodes[i].text;
+                break;
+            }
         }
-    });
-    const activeEl = document.getElementById('nc-'+color);
-    if(activeEl) {
-        activeEl.classList.add('ring-m3-primary');
-        activeEl.classList.remove('ring-transparent');
+        const chapterPreview = closestChapterName.length > 25 ? closestChapterName.substring(0,25) + '...' : closestChapterName;
+
+        const newAnnot = { 
+            id: 'BM_' + Date.now().toString(), 
+            nodeIdx: currentSelection.nodeIdx, 
+            text: currentSelection.text, 
+            color: activeNoteColor, 
+            title: titleVal || (wikiLang === 'id' ? "Bookmark Baru" : "New Bookmark"), // Default kalau kosong
+            note: noteVal,
+            meta: `${chapterPreview} — ${pct}%`
+        };
+        
+        setTimeout(() => { registerAnnotation(newAnnot); }, 300);
     }
 };
 
-window.openNoteInput = function() {
-    if(currentSelection.nodeIdx === -1) return;
-    editingAnnotId = null;
-    document.getElementById('note-input-text').value = '';
-    window.setNoteColor('yellow');
-    document.getElementById('btn-delete-note').classList.add('hidden');
-    openModal('note-modal', 'note-sheet', true);
-};
-
+// KLIK TEKS STABILO DI BUKU -> BUKA MODAL EDIT
 window.showAnnotationDetails = function(annotId) {
     event.preventDefault(); event.stopPropagation();
     const book = library.find(b => b.id === activeBookId); if(!book || !book.annotations) return;
@@ -1355,59 +1292,24 @@ window.showAnnotationDetails = function(annotId) {
     editingAnnotId = annotId;
     currentSelection = { nodeIdx: annot.nodeIdx, text: annot.text };
     
-    // Kalau yang diklik itu Bookmark (Bukan Note Stabilo)
-    if(annot.isBookmark) {
-        const d = i18n[wikiLang] || i18n['id'];
-        showDialog("Hapus Pembatas Buku", "Hapus pembatas buku (bookmark) ini?", "bookmark-minus", [
-            { text: d.cancel || "Batal", primary: false },
-            { text: d.delete || "Hapus", primary: true, action: () => {
-                window.closeDialog();
-                window.deleteAnnotationById(editingAnnotId);
-            }}
-        ]);
-        return;
-    }
-
-    // Modal Edit Note biasa
-    document.getElementById('note-input-text').value = annot.note || '';
-    window.setNoteColor(annot.color || 'yellow');
-    document.getElementById('btn-delete-note').classList.remove('hidden');
+    // Isi form dengan data lama
+    document.getElementById('bookmark-input-title').value = annot.title || '';
+    document.getElementById('bookmark-input-text').value = annot.note || '';
     
-    openModal('note-modal', 'note-sheet', true);
+    // Munculin tombol hapus
+    document.getElementById('btn-delete-bookmark').classList.remove('hidden');
+    
+    openModal('bookmark-modal', 'bookmark-sheet', true);
 };
 
-window.saveNoteAnnotation = function() {
-    const val = document.getElementById('note-input-text').value.trim();
-    history.back();
-    
-    if(editingAnnotId) {
-        const bookIndex = library.findIndex(b => b.id === activeBookId);
-        if(bookIndex > -1) {
-            const annotIndex = library[bookIndex].annotations.findIndex(a => a.id === editingAnnotId);
-            if(annotIndex > -1) {
-                library[bookIndex].annotations[annotIndex].note = val;
-                library[bookIndex].annotations[annotIndex].color = activeNoteColor;
-                localforage.setItem('pdf_epub_master', library).then(() => {
-                    const nodeIdx = library[bookIndex].annotations[annotIndex].nodeIdx;
-                    const nodeEl = document.getElementById(`node-${nodeIdx}`);
-                    if(nodeEl) nodeEl.innerHTML = window.renderNodeText(library[bookIndex].nodes[nodeIdx].text, library[bookIndex].annotations.filter(a => a.nodeIdx === nodeIdx));
-                });
-            }
-        }
-    } else {
-        const newAnnot = { id: 'HL_' + Date.now().toString(), nodeIdx: currentSelection.nodeIdx, text: currentSelection.text, color: activeNoteColor, note: val, isBookmark: false };
-        setTimeout(() => { registerAnnotation(newAnnot); }, 300);
-    }
-};
-
-window.deleteNoteInsideModal = function() {
+window.deleteBookmarkInsideModal = function() {
     const d = i18n[wikiLang] || i18n['id'];
-    showDialog("Hapus Catatan", d.deleteNoteConfirm, "trash-2", [
-        { text: "Batal", primary: false },
-        { text: "Hapus", primary: true, action: () => {
+    showDialog("Hapus Bookmark", d.deleteNoteConfirm, "trash-2", [
+        { text: d.bookmarkCancel || "Batal", primary: false },
+        { text: d.delete || "Hapus", primary: true, action: () => {
             window.closeDialog();
             window.deleteAnnotationById(editingAnnotId);
-            history.back(); // close note modal
+            history.back(); // Tutup modal edit
         }}
     ]);
 }
@@ -1418,7 +1320,6 @@ window.deleteAnnotationById = async function(annotId) {
     const book = library[bookIndex]; 
     const annotIndex = book.annotations.findIndex(a => a.id === annotId); if(annotIndex === -1) return;
     
-    const isBM = book.annotations[annotIndex].isBookmark;
     const nodeIdx = book.annotations[annotIndex].nodeIdx; 
     book.annotations.splice(annotIndex, 1);
     await localforage.setItem('pdf_epub_master', library);
@@ -1429,7 +1330,80 @@ window.deleteAnnotationById = async function(annotId) {
         nodeEl.innerHTML = window.renderNodeText(book.nodes[nodeIdx].text, currentAnnots);
     }
 
-    if(isBM) window.renderBookmarkPanel();
+    window.renderBookmarkPanel();
+};
+
+// RENDER PANEL SIDEBAR BOOKMARK
+window.renderBookmarkPanel = function() {
+    if(!DOM.bookmarkList || !DOM.bookmarkPanel || !activeBookId) return;
+    const book = library.find(b => b.id === activeBookId);
+    if (!book) return;
+
+    DOM.bookmarkList.innerHTML = '';
+    const emptyState = document.getElementById('bookmark-empty');
+    
+    // Semua annotasi sekarang adalah Bookmark berwarna
+    const bookmarks = (book.annotations || []).sort((a,b) => a.nodeIdx - b.nodeIdx);
+
+    if(bookmarks.length === 0) {
+        if(emptyState) emptyState.classList.remove('hidden');
+    } else {
+        if(emptyState) emptyState.classList.add('hidden');
+        
+        bookmarks.forEach(bm => {
+            const btn = document.createElement('div');
+            btn.className = "group relative flex flex-col p-4 mb-3 rounded-2xl bg-m3-surface shadow-sm overflow-hidden text-left border border-m3-surfaceVariant transition-colors hover:border-m3-primary/30";
+            
+            // Kode warna spesifik buat icon di panel
+            let iconColorCls = "text-yellow-500 bg-yellow-500/10";
+            if (bm.color === 'green') iconColorCls = "text-green-500 bg-green-500/10";
+            else if (bm.color === 'pink') iconColorCls = "text-pink-500 bg-pink-500/10";
+
+            // Tombol Area buat diklik (Navigasi mulus)
+            const clickArea = document.createElement('div');
+            clickArea.className = "cursor-pointer flex flex-col";
+            clickArea.onclick = () => {
+                const target = document.getElementById(`node-${bm.nodeIdx}`);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    history.back(); // Tutup panel
+                }
+            };
+
+            // Struktur UI List Persis Request Lu
+            let noteHtml = bm.note ? `<p class="text-xs font-bold text-m3-onSurfaceVariant/80 mt-2 line-clamp-3">${bm.note}</p>` : '';
+            
+            clickArea.innerHTML = `
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-8 h-8 rounded-full ${iconColorCls} flex items-center justify-center shrink-0">
+                        <i data-lucide="bookmark" class="w-4 h-4 fill-current opacity-80"></i>
+                    </div>
+                    <div class="flex flex-col min-w-0 flex-1">
+                        <span class="text-sm font-bold text-m3-onSurface truncate">${bm.title}</span>
+                        <span class="text-[10px] font-bold opacity-70 mt-0.5 tracking-wider uppercase flex items-center gap-1">🔖 ${bm.meta || 'Chapter'}</span>
+                    </div>
+                </div>
+                ${noteHtml}
+                <div class="mt-3 p-3 rounded-xl bg-m3-surfaceVariant/50 border-l-2 border-m3-primary/50">
+                    <span class="text-[11px] font-medium opacity-70 italic line-clamp-4 leading-relaxed">"${bm.text}"</span>
+                </div>
+            `;
+
+            // Tombol Delete (Muncul pas hover di desktop, atau nangkring di kanan atas)
+            const delBtn = document.createElement('button');
+            delBtn.className = "absolute top-4 right-4 w-8 h-8 rounded-full text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center";
+            delBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
+            delBtn.onclick = (e) => {
+                e.stopPropagation(); 
+                window.deleteAnnotationById(bm.id);
+            };
+
+            btn.appendChild(clickArea);
+            btn.appendChild(delBtn);
+            DOM.bookmarkList.appendChild(btn);
+        });
+        if(window.lucide) window.lucide.createIcons();
+    }
 };
 
 // 11. SWIPE TO DISMISS MODAL SETTINGS
@@ -1510,5 +1484,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
-
 
