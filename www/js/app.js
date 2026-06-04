@@ -299,8 +299,12 @@ window.showDialog = function(title, message, iconStr, buttons) {
     document.getElementById('dialog-title').innerText = title;
     document.getElementById('dialog-message').innerText = message;
     
+    // Pastikan efek muter loading ilang tiap kali panggil dialog baru
+    const iconContainer = document.getElementById('dialog-icon-container');
+    if(iconContainer) iconContainer.classList.remove('animate-spin');
+
     const iconEl = document.getElementById('dialog-icon');
-    iconEl.setAttribute('data-lucide', iconStr);
+    if(iconEl) iconEl.setAttribute('data-lucide', iconStr);
     
     const actionsContainer = document.getElementById('dialog-actions');
     actionsContainer.innerHTML = '';
@@ -436,8 +440,9 @@ window.checkForUpdate = async function() {
     }
 };
 
-// 7. BACKUP & RESTORE DATA
+// 7. BACKUP & RESTORE DATA (DENGAN LOADING ANIMATION)
 window.exportData = async function() {
+    const d = typeof i18n !== 'undefined' ? (i18n[wikiLang] || i18n['id']) : {};
     try {
         const data = await localforage.getItem('pdf_epub_master');
         if (!data || data.length === 0) {
@@ -445,49 +450,84 @@ window.exportData = async function() {
             return;
         }
 
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
-            const d = new Date();
-            const fileName = `Baca_Backup_${d.getFullYear()}${('0'+(d.getMonth()+1)).slice(-2)}${('0'+d.getDate()).slice(-2)}_${d.getTime()}.json`;
-            const fullDataStr = JSON.stringify(data);
-            
+        // Tampilkan loading modal tanpa tombol (user ga bisa skip/close)
+        showDialog(
+            wikiLang === 'id' ? "Memproses Backup" : "Processing Backup",
+            wikiLang === 'id' ? "Mohon tunggu sebentar, menyiapkan file lu..." : "Please wait, preparing your file...",
+            "loader", 
+            [] // Kosongin biar ga ada tombol
+        );
+        
+        // Puter icon loading
+        const iconContainer = document.getElementById('dialog-icon-container');
+        if(iconContainer) iconContainer.classList.add('animate-spin');
+
+        // setTimeout ngasih jeda biar UI sempet render modal loading sebelum JS diblokir oleh JSON.stringify
+        setTimeout(async () => {
             try {
-                await window.Capacitor.Plugins.Filesystem.writeFile({
-                    path: fileName,
-                    data: fullDataStr,
-                    directory: 'DOCUMENTS',
-                    encoding: 'utf8'
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+                    const dt = new Date();
+                    const fileName = `Baca_Backup_${dt.getFullYear()}${('0'+(dt.getMonth()+1)).slice(-2)}${('0'+dt.getDate()).slice(-2)}_${dt.getTime()}.json`;
+                    
+                    // Potong nama file kalo kepanjangan pake '...'
+                    let displayFileName = fileName;
+                    if (fileName.length > 25) {
+                        displayFileName = fileName.substring(0, 16) + "..." + fileName.slice(-10);
+                    }
+                    
+                    const fullDataStr = JSON.stringify(data); // Proses berat (bikin lag sebentar)
+                    
+                    try {
+                        await window.Capacitor.Plugins.Filesystem.writeFile({
+                            path: fileName,
+                            data: fullDataStr,
+                            directory: 'DOCUMENTS',
+                            encoding: 'utf8'
+                        });
+                        
+                        // Timpa dialog loading dengan dialog sukses
+                        showDialog(
+                            wikiLang === 'id' ? "Backup Sukses" : "Backup Success", 
+                            wikiLang === 'id' ? `File backup berhasil disimpan di folder Documents HP lu.\nNama file: ${displayFileName}` : `Backup file saved in your device's Documents folder.\nFile name: ${displayFileName}`, 
+                            "check-circle", 
+                            [{ text: "Mantap", primary: true }]
+                        );
+                        return; 
+                    } catch (fsError) {
+                        console.log("Capacitor write gagal, beralih ke teks raw.", fsError);
+                    }
+                }
+                
+                // Kalo ga pake capacitor (di browser biasa/error), lari ke Raw Backup
+                const textOnlyData = data.map(book => {
+                    let strippedBook = { ...book };
+                    delete strippedBook.coverBase64; 
+                    return strippedBook;
                 });
                 
-                showDialog(
-                    wikiLang === 'id' ? "Backup Sukses" : "Backup Success", 
-                    wikiLang === 'id' ? `File backup berhasil disimpan di folder Documents HP lu.\nNama file: ${fileName}` : `Backup file saved in your device's Documents folder.\nFile name: ${fileName}`, 
-                    "check-circle", 
-                    [{ text: "Mantap", primary: true }]
-                );
-                return; 
-            } catch (fsError) {
-                console.log("Capacitor write gagal, beralih ke teks raw.", fsError);
+                const rawStr = JSON.stringify(textOnlyData);
+                document.getElementById('raw-backup-textarea').value = rawStr;
+                
+                // Tutup loading modal
+                window.closeDialog(true);
+                
+                setTimeout(() => {
+                    openModal('raw-backup-modal', 'raw-backup-sheet', true);
+                    setTimeout(() => {
+                        showDialog("Info Fallback", 
+                            wikiLang === 'id' ? 
+                            "Simpan file native gagal. Ini adalah teks mentahnya.\n\nCATATAN: Demi menghindari error sistem (ukuran file terlalu besar), data Sampul Buku otomatis DIHAPUS pada versi ini. Data teks buku tetap aman." : 
+                            "Native file save failed. This is the raw text.\n\nNOTE: To prevent system memory errors, Book Covers are REMOVED in this version. Text data is safe.", 
+                            "info", [{ text: "Mengerti", primary: true }]);
+                    }, 400);
+                }, 350);
+                
+            } catch (err) {
+                console.error("Backup failed:", err);
+                showDialog("Error", "Backup gagal: " + err.message, "alert-triangle", [{ text: "Tutup", primary: true }]);
             }
-        }
-        
-        const textOnlyData = data.map(book => {
-            let strippedBook = { ...book };
-            delete strippedBook.coverBase64; 
-            return strippedBook;
-        });
-        
-        const rawStr = JSON.stringify(textOnlyData);
-        document.getElementById('raw-backup-textarea').value = rawStr;
-        openModal('raw-backup-modal', 'raw-backup-sheet', true);
-        
-        setTimeout(() => {
-             showDialog("Info Fallback", 
-                wikiLang === 'id' ? 
-                "Simpan file native gagal. Ini adalah teks mentahnya.\n\nCATATAN: Demi menghindari error sistem (ukuran file terlalu besar), data Sampul Buku otomatis DIHAPUS pada versi ini. Data teks buku tetap aman." : 
-                "Native file save failed. This is the raw text.\n\nNOTE: To prevent system memory errors, Book Covers are REMOVED in this version. Text data is safe.", 
-                "info", [{ text: "Mengerti", primary: true }]);
-        }, 400);
-        
+        }, 150); // Kasih nafas 150ms
+
     } catch (err) {
         console.error("Backup failed:", err);
         showDialog("Error", "Backup gagal: " + err.message, "alert-triangle", [{ text: "Tutup", primary: true }]);
@@ -1100,9 +1140,12 @@ window.openBook = function(book) {
         header.classList.add('translate-y-0', 'opacity-100');
 
         renderBookmarkPanel(); 
-        loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
-        setTimeout(() => {
+        // REVISI LOGIKA LOADING & SCROLLING DISINI
+        // 1. Kasih waktu frame browser buat ngitung ukuran layout DOM yang baru dimasukin
+        requestAnimationFrame(() => {
+            
+            // 2. Eksekusi lompatan (scroll) instan saat loading screen masih nutupin layar
             if (book.lastReadId) { 
                 const target = document.getElementById(book.lastReadId); 
                 const container = DOM.readContent;
@@ -1113,10 +1156,21 @@ window.openBook = function(book) {
                     container.scrollTo({ top: offset, behavior: 'auto' });
                 } 
             } else { 
-                DOM.readContent.scrollTo(0,0); 
+                DOM.readContent.scrollTo({ top: 0, behavior: 'auto' }); 
             }
-            setTimeout(() => { window.setupIntersectionObserver(); }, 300);
-        }, 100); 
+            
+            // 3. Kasih jeda biar browser selesai nge-paint posisinya (menghindari lag visual)
+            setTimeout(() => {
+                // 4. Tutup loading screen. Sekarang layar langsung ada di posisi stabil.
+                loader.classList.add('opacity-0'); 
+                setTimeout(() => loader.classList.add('hidden'), 300);
+
+                // 5. Baru nyalain observer
+                window.setupIntersectionObserver(); 
+            }, 150);
+            
+        });
+
     }, 600); 
 }
 
