@@ -707,20 +707,27 @@ function renderLibrary(filterText = "") {
     } else { DOM.topSection.classList.add('hidden'); }
     
     const pinnedSection = document.getElementById('pinned-books-section');
-    if (pinnedBooks.length > 0 && !filterText) {
+    if (pinnedBooks.length > 0) {
         if(pinnedSection) pinnedSection.classList.remove('hidden');
         pinnedBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(createBookCard(book, false, idx)); });
     } else {
         if(pinnedSection) pinnedSection.classList.add('hidden');
     }
 
-    if (regularBooks.length === 0) { 
+    const hasAnyBook = pinnedBooks.length > 0 || regularBooks.length > 0;
+    if (!hasAnyBook) { 
         DOM.empty.classList.remove('hidden'); DOM.grid.classList.add('hidden'); 
         if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
     } else {
-        DOM.empty.classList.add('hidden'); DOM.grid.classList.remove('hidden');
-        if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.remove('hidden');
-        regularBooks.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
+        DOM.empty.classList.add('hidden');
+        if (regularBooks.length === 0) {
+            DOM.grid.classList.add('hidden');
+            if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.add('hidden');
+        } else {
+            DOM.grid.classList.remove('hidden');
+            if(document.getElementById('collection-heading')) document.getElementById('collection-heading').classList.remove('hidden');
+            regularBooks.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
+        }
     }
 
     updateStatistics(); // PANGGIL STATISTIK SETIAP LIBRARY SELESAI RENDER
