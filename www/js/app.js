@@ -193,7 +193,22 @@ function setupSearchListeners() {
                 if (window.location.hash !== '#search') pushAppHistory('search');
             }
         });
-        DOM.globalSearch.addEventListener('input', (e) => renderLibrary(e.target.value));
+        DOM.globalSearch.addEventListener('input', (e) => {
+            // [MODIFIKASI] Auto-hide statistik saat search
+            const statSection = document.getElementById('statistics-section');
+            if(statSection) {
+                if(e.target.value.trim().length > 0) {
+                    statSection.style.height = '0px';
+                    statSection.style.opacity = '0';
+                    statSection.style.marginBottom = '0px';
+                } else {
+                    statSection.style.height = '';
+                    statSection.style.opacity = '1';
+                    statSection.style.marginBottom = '';
+                }
+            }
+            renderLibrary(e.target.value);
+        });
     }
 
     if(searchCapsule) {
@@ -207,9 +222,20 @@ function setupSearchListeners() {
 
 window.closeSearch = function(fromHistory = false) {
     const searchArea = document.getElementById('search-area');
+    const statSection = document.getElementById('statistics-section');
+
     if (searchArea && searchArea.classList.contains('search-active')) {
         searchArea.classList.remove('search-active');
-        DOM.globalSearch.blur(); DOM.globalSearch.value = ''; renderLibrary();
+        DOM.globalSearch.blur(); DOM.globalSearch.value = ''; 
+        
+        // [MODIFIKASI] Tampilkan kembali statistik saat search ditutup
+        if(statSection) {
+             statSection.style.height = '';
+             statSection.style.opacity = '1';
+             statSection.style.marginBottom = '';
+        }
+
+        renderLibrary();
         if (!fromHistory && window.location.hash === '#search') history.back();
     }
 };
@@ -293,7 +319,7 @@ function applyLanguage() {
     updateBatchSelectionUI();
 
     // Menerjemahkan Label Statistik
-    setElementText('str-stat-title', d.statTitle || "Statistik Membaca");
+    setElementText('str-stat-title', d.statTitle || "Statistik");
     setElementText('str-stat-total', d.statTotal || "Koleksi");
     setElementText('str-stat-reading', d.statReading || "Dibaca");
     setElementText('str-stat-completed', d.statCompleted || "Selesai");
@@ -1213,7 +1239,6 @@ if(document.getElementById('btn-back')) {
     document.getElementById('btn-back').addEventListener('click', () => history.back());
 }
 
-// PANEL LOGIC: Anti-kedip + Dynamic Scroll yg Aman + Swipe aman
 window._closeSidePanelsAction = function(isFromHistory = false) { 
     if (!isFromHistory) { history.back(); return; }
     if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); 
@@ -1423,7 +1448,7 @@ async function registerAnnotation(annotObj) {
     }
     window.getSelection().removeAllRanges();
     window.renderBookmarkPanel();
-    updateStatistics(); // [MODIFIKASI] Update stat setelah nyatet
+    updateStatistics(); 
 }
 
 window.openBookmarkModal = function(color) {
@@ -1470,8 +1495,6 @@ window.saveBookmarkAnnotation = function() {
                 break;
             }
         }
-        
-        // [PERBAIKAN]: Bikin title chapter buat bookmark gak kepanjangan
         const chapterPreview = closestChapterName.length > 15 ? closestChapterName.substring(0, 15) + '...' : closestChapterName;
 
         const newAnnot = { 
@@ -1534,7 +1557,7 @@ window.deleteAnnotationById = async function(annotId) {
     }
 
     window.renderBookmarkPanel();
-    updateStatistics(); // [MODIFIKASI] Update stat setelah hapus bookmark
+    updateStatistics(); 
 };
 
 window.renderBookmarkPanel = function() {
@@ -1597,7 +1620,6 @@ window.renderBookmarkPanel = function() {
                 </div>
             `;
             
-            // POTONG TEKS BOOKMARK SAAT RENDER BIAR LAMA IKUT RAPIH
             let metaText = bm.meta || 'Chapter';
             if (metaText.length > 15) metaText = metaText.substring(0, 15) + '...';
 
@@ -1630,7 +1652,7 @@ window.renderBookmarkPanel = function() {
     }
 };
 
-// 12. SWIPE TO DISMISS LOGIC (Aman Anti-Geser)
+// 12. SWIPE TO DISMISS LOGIC
 function setupSwipeToDismiss() {
     const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
     sheets.forEach(sheetId => {
