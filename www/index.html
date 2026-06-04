@@ -4,29 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1C1B1E">
     <title>Baca.</title>
     
+    <!-- External Libs -->
     <script src="libs/tailwindcss.js"></script>
     <script src="libs/pdf.min.js"></script>
     <script src="libs/localforage.min.js"></script>
     <script src="libs/jszip.min.js"></script>
     <script src="libs/lucide.js"></script>
 
+    <!-- Konfigurasi Statis (Tailwind, Palet, i18n) -->
     <script src="js/config.js"></script>
 
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
     
+    <!-- CSS Terpisah & Tema Dinamis -->
     <link rel="stylesheet" href="css/style.css">
     <style id="dynamic-theme"></style>
 </head>
 <body class="font-sans flex flex-col relative">
 
+    <!-- VIEW: LIBRARY -->
     <div id="library-view" class="absolute inset-0 flex flex-col overflow-hidden transition-transform duration-500 origin-bottom bg-m3-bg z-10 w-full">
         
         <header id="main-header" class="flex-none sticky top-0 z-40 bg-m3-bg pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] pb-5 px-5 transition-shadow duration-300">
@@ -58,12 +64,14 @@
                 </div>
             </div>
 
+            <!-- VIEW: SEMUA BUKU -->
             <div id="continue-reading-section" class="hidden mb-8 -mx-5 mt-2">
                 <h2 id="str-continue-reading" class="text-base font-bold mb-4 text-m3-onBg px-5 tracking-tight">Lanjutkan Membaca</h2>
                 <div id="top-books-slider" class="flex gap-3 overflow-x-auto snap-x snap-proximity px-5 pb-2 hide-scroll" style="scroll-padding-left: 1.25rem;">
                 </div>
             </div>
 
+            <!-- PINNED BOOKS SECTION -->
             <div id="pinned-books-section" class="hidden mb-8 mt-2">
                 <div class="flex items-center gap-2 mb-4">
                     <i data-lucide="pin" class="w-5 h-5 text-m3-primary fill-m3-primary/20"></i>
@@ -72,6 +80,7 @@
                 <div id="pinned-book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
             </div>
 
+            <!-- REGULAR COLLECTION SECTION -->
             <div id="collection-heading" class="hidden mb-4 mt-2">
                 <h2 class="text-base font-bold text-m3-onBg tracking-tight" id="str-book-collection">Koleksi Buku</h2>
             </div>
@@ -100,6 +109,7 @@
         </div>
     </div>
 
+    <!-- VIEW: READER -->
     <div id="reader-view" class="absolute inset-0 flex flex-col bg-m3-bg text-m3-onBg transform translate-y-full transition-transform duration-500 ease-in-out z-20 w-full overflow-hidden">
         
         <div id="reader-loading-overlay" class="absolute inset-0 z-50 bg-m3-bg flex flex-col items-center justify-center transition-opacity duration-300 hidden opacity-0">
@@ -123,18 +133,22 @@
 
             <div id="side-panel-overlay" class="hidden absolute inset-0 bg-black/20 z-30 transition-opacity" onclick="history.back()"></div>
 
+            <!-- Panel Daftar Isi -->
             <div id="toc-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-toc-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="list-tree"></i> Daftar Isi</h3>
                 <div id="toc-list" class="space-y-2 flex flex-col pb-20"></div>
             </div>
 
+            <!-- Panel Bookmark -->
             <div id="bookmark-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-bookmark-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="bookmark"></i> Bookmark</h3>
                 <div id="bookmark-list" class="space-y-2 flex flex-col pb-20">
-                    </div>
+                    <!-- List Bookmark di-render dari app.js nanti -->
+                </div>
                 <div id="bookmark-empty" class="text-sm opacity-50 p-3 text-center hidden font-bold" id="str-bookmark-empty">Belum ada pembatas buku.</div>
             </div>
             
+            <!-- Panel Tampilan & Pencarian -->
             <div id="settings-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-set-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="sliders-horizontal"></i> Tampilan</h3>
                 
@@ -187,10 +201,12 @@
             </div>
         </div>
 
+        <!-- PROGRESS BAR -->
         <div id="progress-container" class="h-1 w-full bg-m3-surfaceVariant shrink-0 z-40 relative">
             <div id="reading-progress-bar" class="h-full bg-m3-primary progress-smooth w-0"></div>
         </div>
 
+        <!-- BOTTOM NAV BAR -->
         <div id="reader-bottom-bar" class="bg-m3-surfaceVariant px-2 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] shrink-0 z-40 relative">
             <div class="capsule-group bg-transparent rounded-full h-[60px]">
                 <button id="btn-back" class="capsule-btn flex-col gap-1 text-m3-onSurfaceVariant transition-all">
@@ -218,6 +234,7 @@
          
     </div>
 
+    <!-- Welcome Modal -->
     <div id="welcome-modal" onclick="if(event.target === this) closeWelcome()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[48px] overflow-hidden flex flex-col scale-75 translate-y-12 border-none" id="welcome-sheet">
             <div class="p-8 overflow-y-auto max-h-[75vh]">
@@ -247,6 +264,7 @@
         </div>
     </div>
 
+    <!-- Global Settings Modal -->
     <div id="global-settings-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-t-[48px] p-6 pb-12 transform translate-y-full border-none max-h-[90dvh] overflow-y-auto hide-scroll will-change-transform" id="global-settings-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 shrink-0 sticky top-0"></div>
@@ -326,6 +344,15 @@
                 <i data-lucide="info"></i> <span id="str-btn-info">Lihat Instruksi</span>
             </button>
             
+            <!-- NEW: TOMBOL CEK PEMBARUAN -->
+            <button onclick="checkForUpdate()" id="btn-update-app" class="flex items-center justify-center gap-3 w-full p-4 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-2xl font-bold btn-morph mb-3 group">
+                <i data-lucide="refresh-cw" id="icon-update-app" class="w-5 h-5 transition-transform"></i> 
+                <div class="flex flex-col items-start leading-tight">
+                    <span id="str-btn-update">Cek Pembaruan</span>
+                    <span class="text-[10px] opacity-70 font-mono mt-0.5" id="app-version-display">v2.0.3</span>
+                </div>
+            </button>
+
             <a href="https://saweria.co/Densl" target="_blank" class="flex items-center justify-center gap-2 w-full p-4 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-2xl font-bold btn-morph mb-4">
                 <i data-lucide="coffee"></i> <span id="str-btn-donate">Traktir Kopi (Donasi)</span>
             </a>
@@ -334,6 +361,7 @@
         </div>
     </div>
 
+    <!-- Modal Raw Backup -->
     <div id="raw-backup-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-backup-sheet">
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-bak-title">Data Backup Mentah</h3>
@@ -346,6 +374,7 @@
         </div>
     </div>
 
+    <!-- Modal Raw Restore -->
     <div id="raw-restore-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col max-h-[80vh]" id="raw-restore-sheet">
             <h3 class="text-xl font-bold mb-2 text-m3-onSurface" id="str-raw-res-title">Pulihkan Data</h3>
@@ -361,6 +390,7 @@
         </div>
     </div>
 
+    <!-- BOOK OPTIONS MODAL -->
     <div id="b-opt-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[100] flex items-end justify-center opacity-0 p-4 pb-8 transition-opacity">
         <div class="modal-content bg-m3-surface shadow-2xl w-full max-w-sm rounded-[32px] p-6 transform translate-y-full border-none" id="b-opt-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6"></div>
@@ -376,6 +406,7 @@
         </div>
     </div>
 
+    <!-- Edit Book Data Modal -->
     <div id="edit-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-8 transform scale-75 translate-y-12 border-none" id="edit-sheet">
             <h3 id="str-edit-title" class="text-xl font-bold mb-6 text-m3-onSurface">Edit Detail</h3>
@@ -402,6 +433,7 @@
         </div>
     </div>
 
+    <!-- Floating Text Selection Menu -->
     <div id="selection-menu" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" class="hidden fixed z-50 bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-full px-2 py-1 flex items-center gap-1 border-none pointer-events-auto transition-all opacity-0 scale-75" style="top: -100px; left: 0px;">
         
         <button onpointerdown="event.preventDefault(); openBookmarkModal('yellow')" class="w-10 h-10 rounded-full flex items-center justify-center transition-colors text-[#EAB308] hover:bg-m3-surface btn-morph">
@@ -421,6 +453,7 @@
         </button>
     </div>
 
+    <!-- Bookmark Create/Edit Modal -->
     <div id="bookmark-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-center justify-center opacity-0 p-4">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[48px] p-6 transform scale-75 translate-y-12 border-none" id="bookmark-sheet">
             <h3 id="str-bookmark-modal-title" class="text-lg font-bold mb-5 text-m3-onSurface flex items-center gap-2"><i data-lucide="bookmark" class="w-5 h-5"></i> Bookmark</h3>
@@ -437,6 +470,7 @@
         </div>
     </div>
 
+    <!-- AI Definition Modal -->
     <div id="ai-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-end sm:items-center justify-center opacity-0 pb-0 sm:pb-0 p-0 sm:p-4">
         <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[48px] rounded-t-[48px] p-6 pb-12 sm:pb-6 transform translate-y-full flex flex-col max-h-[85vh] border-none" id="ai-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 sm:hidden"></div>
@@ -457,6 +491,7 @@
         </div>
     </div>
 
+    <!-- CUSTOM DIALOG MODAL -->
     <div id="custom-dialog" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4 opacity-0 transition-opacity">
         <div class="modal-content bg-m3-surface w-full max-w-sm rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform" id="custom-dialog-sheet">
             <div class="flex items-center gap-3 mb-4">
@@ -467,13 +502,16 @@
             </div>
             <p id="dialog-message" class="text-m3-onSurfaceVariant text-sm mb-6 font-medium leading-relaxed"></p>
             <div class="flex gap-2 justify-end" id="dialog-actions">
-                </div>
+                <!-- Tombol dinamis dirender via JS -->
+            </div>
         </div>
     </div>
 
+    <!-- Engine & App Logic Scripts -->
     <script src="js/reader.js"></script>
     <script src="js/app.js"></script>
 
 </body>
 </html>
+
 
