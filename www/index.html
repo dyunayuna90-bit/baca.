@@ -23,8 +23,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Mono&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;1,400&family=Merriweather:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Mono&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
     
     <!-- CSS Terpisah & Tema Dinamis -->
     <link rel="stylesheet" href="css/style.css">
@@ -37,8 +36,8 @@
         
         <header id="main-header" class="flex-none sticky top-0 z-40 bg-m3-bg pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] pb-5 px-5 transition-shadow duration-300">
             <div id="title-area" class="mb-4">
-                <h1 class="text-4xl font-bold tracking-tighter mb-1 text-m3-onBg">Baca.</h1>
-                <p id="library-count" class="text-m3-onSurfaceVariant text-sm font-bold">0 Books</p>
+                <h1 class="text-4xl font-black tracking-tighter text-m3-onBg" style="font-family: 'Outfit', sans-serif;">Baca.</h1>
+                <!-- JUMLAH BUKU DI BAWAH HEADER SUDAH DIHAPUS -->
             </div>
             
             <div id="search-area" class="search-row transition-shadow duration-300">
@@ -64,52 +63,34 @@
                 </div>
             </div>
 
-            <!-- STATISTIK USER (M3 Expressive Card) -->
-            <section id="statistics-section" class="mb-6 mt-2 transition-all duration-500">
-                <div class="bg-m3-surfaceVariant text-m3-onSurfaceVariant rounded-[32px] p-5 shadow-sm relative overflow-hidden">
-                    <!-- Ornamen background biar gak flat banget -->
-                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-m3-primary/10 rounded-full blur-xl pointer-events-none"></div>
-                    
-                    <div class="flex items-center justify-between mb-5 relative z-10">
-                        <h2 class="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70" id="str-stat-title">Statistik Membaca</h2>
-                        <i data-lucide="activity" class="w-4 h-4 opacity-60"></i>
+            <!-- STATISTIK USER (M3 Expressive Card - Compact) -->
+            <section id="statistics-section" class="mb-8 mt-1 transition-all duration-300 origin-top overflow-hidden">
+                <div class="bg-m3-secondaryContainer text-m3-onSecondaryContainer rounded-[28px] p-4 shadow-sm relative flex flex-col justify-center min-h-[100px]">
+                    <!-- Ornamen background M3 Expressive -->
+                    <i data-lucide="asterisk" class="absolute -right-4 -bottom-6 w-32 h-32 text-m3-onSecondaryContainer opacity-[0.04] transform rotate-45 pointer-events-none"></i>
+                    <div class="absolute -left-8 -top-8 w-24 h-24 bg-m3-onSecondaryContainer/5 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <div class="flex items-center gap-2 mb-3 relative z-10">
+                        <div class="w-1.5 h-4 bg-m3-primary rounded-full"></div>
+                        <h2 class="text-xs font-black uppercase tracking-[0.15em] text-m3-onSecondaryContainer" id="str-stat-title">Statistik</h2>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-y-5 gap-x-4 relative z-10">
-                        <!-- Koleksi -->
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5 mb-1 opacity-70">
-                                <i data-lucide="library" class="w-3.5 h-3.5"></i>
-                                <span class="text-[10px] font-bold uppercase tracking-wider" id="str-stat-total">Koleksi</span>
-                            </div>
-                            <span class="text-2xl font-black text-m3-primary" id="stat-val-total">0</span>
+
+                    <div class="grid grid-cols-4 gap-2 relative z-10">
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-total">0</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-total">Koleksi</span>
                         </div>
-                        
-                        <!-- Dibaca -->
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5 mb-1 opacity-70">
-                                <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-                                <span class="text-[10px] font-bold uppercase tracking-wider" id="str-stat-reading">Dibaca</span>
-                            </div>
-                            <span class="text-2xl font-black text-m3-primary" id="stat-val-reading">0</span>
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-reading">0</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-reading">Dibaca</span>
                         </div>
-                        
-                        <!-- Selesai -->
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5 mb-1 opacity-70">
-                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
-                                <span class="text-[10px] font-bold uppercase tracking-wider" id="str-stat-completed">Selesai</span>
-                            </div>
-                            <span class="text-2xl font-black text-m3-primary" id="stat-val-completed">0</span>
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-completed">0</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-completed">Selesai</span>
                         </div>
-                        
-                        <!-- Catatan -->
-                        <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5 mb-1 opacity-70">
-                                <i data-lucide="highlighter" class="w-3.5 h-3.5"></i>
-                                <span class="text-[10px] font-bold uppercase tracking-wider" id="str-stat-notes">Catatan</span>
-                            </div>
-                            <span class="text-2xl font-black text-m3-primary" id="stat-val-notes">0</span>
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-notes">0</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-notes">Catatan</span>
                         </div>
                     </div>
                 </div>
@@ -561,5 +542,3 @@
 
 </body>
 </html>
-
-
