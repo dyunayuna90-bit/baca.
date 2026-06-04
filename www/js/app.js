@@ -1174,12 +1174,25 @@ if(document.getElementById('btn-back')) {
     document.getElementById('btn-back').addEventListener('click', () => history.back());
 }
 
+// -------------------------------------------------------------
+// [PERBAIKAN]: Fungsi Side Panel tanpa merusak DOM / animasi ngaco
+// -------------------------------------------------------------
 window._closeSidePanelsAction = function(isFromHistory = false) { 
     if (!isFromHistory) { history.back(); return; }
-    if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); 
-    if(DOM.setPanel) DOM.setPanel.classList.add('translate-x-full', 'opacity-0'); 
-    if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('translate-x-full', 'opacity-0');
-    const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.add('hidden');
+    if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full'); 
+    if(DOM.setPanel) DOM.setPanel.classList.add('translate-x-full'); 
+    if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('translate-x-full');
+    
+    // Matikan transisi transparan perlahan
+    setTimeout(() => {
+        if(DOM.tocPanel) DOM.tocPanel.classList.add('opacity-0'); 
+        if(DOM.setPanel) DOM.setPanel.classList.add('opacity-0'); 
+        if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('opacity-0');
+    }, 300);
+
+    const overlay = document.getElementById('side-panel-overlay'); 
+    if(overlay) overlay.classList.add('hidden');
+    
     activePanel = null;
     updateBottomNavUI(null);
 }
@@ -1192,11 +1205,21 @@ window.togglePanel = function(panelEl, name, btnId) {
     } else { 
         pushAppHistory(`panel-${name}`); 
     }
-    panelEl.classList.remove('translate-x-full', 'opacity-0'); 
-    const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.remove('hidden');
+    
+    // Pastikan transisi rapi, lepas opacity 0 dulu biar siap di-render, baru slide in
+    panelEl.classList.remove('opacity-0');
+    
+    requestAnimationFrame(() => {
+        panelEl.classList.remove('translate-x-full'); 
+    });
+
+    const overlay = document.getElementById('side-panel-overlay'); 
+    if(overlay) overlay.classList.remove('hidden');
+    
     activePanel = name; 
     updateBottomNavUI(btnId);
 }
+// -------------------------------------------------------------
 
 if(document.getElementById('btn-toc')) document.getElementById('btn-toc').onclick = () => togglePanel(DOM.tocPanel, 'toc', 'btn-toc'); 
 if(document.getElementById('btn-settings')) document.getElementById('btn-settings').onclick = () => togglePanel(DOM.setPanel, 'set', 'btn-settings');
@@ -1419,7 +1442,9 @@ window.saveBookmarkAnnotation = function() {
                 break;
             }
         }
-        const chapterPreview = closestChapterName.length > 25 ? closestChapterName.substring(0,25) + '...' : closestChapterName;
+        
+        // [PERBAIKAN]: Bikin title chapter buat bookmark gak kepanjangan (Potong jadi 15 huruf + ...)
+        const chapterPreview = closestChapterName.length > 15 ? closestChapterName.substring(0, 15) + '...' : closestChapterName;
 
         const newAnnot = { 
             id: 'BM_' + Date.now().toString(), 
