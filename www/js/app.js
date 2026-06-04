@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTypo();
     applyThemeToDOM();
     loadLibrary();
+    setupSwipeToDismiss(); // Nyalain Gestur Aman
 
     if (!localStorage.getItem('first_time_seen_v5')) {
         setTimeout(() => { openModal('welcome-modal', 'welcome-sheet', true); }, 500);
@@ -389,11 +390,9 @@ window.checkForUpdate = async function() {
     
     if(!window.UPDATE_URL) return;
 
-    // Puter icon
     if(icon) icon.classList.add('animate-spin');
     
     try {
-        // Pake parameter ?t buat nembus cache GitHub Raw
         const res = await fetch(window.UPDATE_URL + '?t=' + new Date().getTime());
         if (!res.ok) throw new Error("Gagal terhubung ke GitHub");
         
@@ -403,7 +402,6 @@ window.checkForUpdate = async function() {
 
         if(icon) icon.classList.remove('animate-spin');
 
-        // Komparasi Semver
         const isNewer = compareVersions(latestVersion, currentVersion) > 0;
 
         if (isNewer) {
@@ -801,7 +799,8 @@ window.openBookOptions = function(id) {
     }
 
     if(window.lucide) window.lucide.createIcons();
-    openModal('b-opt-modal', 'b-opt-sheet');
+    // Modal opsi sekarang di-slide biar mulus
+    openModal('b-opt-modal', 'b-opt-sheet', false); 
 }
 
 window.togglePinBook = async function() {
@@ -1174,25 +1173,13 @@ if(document.getElementById('btn-back')) {
     document.getElementById('btn-back').addEventListener('click', () => history.back());
 }
 
-// -------------------------------------------------------------
-// [PERBAIKAN]: Fungsi Side Panel tanpa merusak DOM / animasi ngaco
-// -------------------------------------------------------------
+// PANEL LOGIC: Kembali ke kode stabil (Anti-kedip) + Dynamic Scroll yg Aman
 window._closeSidePanelsAction = function(isFromHistory = false) { 
     if (!isFromHistory) { history.back(); return; }
-    if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full'); 
-    if(DOM.setPanel) DOM.setPanel.classList.add('translate-x-full'); 
-    if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('translate-x-full');
-    
-    // Matikan transisi transparan perlahan
-    setTimeout(() => {
-        if(DOM.tocPanel) DOM.tocPanel.classList.add('opacity-0'); 
-        if(DOM.setPanel) DOM.setPanel.classList.add('opacity-0'); 
-        if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('opacity-0');
-    }, 300);
-
-    const overlay = document.getElementById('side-panel-overlay'); 
-    if(overlay) overlay.classList.add('hidden');
-    
+    if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); 
+    if(DOM.setPanel) DOM.setPanel.classList.add('translate-x-full', 'opacity-0'); 
+    if(DOM.bookmarkPanel) DOM.bookmarkPanel.classList.add('translate-x-full', 'opacity-0');
+    const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.add('hidden');
     activePanel = null;
     updateBottomNavUI(null);
 }
@@ -1205,21 +1192,23 @@ window.togglePanel = function(panelEl, name, btnId) {
     } else { 
         pushAppHistory(`panel-${name}`); 
     }
-    
-    // Pastikan transisi rapi, lepas opacity 0 dulu biar siap di-render, baru slide in
-    panelEl.classList.remove('opacity-0');
-    
-    requestAnimationFrame(() => {
-        panelEl.classList.remove('translate-x-full'); 
-    });
-
-    const overlay = document.getElementById('side-panel-overlay'); 
-    if(overlay) overlay.classList.remove('hidden');
-    
+    panelEl.classList.remove('translate-x-full', 'opacity-0'); 
+    const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.remove('hidden');
     activePanel = name; 
     updateBottomNavUI(btnId);
+
+    // Dynamic Scroll Daftar Isi (Anti-Layar-Geser)
+    // Pake logika scrollTop manual ketimbang scrollIntoView biar container utama ngga ditarik paksa
+    if (name === 'toc' && DOM.tocList) {
+        setTimeout(() => {
+            const activeTocItem = DOM.tocList.querySelector('.bg-m3-primaryContainer');
+            if (activeTocItem) {
+                const offset = activeTocItem.offsetTop - (DOM.tocList.clientHeight / 2) + (activeTocItem.clientHeight / 2);
+                DOM.tocList.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+            }
+        }, 250); // Jeda santai biar panel kebuka dulu sempurna
+    }
 }
-// -------------------------------------------------------------
 
 if(document.getElementById('btn-toc')) document.getElementById('btn-toc').onclick = () => togglePanel(DOM.tocPanel, 'toc', 'btn-toc'); 
 if(document.getElementById('btn-settings')) document.getElementById('btn-settings').onclick = () => togglePanel(DOM.setPanel, 'set', 'btn-settings');
@@ -1442,8 +1431,6 @@ window.saveBookmarkAnnotation = function() {
                 break;
             }
         }
-        
-        // [PERBAIKAN]: Bikin title chapter buat bookmark gak kepanjangan (Potong jadi 15 huruf + ...)
         const chapterPreview = closestChapterName.length > 15 ? closestChapterName.substring(0, 15) + '...' : closestChapterName;
 
         const newAnnot = { 
@@ -1568,6 +1555,10 @@ window.renderBookmarkPanel = function() {
                 </div>
             `;
             
+            // POTONG TEKS BOOKMARK SAAT RENDER (JADI SEMUA BOOKMARK LAMA IKUT RAPIH)
+            let metaText = bm.meta || 'Chapter';
+            if (metaText.length > 15) metaText = metaText.substring(0, 15) + '...';
+
             btn.innerHTML = `
                 <div class="flex items-start justify-between gap-2 mb-2 w-full">
                     <span class="text-sm font-bold text-m3-onSurface leading-tight line-clamp-2 pr-6">${bm.title}</span>
@@ -1575,7 +1566,7 @@ window.renderBookmarkPanel = function() {
                 
                 <div class="flex items-center gap-1.5 w-max px-2.5 py-1 rounded-lg ${iconColorCls}">
                     <i data-lucide="bookmark" class="w-3 h-3 fill-current"></i>
-                    <span class="text-[9px] font-bold uppercase tracking-wider">${bm.meta || 'Chapter'}</span>
+                    <span class="text-[9px] font-bold uppercase tracking-wider">${metaText}</span>
                 </div>
                 
                 ${noteHtml}
@@ -1597,55 +1588,69 @@ window.renderBookmarkPanel = function() {
     }
 };
 
-// 12. SWIPE TO DISMISS MODAL SETTINGS
-document.addEventListener("DOMContentLoaded", () => {
-    const settingsSheet = document.getElementById('global-settings-sheet');
-    if(settingsSheet) {
-        let touchStartY = 0;
-        let initialScrollTop = 0;
-        let isPulling = false;
-
-        settingsSheet.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-            initialScrollTop = settingsSheet.scrollTop;
-            settingsSheet.style.transition = 'none'; 
+// 12. SWIPE TO DISMISS LOGIC (Anti-Scroll & Aman buat Layout)
+function setupSwipeToDismiss() {
+    // A. Bottom Sheets (Geser ke bawah)
+    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
+    sheets.forEach(sheetId => {
+        const sheet = document.getElementById(sheetId);
+        if (!sheet) return;
+        let touchStartY = 0; let initialScrollTop = 0; let isPulling = false;
+        sheet.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY; initialScrollTop = sheet.scrollTop; sheet.style.transition = 'none'; 
         }, { passive: true });
-
-        settingsSheet.addEventListener('touchmove', (e) => {
+        sheet.addEventListener('touchmove', (e) => {
             if (initialScrollTop <= 0) {
-                const touchCurrentY = e.touches[0].clientY;
-                const deltaY = touchCurrentY - touchStartY;
-
+                const deltaY = e.touches[0].clientY - touchStartY;
                 if (deltaY > 0) { 
-                    isPulling = true;
-                    if(e.cancelable) e.preventDefault(); 
-                    const pullDistance = deltaY * 0.4;
-                    settingsSheet.style.transform = `translateY(${pullDistance}px)`;
+                    isPulling = true; if(e.cancelable) e.preventDefault(); 
+                    sheet.style.transform = `translateY(${deltaY * 0.5}px)`; 
                 }
             }
         }, { passive: false });
+        sheet.addEventListener('touchend', (e) => {
+            if (!isPulling) return; isPulling = false;
+            const deltaY = e.changedTouches[0].clientY - touchStartY;
+            sheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+            if (deltaY > 100) { 
+                sheet.style.transform = 'translateY(100%)'; 
+                setTimeout(() => { history.back(); setTimeout(() => { sheet.style.transform = ''; }, 100); }, 100);
+            } else { sheet.style.transform = ''; }
+        });
+    });
 
-        settingsSheet.addEventListener('touchend', (e) => {
-            if (!isPulling) return;
-            isPulling = false;
-            
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaY = touchEndY - touchStartY;
-
-            if (deltaY > 80) { 
-                settingsSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
-                settingsSheet.style.transform = 'translateY(100%)'; 
-                setTimeout(() => {
-                    history.back(); 
-                    setTimeout(() => { settingsSheet.style.transform = ''; }, 100);
-                }, 100);
-            } else {
-                settingsSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
-                settingsSheet.style.transform = ''; 
+    // B. Side Panels (Geser ke kanan)
+    const panels = ['toc-panel', 'settings-panel', 'bookmark-panel'];
+    panels.forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if(!panel) return;
+        let touchStartX = 0; let touchStartY = 0; let isSwipingPanel = false;
+        panel.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; panel.style.transition = 'none';
+        }, { passive: true });
+        panel.addEventListener('touchmove', (e) => {
+            const deltaX = e.touches[0].clientX - touchStartX;
+            const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+            // Hanya deteksi swipe murni horizontal ke KANAN biar scroll ke bawah ga keblokir
+            if (deltaX > 0 && deltaX > deltaY) { 
+                isSwipingPanel = true;
+                if(e.cancelable) e.preventDefault();
+                panel.style.transform = `translateX(${deltaX}px)`;
+            }
+        }, { passive: false }); 
+        panel.addEventListener('touchend', (e) => {
+            if (!isSwipingPanel) return; isSwipingPanel = false;
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            panel.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease';
+            if (deltaX > 80) { 
+                panel.style.transform = 'translateX(100%)';
+                setTimeout(() => { history.back(); setTimeout(() => { panel.style.transform = ''; }, 100); }, 100);
+            } else { 
+                panel.style.transform = 'translateX(0)';
             }
         });
-    }
-});
+    });
+}
 
 // 13. PWA & CAPACITOR SETUP
 if ('serviceWorker' in navigator) {
@@ -1675,5 +1680,3 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
-
-
