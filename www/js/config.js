@@ -1,3 +1,7 @@
+window.APP_VERSION = "2.0.3";
+window.UPDATE_URL = "https://raw.githubusercontent.com/dyunayuna90-bit/baca./main/package.json";
+window.RELEASES_URL = "https://github.com/dyunayuna90-bit/baca./releases/latest";
+
 // Konfigurasi Tailwind CSS untuk kustomisasi warna dan font
 window.tailwind = window.tailwind || {};
 window.tailwind.config = {
@@ -78,16 +82,13 @@ const i18n = {
         selected: "Terpilih", cancel: "Batal", delete: "Hapus", deleteConfirm: "Hapus buku yang dipilih secara permanen?", 
         optSelect: "Pilih Beberapa", optEdit: "Edit Detail", optDelete: "Hapus Permanen",
         
-        // --- TEXT BUAT PIN BUKU ---
         pinnedBooks: "Buku Disematkan",
         optPin: "Sematkan Buku", optUnpin: "Lepas Sematan",
         
-        // --- TEXT BUAT MODAL & PANEL BOOKMARK ---
         navBookmark: "Bookmark",
         bookmarkTitle: "Panel Bookmark",
         bookmarkEmpty: "Belum ada pembatas buku.",
         
-        // Modal Input UI
         bookmarkModalTitle: "Bookmark",
         bookmarkTitlePlaceholder: "Judul Bookmark...",
         bookmarkNotePlaceholder: "Tulis catatan (opsional)...",
@@ -103,6 +104,17 @@ const i18n = {
         setMainTitle: "Pengaturan", setPalette: "Palet Tema", setLang: "Bahasa", setInfo: "Info & Dukungan",
         btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnClose: "Tutup",
         setData: "Data Aplikasi", btnBackup: "Backup Data", btnRestore: "Pulihkan",
+        
+        // Teks Sistem Cek Update
+        btnUpdate: "Cek Pembaruan",
+        updateChecking: "Mengecek versi...",
+        updateLatestTitle: "Sudah Versi Terbaru",
+        updateLatestDesc: `Aplikasi lu udah pakai versi paling baru (v${window.APP_VERSION}).`,
+        updateAvailableTitle: "Update Tersedia!",
+        updateAvailableDesc: "Versi {v} udah rilis nih. Mau buka halaman download sekarang?",
+        updateError: "Gagal ngecek update. Pastiin internet lu nyala atau Repo Github lu udah bener.",
+        btnDownload: "Download",
+
         navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navText: "Teks", navFull: "Penuh",
         readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
         setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
@@ -121,16 +133,13 @@ const i18n = {
         selected: "Selected", cancel: "Cancel", delete: "Delete", deleteConfirm: "Permanently delete selected books?", 
         optSelect: "Select Multiple", optEdit: "Edit Details", optDelete: "Delete Permanently",
         
-        // --- TEXT BUAT PIN BUKU ---
         pinnedBooks: "Pinned Books",
         optPin: "Pin Book", optUnpin: "Unpin Book",
         
-        // --- TEXT BUAT MODAL & PANEL BOOKMARK ---
         navBookmark: "Bookmark",
         bookmarkTitle: "Bookmarks Panel",
         bookmarkEmpty: "No bookmarks yet.",
         
-        // Modal Input UI
         bookmarkModalTitle: "Bookmark",
         bookmarkTitlePlaceholder: "Bookmark Title...",
         bookmarkNotePlaceholder: "Write a note (optional)...",
@@ -146,6 +155,17 @@ const i18n = {
         setMainTitle: "Settings", setPalette: "Theme Palette", setLang: "Language", setInfo: "Info & Support",
         btnInfo: "View Instructions", btnDonate: "Buy Me a Coffee", btnClose: "Close",
         setData: "App Data", btnBackup: "Backup Data", btnRestore: "Restore Data",
+        
+        // Teks Sistem Cek Update
+        btnUpdate: "Check for Updates",
+        updateChecking: "Checking version...",
+        updateLatestTitle: "Up to Date",
+        updateLatestDesc: `You are running the latest version (v${window.APP_VERSION}).`,
+        updateAvailableTitle: "Update Available!",
+        updateAvailableDesc: "Version {v} is out. Open the download page now?",
+        updateError: "Failed to check for updates. Check your internet connection.",
+        btnDownload: "Download",
+
         navBack: "Back", navToc: "Contents", navSearch: "Search", navText: "Text", navFull: "Full",
         readerLoading: "Loading Book...", tocTitle: "Table of Contents", setTitle: "Appearance",
         setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
@@ -159,4 +179,3 @@ const i18n = {
         setAiConfig: "AI Configuration", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Add your API Key to get smart definitions from AI. (Optimal setup: use Gemini 2.5 Flash Lite for maximum speed).", keySaved: "API Key saved successfully."
     }
 };
-
