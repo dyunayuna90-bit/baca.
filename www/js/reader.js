@@ -195,7 +195,7 @@ async function handlePdf(file, bookTitle) {
             const y = Math.round(item.transform[5]); 
             const height = item.height;
             if (lastY !== -1 && Math.abs(y - lastY) > height * 1.5) {
-                if (currentBlock.trim().length > 1) { // CEGAH HURUF TUNGGAL JADI PARAGRAF
+                if (currentBlock.trim().length > 0) { // Biarin 1 huruf lewat (Drop Cap awal bab)
                     let cleanText = currentBlock.trim().replace(/\s+/g, ' ');
                     parsedNodes.push({ tag: isTitle ? 'h2' : 'p', text: cleanText });
                 }
@@ -207,7 +207,7 @@ async function handlePdf(file, bookTitle) {
             lastY = y;
         });
 
-        if (currentBlock.trim().length > 1) { 
+        if (currentBlock.trim().length > 0) { 
             let cleanText = currentBlock.trim().replace(/\s+/g, ' ');
             parsedNodes.push({ tag: isTitle ? 'h2' : 'p', text: cleanText }); 
         }
@@ -218,7 +218,7 @@ async function handlePdf(file, bookTitle) {
     renderLibrary();
 }
 
-// 3. FUNGSI EKSTRAK EPUB
+// 3. FUNGSI EKSTRAK EPUB (REVISI ALGORITMA: ANTI-LAG & ANTI-DUPLIKAT MURNI)
 async function handleEpub(file, bookTitle) {
     const zip = await JSZip.loadAsync(file); 
     let parsedNodes = []; 
@@ -265,6 +265,9 @@ async function handleEpub(file, bookTitle) {
 
     const spine = Array.from(opfDoc.getElementsByTagName("itemref")).map(item => item.getAttribute("idref"));
     let order = 0;
+    
+    // Tag yang sah buat dijadiin blok paragraf / heading
+    const validBlockTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'div', 'section', 'article', 'header'];
 
     for (const idref of spine) {
         order++;
@@ -279,60 +282,61 @@ async function handleEpub(file, bookTitle) {
         const htmlStr = await htmlFile.async("text");
         const doc = (new DOMParser()).parseFromString(htmlStr, "text/html");
         
-        // PEMBERSIHAN NODE (Menghapus elemen yg gak penting biar parser fokus)
-        doc.querySelectorAll('script, style, nav, footer, iframe').forEach(el => el.remove());
+        // Bersihin sampah yang bikin layout kotor
+        doc.querySelectorAll('script, style, nav, footer, iframe, svg, button').forEach(el => el.remove());
 
-        const body = doc.body;
-        const walker = document.createTreeWalker(body, NodeFilter.SHOW_ELEMENT, null, false);
-        let el;
+        // Scan semua elemen secara berurutan dari atas ke bawah (Pre-order Traversal)
+        const allElements = doc.body.querySelectorAll('*');
 
-        while ((el = walker.nextNode())) {
-            const tag = el.tagName.toLowerCase();
+        for (let el of allElements) {
+            let tag = el.tagName.toLowerCase();
             
+            // 1. Eksekusi Gambar
             if (tag === 'img' || tag === 'image') {
                 let src = el.getAttribute('src') || el.getAttribute('href');
-                if (src && !src.startsWith('http')) {
+                if (src && !src.startsWith('http') && !src.startsWith('data:')) {
                     let absPath = resolveRelativePath(htmlPath, src); 
                     const imgFile = zip.file(absPath);
                     if (imgFile) { 
                         const b64 = await imgFile.async("base64"); 
-                        parsedNodes.push({ tag: 'img', src: "data:image/jpeg;base64," + b64 }); 
+                        let mime = "image/jpeg";
+                        if(absPath.toLowerCase().endsWith('.png')) mime = "image/png";
+                        else if(absPath.toLowerCase().endsWith('.gif')) mime = "image/gif";
+                        parsedNodes.push({ tag: 'img', src: `data:${mime};base64,${b64}` }); 
                     }
+                } else if (src && src.startsWith('data:')) {
+                    parsedNodes.push({ tag: 'img', src: src });
                 }
-            } 
-            else if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'blockquote'].includes(tag)) {
-                // LOGIKA PENCUCIAN OTAK (Pembersihan Teks)
-                let text = el.textContent.trim();
-                
-                // 1. Abaikan Teks Kosong atau Cuma 1 Karakter (Mencegah Drop Cap aneh)
-                if (!text || text.length <= 1) continue;
-                
-                // 2. Berantas Spasi Jarak Jauh (contoh: "B a B : 1")
-                // Kalo jumlah spasi hampir sama dengan jumlah huruf, satukan.
-                const spaceCount = (text.match(/ /g) || []).length;
-                if(spaceCount > text.length / 2) {
-                    text = text.replace(/ /g, '');
-                } else {
-                    text = text.replace(/\s+/g, ' '); // Standar rapihin spasi
-                }
+                continue;
+            }
 
-                // 3. Tentukan Tag Akhir Berdasarkan Kualitas Teks
-                let finalTag = 'p'; 
-                
-                if (['h1', 'h2', 'h3'].includes(tag)) {
-                    // Kalo heading kepanjangan (> 120 huruf), itu pasti paragraf nyasar.
-                    // Kalo kependekan (< 3 huruf), itu sampah.
-                    if (text.length > 3 && text.length < 120) {
-                        finalTag = (tag === 'h1') ? 'h1' : 'h2'; 
+            // 2. Eksekusi Blok Teks
+            if (validBlockTags.includes(tag)) {
+                // Cek apakah elemen ini punya anak blok lain di dalamnya (Kalo punya, ini cuma Wrapper, lewatin aja)
+                let hasBlockChild = false;
+                const descendants = el.querySelectorAll('*');
+                for (let i = 0; i < descendants.length; i++) {
+                    if (validBlockTags.includes(descendants[i].tagName.toLowerCase())) {
+                        hasBlockChild = true;
+                        break;
                     }
                 }
+                
+                if (hasBlockChild) continue; // Jangan ambil teksnya, tunggu iterasi sampai ke anak terdalamnya
+                
+                let text = el.textContent.trim().replace(/\s+/g, ' ');
+                if (text.length === 0) continue;
+                
+                let finalTag = 'p';
+                if (['h1', 'h2', 'h3', 'h4'].includes(tag)) finalTag = tag === 'h1' ? 'h1' : 'h2';
+                
+                // Pembersihan kasus Bab spasi alay ("B a B", "B A B")
+                text = text.replace(/B\s*A\s*B/gi, 'BAB');
+
+                // Kalau teks h1/h2 tapi panjangnya ngotak (kayak paragraf utuh), turunin pangkas jadi paragraf
+                if ((finalTag === 'h1' || finalTag === 'h2') && text.length > 150) finalTag = 'p';
 
                 parsedNodes.push({ tag: finalTag, text: text });
-                
-                // Loncat ke node selanjutnya tanpa masuk ke child dari elemen ini
-                // biar teks gak keambil 2x (misal: <div> <p>Teks</p> </div>)
-                let nextNode = walker.nextSibling();
-                if(nextNode) el = nextNode; 
             }
         }
     }
@@ -436,3 +440,6 @@ window.closeAiModal = function(isFromHistory = false) {
     m.classList.add('opacity-0');
     setTimeout(() => m.classList.add('hidden'), 300);
 }
+
+
+
