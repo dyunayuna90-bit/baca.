@@ -19,154 +19,36 @@ window.tailwind.config = {
                     surfaceVariant: 'var(--md-sys-color-surface-variant)', onSurfaceVariant: 'var(--md-sys-color-on-surface-variant)',
                 }
             },
-            borderRadius: { '4xl': '32px', '5xl': '48px', 'inherit': 'inherit' },
-            fontFamily: {     
+            fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+                serif: ['Lora', 'serif'],
                 merriweather: ['Merriweather', 'serif'],
-                playfair: ['"Playfair Display"', 'serif'],
-                mono: ['"Space Mono"', 'monospace'],
-                google: ['"Google Sans Flex"', 'sans-serif']
+                playfair: ['Playfair Display', 'serif'],
+                mono: ['Space Mono', 'monospace'],
+                google: ['Google Sans Flex', 'sans-serif']
             }
         }
     }
 };
 
-// Data Palet Warna Material 3
-const M3_PALETTES = {
-    orchid: { // Sunset Orchid
-        light: `--md-sys-color-primary:#A855F7;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FED7AA;--md-sys-color-on-primary-container:#7C2D12;--md-sys-color-secondary-container:#FCE7F3;--md-sys-color-on-secondary-container:#831843;--md-sys-color-tertiary-container:#FCE7F3;--md-sys-color-on-tertiary-container:#701A75;--md-sys-color-background:#F5F0FB;--md-sys-color-on-background:#1F003C;--md-sys-color-surface:#FFFFFF;--md-sys-color-on-surface:#120024;--md-sys-color-surface-variant:#F3E8FF;--md-sys-color-on-surface-variant:#6B21A8;`,
-        dark: `--md-sys-color-primary:#C084FC;--md-sys-color-on-primary:#3B0764;--md-sys-color-primary-container:#C2410C;--md-sys-color-on-primary-container:#FFEDD5;--md-sys-color-secondary-container:#831843;--md-sys-color-on-secondary-container:#FCE7F3;--md-sys-color-tertiary-container:#4A044E;--md-sys-color-on-tertiary-container:#FCE7F3;--md-sys-color-background:#0A0314;--md-sys-color-on-background:#F5E0FF;--md-sys-color-surface:#12091F;--md-sys-color-on-surface:#F3E8FF;--md-sys-color-surface-variant:#3B0764;--md-sys-color-on-surface-variant:#F5D0FE;`
-    },
-    olive: { // Organic Olive Green
-        light: `--md-sys-color-primary:#3F6212;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FDBA74;--md-sys-color-on-primary-container:#431407;--md-sys-color-secondary-container:#D1FAE5;--md-sys-color-on-secondary-container:#064E3B;--md-sys-color-tertiary-container:#FEF9C3;--md-sys-color-on-tertiary-container:#451A03;--md-sys-color-background:#F3F4ED;--md-sys-color-on-background:#1A2E05;--md-sys-color-surface:#FBFDF9;--md-sys-color-on-surface:#152B05;--md-sys-color-surface-variant:#E1EAD8;--md-sys-color-on-surface-variant:#3F5231;`, 
-        dark: `--md-sys-color-primary:#A1C986;--md-sys-color-on-primary:#183803;--md-sys-color-primary-container:#7C2D12;--md-sys-color-on-primary-container:#FFEDD5;--md-sys-color-secondary-container:#064E3B;--md-sys-color-on-secondary-container:#D1FAE5;--md-sys-color-tertiary-container:#422006;--md-sys-color-on-tertiary-container:#FEF9C3;--md-sys-color-background:#0B1107;--md-sys-color-on-background:#ECFCCB;--md-sys-color-surface:#11180D;--md-sys-color-on-surface:#ECFCCB;--md-sys-color-surface-variant:#232E1C;--md-sys-color-on-surface-variant:#CCD8C2;` 
-    },
-    coral: { // Terracotta Coral
-        light: `--md-sys-color-primary:#C2410C;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#CCFBF1;--md-sys-color-on-primary-container:#032F30;--md-sys-color-secondary-container:#FCE7F3;--md-sys-color-on-secondary-container:#500724;--md-sys-color-tertiary-container:#E2E8F0;--md-sys-color-on-tertiary-container:#0F172A;--md-sys-color-background:#FFF7F5;--md-sys-color-on-background:#3E0E00;--md-sys-color-surface:#FFFBFA;--md-sys-color-on-surface:#3E0E00;--md-sys-color-surface-variant:#FFD9D1;--md-sys-color-on-surface-variant:#7C3526;`,
-        dark: `--md-sys-color-primary:#FFB5A5;--md-sys-color-on-primary:#5F1605;--md-sys-color-primary-container:#032F30;--md-sys-color-on-primary-container:#CCFBF1;--md-sys-color-secondary-container:#500724;--md-sys-color-on-secondary-container:#FCE7F3;--md-sys-color-tertiary-container:#1E293B;--md-sys-color-on-tertiary-container:#F1F5F9;--md-sys-color-background:#180C08;--md-sys-color-on-background:#FFD9D4;--md-sys-color-surface:#20120E;--md-sys-color-on-surface:#FFD9D4;--md-sys-color-surface-variant:#533F3A;--md-sys-color-on-surface-variant:#FFB5A5;`
-    },
-    teal: { // Oceanic Teal
-        light: `--md-sys-color-primary:#0F766E;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FCE7F3;--md-sys-color-on-primary-container:#500724;--md-sys-color-secondary-container:#FEF08A;--md-sys-color-on-secondary-container:#422006;--md-sys-color-tertiary-container:#F0FDFA;--md-sys-color-on-tertiary-container:#0F172A;--md-sys-color-background:#F0FDFA;--md-sys-color-on-background:#002026;--md-sys-color-surface:#FFFFFF;--md-sys-color-on-surface:#002026;--md-sys-color-surface-variant:#CCE7EC;--md-sys-color-on-surface-variant:#004F5D;`,
-        dark: `--md-sys-color-primary:#5CD5EC;--md-sys-color-on-primary:#003640;--md-sys-color-primary-container:#500724;--md-sys-color-on-primary-container:#FCE7F3;--md-sys-color-secondary-container:#422006;--md-sys-color-on-secondary-container:#FEF08A;--md-sys-color-tertiary-container:#115E59;--md-sys-color-on-tertiary-container:#F0FDFA;--md-sys-color-background:#031417;--md-sys-color-on-background:#B6F0FC;--md-sys-color-surface:#061C20;--md-sys-color-on-surface:#B6F0FC;--md-sys-color-surface-variant:#304D54;--md-sys-color-on-surface-variant:#B6F0FC;`
-    },
-    lavender: { // Regal Lavender
-        light: `--md-sys-color-primary:#6D28D9;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#ECFCCB;--md-sys-color-on-primary-container:#1E293B;--md-sys-color-secondary-container:#FFE4E6;--md-sys-color-on-secondary-container:#4C0519;--md-sys-color-tertiary-container:#FDF4FF;--md-sys-color-on-tertiary-container:#3B0764;--md-sys-color-background:#FAF5FF;--md-sys-color-on-background:#1D0061;--md-sys-color-surface:#FCFAFF;--md-sys-color-on-surface:#1D0061;--md-sys-color-surface-variant:#E8DFFF;--md-sys-color-on-surface-variant:#5E17EB;`,
-        dark: `--md-sys-color-primary:#C4B5FD;--md-sys-color-on-primary:#2E1065;--md-sys-color-primary-container:#2D3748;--md-sys-color-on-primary-container:#ECFCCB;--md-sys-color-secondary-container:#4C0519;--md-sys-color-on-secondary-container:#FFE4E6;--md-sys-color-tertiary-container:#3B0764;--md-sys-color-on-tertiary-container:#FDF4FF;--md-sys-color-background:#090412;--md-sys-color-on-background:#EDE9FE;--md-sys-color-surface:#110A1E;--md-sys-color-on-surface:#EDE9FE;--md-sys-color-surface-variant:#3C00A6;--md-sys-color-on-surface-variant:#E8DFFF;`
-    },
-    rose: { // Crimson Rosewood
-        light: `--md-sys-color-primary:#BE123C;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FEF08A;--md-sys-color-on-primary-container:#422006;--md-sys-color-secondary-container:#E0F2FE;--md-sys-color-on-secondary-container:#0369A1;--md-sys-color-tertiary-container:#FFF1F2;--md-sys-color-on-tertiary-container:#4C0519;--md-sys-color-background:#FFF5F5;--md-sys-color-on-background:#450A0A;--md-sys-color-surface:#FFFBFB;--md-sys-color-on-surface:#450A0A;--md-sys-color-surface-variant:#FCA5A5;--md-sys-color-on-surface-variant:#B91C1C;`, 
-        dark: `--md-sys-color-primary:#FCA5A5;--md-sys-color-on-primary:#450A0A;--md-sys-color-primary-container:#422006;--md-sys-color-on-primary-container:#FEF08A;--md-sys-color-secondary-container:#0369A1;--md-sys-color-on-secondary-container:#E0F2FE;--md-sys-color-tertiary-container:#4C0519;--md-sys-color-on-tertiary-container:#FFF1F2;--md-sys-color-background:#1F0505;--md-sys-color-on-background:#FEE2E2;--md-sys-color-surface:#260C0C;--md-sys-color-on-surface:#FEE2E2;--md-sys-color-surface-variant:#7F1D1D;--md-sys-color-on-surface-variant:#FCA5A5;` 
-    },
-    lime: { // Forest Lime
-        light: `--md-sys-color-primary:#4D7C0F;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#E9D5FF;--md-sys-color-on-primary-container:#3B0764;--md-sys-color-secondary-container:#FCE7F3;--md-sys-color-on-secondary-container:#831843;--md-sys-color-tertiary-container:#F0FDF4;--md-sys-color-on-tertiary-container:#166534;--md-sys-color-background:#F7FEE7;--md-sys-color-on-background:#132000;--md-sys-color-surface:#FCFDF7;--md-sys-color-on-surface:#132000;--md-sys-color-surface-variant:#D1E897;--md-sys-color-on-surface-variant:#4C6A00;`,
-        dark: `--md-sys-color-primary:#C5E85C;--md-sys-color-on-primary:#253600;--md-sys-color-primary-container:#3B0764;--md-sys-color-on-primary-container:#E9D5FF;--md-sys-color-secondary-container:#831843;--md-sys-color-on-secondary-container:#FCE7F3;--md-sys-color-tertiary-container:#14532D;--md-sys-color-on-tertiary-container:#F0FDF4;--md-sys-color-background:#0A0E02;--md-sys-color-on-background:#E1FF85;--md-sys-color-surface:#0F1404;--md-sys-color-on-surface:#E1FF85;--md-sys-color-surface-variant:#3A5000;--md-sys-color-on-surface-variant:#C5E85C;`
-    },
-    sand: { // Warm Sand
-        light: `--md-sys-color-primary:#78350F;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#DBEAFE;--md-sys-color-on-primary-container:#1E40AF;--md-sys-color-secondary-container:#FCE7F3;--md-sys-color-on-secondary-container:#9D174D;--md-sys-color-tertiary-container:#FFF8E1;--md-sys-color-on-tertiary-container:#6D4C41;--md-sys-color-background:#FDFBF7;--md-sys-color-on-background:#3E2723;--md-sys-color-surface:#FFFDF9;--md-sys-color-on-surface:#3E2723;--md-sys-color-surface-variant:#EFEBE9;--md-sys-color-on-surface-variant:#6D4C41;`,
-        dark: `--md-sys-color-primary:#D7CCC8;--md-sys-color-on-primary:#3E2723;--md-sys-color-primary-container:#1E40AF;--md-sys-color-on-primary-container:#DBEAFE;--md-sys-color-secondary-container:#9D174D;--md-sys-color-on-secondary-container:#FCE7F3;--md-sys-color-tertiary-container:#241A17;--md-sys-color-on-tertiary-container:#FFF8E1;--md-sys-color-background:#130E0C;--md-sys-color-on-background:#FFE0B2;--md-sys-color-surface:#1C1412;--md-sys-color-on-surface:#FFE0B2;--md-sys-color-surface-variant:#4E342E;--md-sys-color-on-surface-variant:#D7CCC8;`
-    },
-    monochrome: { // Monochrome Tech
-        light: `--md-sys-color-primary:#1E293B;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FEF08A;--md-sys-color-on-primary-container:#713F12;--md-sys-color-secondary-container:#E2E8F0;--md-sys-color-on-secondary-container:#0F172A;--md-sys-color-tertiary-container:#F5F5F5;--md-sys-color-on-tertiary-container:#212121;--md-sys-color-background:#F1F5F9;--md-sys-color-on-background:#212121;--md-sys-color-surface:#FAFAFA;--md-sys-color-on-surface:#212121;--md-sys-color-surface-variant:#ECEFF1;--md-sys-color-on-surface-variant:#546E7A;`, 
-        dark: `--md-sys-color-primary:#CFD8DC;--md-sys-color-on-primary:#263238;--md-sys-color-primary-container:#713F12;--md-sys-color-on-primary-container:#FEF08A;--md-sys-color-secondary-container:#0F172A;--md-sys-color-on-secondary-container:#E2E8F0;--md-sys-color-tertiary-container:#212121;--md-sys-color-on-tertiary-container:#F5F5F5;--md-sys-color-background:#101416;--md-sys-color-on-background:#ECEFF1;--md-sys-color-surface:#151A1D;--md-sys-color-on-surface:#ECEFF1;--md-sys-color-surface-variant:#37474F;--md-sys-color-on-surface-variant:#CFD8DC;` 
-    },
-    blueberry: { // Electric Cobalt
-        light: `--md-sys-color-primary:#1D4ED8;--md-sys-color-on-primary:#FFFFFF;--md-sys-color-primary-container:#FCE7F3;--md-sys-color-on-primary-container:#4C0519;--md-sys-color-secondary-container:#FEF08A;--md-sys-color-on-secondary-container:#422006;--md-sys-color-tertiary-container:#E8EAF6;--md-sys-color-on-tertiary-container:#1A237E;--md-sys-color-background:#EFF6FF;--md-sys-color-on-background:#00153B;--md-sys-color-surface:#F4F9FF;--md-sys-color-on-surface:#00153B;--md-sys-color-surface-variant:#C2ECFF;--md-sys-color-on-surface-variant:#1A237E;`, 
-        dark: `--md-sys-color-primary:#80CAFF;--md-sys-color-on-primary:#00153B;--md-sys-color-primary-container:#4C0519;--md-sys-color-on-primary-container:#FCE7F3;--md-sys-color-secondary-container:#422006;--md-sys-color-on-secondary-container:#FEF08A;--md-sys-color-tertiary-container:#001E45;--md-sys-color-on-tertiary-container:#E8EAF6;--md-sys-color-background:#040A1A;--md-sys-color-on-background:#C2ECFF;--md-sys-color-surface:#07122E;--md-sys-color-on-surface:#C2ECFF;--md-sys-color-surface-variant:#1A237E;--md-sys-color-on-surface-variant:#80CAFF;` 
-    }
-};
-
-// Data Kamus / Terjemahan Bahasa (i18n)
-const i18n = {
-    id: {
-        libEmpty: "Perpustakaan Kosong.", searchBooks: "Cari buku...", loadingDocs: "Membaca Dokumen...", 
-        booksCount: "Buku", continueReading: "Lanjutkan Membaca", bookCollection: "Koleksi Buku", 
-        selected: "Terpilih", cancel: "Batal", delete: "Hapus", deleteConfirm: "Hapus buku yang dipilih secara permanen?", 
-        optSelect: "Pilih Beberapa", optEdit: "Edit Detail", optDelete: "Hapus Permanen",
-        
-        pinnedBooks: "Buku Disematkan",
-        optPin: "Sematkan Buku", optUnpin: "Lepas Sematan",
-        
-        navBookmark: "Bookmark",
-        bookmarkTitle: "Panel Bookmark",
-        bookmarkEmpty: "Belum ada pembatas buku.",
-        
-        bookmarkModalTitle: "Bookmark",
-        bookmarkTitlePlaceholder: "Judul Bookmark...",
-        bookmarkNotePlaceholder: "Tulis catatan (opsional)...",
-        bookmarkCancel: "Batal",
-        bookmarkSave: "Simpan",
-
-        extractingCover: "Mengekstrak Sampul...", readingPage: "Membaca Halaman", formattingText: "Memformat Teks...",
-        extractingEpub: "Mengekstrak EPUB...", analyzingStruct: "Menganalisa Struktur...", extractingChapter: "Mengekstrak Bab",
-        welcomeTitle: "Selamat Datang di Baca.", welcomeDesc: "Harap baca instruksi berikut untuk pengalaman membaca yang optimal.",
-        welBackup: "Pencadangan Data", welBackupDesc: "Gunakan fitur Backup di Pengaturan. Data di-backup jadi file JSON dan otomatis masuk ke folder <b>Documents</b> di penyimpanan utama HP. Ingat, di folder Documents, bukan di DCIM atau Download! Nanti buat restore, anda tinggal klik 'Pilih File' dan cari file tersebut.",
-        welFormat: "Batasan Format", welFormatDesc: "<b>PDF:</b> Hanya teks. Gambar diabaikan.<br><b>EPUB:</b> Didukung penuh.",
-        welPrivacy: "Privasi Total", welPrivacyDesc: "Diproses secara lokal di perangkat Anda.", welBtn: "Mengerti",
-        setMainTitle: "Pengaturan", setPalette: "Palet Tema", setLang: "Bahasa", setInfo: "Info & Dukungan",
-        btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnClose: "Tutup",
-        setData: "Data Aplikasi", btnBackup: "Backup Data", btnRestore: "Pulihkan",
-        
-        // Teks Sistem Cek Update
-        btnUpdate: "Cek Pembaruan",
-        updateChecking: "Mengecek versi...",
-        updateLatestTitle: "Sudah Versi Terbaru",
-        updateLatestDesc: `Aplikasi lu udah pakai versi paling baru (v${window.APP_VERSION}).`,
-        updateAvailableTitle: "Update Tersedia!",
-        updateAvailableDesc: "Versi {v} udah rilis nih. Mau buka halaman download sekarang?",
-        updateError: "Gagal ngecek update. Pastiin internet lu nyala atau Repo Github lu udah bener.",
-        btnDownload: "Download",
-
-        navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navText: "Teks", navFull: "Penuh",
-        readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
-        setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
-        searchPlaceholder: "Cari dalam buku...", searchNotFound: "Tidak ditemukan.",
-        aiTitle: "Penjelasan", aiLoading: "Mencari referensi...", noInternet: "Koneksi internet bermasalah.",
-        deleteNoteConfirm: "Hapus catatan/sorotan ini?",
-        editTitle: "Edit Detail", editBookTitle: "Judul Buku", editBookCover: "Gambar Sampul", editBookShape: "Bentuk Kartu", editCancel: "Batal", editSave: "Simpan", optCancel: "Batal", themeLight: "Mode Terang", themeDark: "Mode Gelap", amoledLabel: "AMOLED (Hitam Pekat)",
-        shapeDyn: "Dinamis", shapeRound: "Bulat", shapeSquare: "Kotak",                
-        rawBakTitle: "Data Backup Mentah", rawBakDesc: "Karena batasan sistem perangkat, silakan salin teks di bawah ini dan simpan ke dalam Note/Pesan WhatsApp/File teks dengan aman.", rawBakCopy: "Salin Teks", rawBakClose: "Tutup",
-        rawResTitle: "Pulihkan Data", rawResDesc: "Paste teks mentah (JSON) backup lu di kotak ini, ATAU pilih file JSON dari perangkat.", rawResFile: "Pilih File", rawResProcess: "Proses Teks", rawResClose: "Batal",
-        setAiConfig: "Konfigurasi AI", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Tambahkan API Key untuk mendapatkan penjelasan pintar dari AI. (Saran optimal: gunakan Gemini 2.5 Flash Lite untuk kecepatan maksimal).", keySaved: "API Key berhasil disimpan."
-    },
+// KAMUS BAHASA (Bilingual I18n)
+// [MODIFIKASI] Nambahin key buat translate UI Statistik
+window.i18n = {
     en: {
-        libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
-        booksCount: "Books", continueReading: "Continue Reading", bookCollection: "Book Collection", 
-        selected: "Selected", cancel: "Cancel", delete: "Delete", deleteConfirm: "Permanently delete selected books?", 
-        optSelect: "Select Multiple", optEdit: "Edit Details", optDelete: "Delete Permanently",
-        
-        pinnedBooks: "Pinned Books",
-        optPin: "Pin Book", optUnpin: "Unpin Book",
-        
-        navBookmark: "Bookmark",
-        bookmarkTitle: "Bookmarks Panel",
-        bookmarkEmpty: "No bookmarks yet.",
-        
-        bookmarkModalTitle: "Bookmark",
-        bookmarkTitlePlaceholder: "Bookmark Title...",
-        bookmarkNotePlaceholder: "Write a note (optional)...",
-        bookmarkCancel: "Cancel",
-        bookmarkSave: "Save",
-
-        extractingCover: "Extracting Cover...", readingPage: "Reading Page", formattingText: "Formatting Text...",
-        extractingEpub: "Extracting EPUB...", analyzingStructure: "Analyzing Structure...", extractingChapter: "Extracting Chapter",
-        welcomeTitle: "Welcome to Baca.", welcomeDesc: "Please read these instructions for the optimal reading experience.",
-        welBackup: "Data Backup", welBackupDesc: "Use the Backup feature in Settings. Data is saved as a JSON file directly to the <b>Documents</b> folder on your device's main storage (not DCIM or Downloads). To restore, simply find and select that backup file from the Documents folder.",
-        welFormat: "Format Limitations", welFormatDesc: "<b>PDF:</b> Text only. Images ignored.<br><b>EPUB:</b> Fully supported.",
-        welPrivacy: "Total Privacy", welPrivacyDesc: "Processed locally on your device.", welBtn: "Got it",
-        setMainTitle: "Settings", setPalette: "Theme Palette", setLang: "Language", setInfo: "Info & Support",
-        btnInfo: "View Instructions", btnDonate: "Buy Me a Coffee", btnClose: "Close",
-        setData: "App Data", btnBackup: "Backup Data", btnRestore: "Restore Data",
-        
-        // Teks Sistem Cek Update
-        btnUpdate: "Check for Updates",
-        updateChecking: "Checking version...",
-        updateLatestTitle: "Up to Date",
-        updateLatestDesc: `You are running the latest version (v${window.APP_VERSION}).`,
-        updateAvailableTitle: "Update Available!",
-        updateAvailableDesc: "Version {v} is out. Open the download page now?",
-        updateError: "Failed to check for updates. Check your internet connection.",
-        btnDownload: "Download",
-
-        navBack: "Back", navToc: "Contents", navSearch: "Search", navText: "Text", navFull: "Full",
+        libEmpty: "Library is Empty. Tap + to add.", continueReading: "Continue Reading", bookCollection: "Book Collection", loadingDocs: "Loading Document...", cancel: "Cancel", delete: "Delete",
+        optSelect: "Select", optEdit: "Edit Details", optDelete: "Delete",
+        pinnedBooks: "Pinned Books", navBookmark: "Bookmarks", bookmarkTitle: "Bookmarks", bookmarkEmpty: "No bookmarks yet.", bookmarkCancel: "Cancel", bookmarkSave: "Save",
+        bookmarkModalTitle: "Bookmark", bookmarkTitlePlaceholder: "Title (Optional)", bookmarkNotePlaceholder: "Write a note (optional)...",
+        welcomeTitle: "Welcome to Baca. v5", welcomeDesc: "PWA E-Reader designed for ultimate reading comfort. No servers, no ads.",
+        welBackup: "Local Data & Backup", welBackupDesc: "All books & notes are stored safely on your browser. <b>Backup regularly</b> to prevent data loss.",
+        welFormat: "Supported Formats", welFormatDesc: "Supports <b>EPUB</b> and pure text <b>PDF</b>.",
+        welPrivacy: "100% Privacy", welPrivacyDesc: "Processed entirely on your device.", welBtn: "Got it, let's go!",
+        setMainTitle: "Settings", setPalette: "Theme Palette", setLang: "Language", setInfo: "Info & Support", setData: "Data Management",
+        btnBackup: "Backup JSON", btnRestore: "Restore JSON", btnInfo: "Instructions", btnDonate: "Buy me a coffee", btnClose: "Close",
+        btnUpdate: "Check Updates", searchBooks: "Search books...", booksCount: "Books", updateAvailableTitle: "Update Available!",
+        updateAvailableDesc: "Version {v} is out. Open download page?", btnDownload: "Download", updateLatestTitle: "Up to Date",
+        updateLatestDesc: "You are running the latest version (v{v}).", updateError: "Failed to check update. Check internet connection.",
+        navBack: "Back", navToc: "Contents", navText: "Text", navFull: "Full",
         readerLoading: "Loading Book...", tocTitle: "Table of Contents", setTitle: "Appearance",
         setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
         searchPlaceholder: "Search in book...", searchNotFound: "Not found.",
@@ -176,6 +58,83 @@ const i18n = {
         shapeDyn: "Dynamic", shapeRound: "Rounded", shapeSquare: "Square",               
         rawBakTitle: "Raw Backup Data", rawBakDesc: "Due to device restrictions, please copy the text below and save it safely in your Notes or a text file.", rawBakCopy: "Copy Text", rawBakClose: "Close",
         rawResTitle: "Restore Data", rawResDesc: "Paste your raw backup JSON text here, OR choose a JSON file from your device.", rawResFile: "Select File", rawResProcess: "Process Text", rawResClose: "Cancel",
-        setAiConfig: "AI Configuration", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Add your API Key to get smart definitions from AI. (Optimal setup: use Gemini 2.5 Flash Lite for maximum speed).", keySaved: "API Key saved successfully."
+        setAiConfig: "AI Configuration", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Add your API Key to get smart definitions from AI. (Optimal setup: use Gemini 2.5 Flash Lite for maximum speed).", keySaved: "API Key saved successfully.",
+        
+        // Terjemahan Baru buat UI Statistik
+        statTitle: "Statistics", statTotal: "Collection", statReading: "Reading", statCompleted: "Completed", statNotes: "Notes" 
+    },
+    id: {
+        libEmpty: "Belum ada buku. Tap + untuk tambah.", continueReading: "Lanjutkan Membaca", bookCollection: "Koleksi Buku", loadingDocs: "Memuat Dokumen...", cancel: "Batal", delete: "Hapus",
+        optSelect: "Pilih", optEdit: "Edit Detail", optDelete: "Hapus Permanen",
+        pinnedBooks: "Buku Disematkan", navBookmark: "Catatan", bookmarkTitle: "Catatan", bookmarkEmpty: "Belum ada pembatas buku.", bookmarkCancel: "Batal", bookmarkSave: "Simpan",
+        bookmarkModalTitle: "Catat", bookmarkTitlePlaceholder: "Judul Catatan (Opsional)", bookmarkNotePlaceholder: "Tulis catatan, pemikiran, atau ringkasan di sini...",
+        welcomeTitle: "Selamat Datang di Baca. v5", welcomeDesc: "E-Reader PWA dengan Material Design 3. Didesain untuk kenyamanan membaca mutlak tanpa server, tanpa iklan.",
+        welBackup: "Data Lokal & Backup", welBackupDesc: "Semua buku dan catatan disimpan di memori HP lu (Browser). <b>Wajib backup JSON berkala</b> biar data ga hilang kalau clear cache.",
+        welFormat: "Format Buku", welFormatDesc: "Mendukung <b>EPUB</b> dan <b>PDF</b> murni (Teks). PDF hasil scan gambar tidak akan bisa diekstrak teksnya.",
+        welPrivacy: "Privasi 100%", welPrivacyDesc: "Kami tidak mengumpulkan data lu. Semuanya diproses lokal.", welBtn: "Mengerti, Lanjut!",
+        setMainTitle: "Pengaturan", setPalette: "Tema Latar", setLang: "Bahasa", setInfo: "Info & Dukungan", setData: "Data Aplikasi",
+        btnBackup: "Backup Data", btnRestore: "Pulihkan", btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnClose: "Tutup",
+        btnUpdate: "Cek Pembaruan", searchBooks: "Cari buku...", booksCount: "Buku", updateAvailableTitle: "Update Tersedia!",
+        updateAvailableDesc: "Versi {v} udah rilis nih. Mau buka halaman download sekarang?", btnDownload: "Download", updateLatestTitle: "Sudah Versi Terbaru",
+        updateLatestDesc: "Aplikasi lu udah pakai versi paling baru (v{v}).", updateError: "Gagal ngecek update. Pastiin internet lu nyala.",
+        navBack: "Kembali", navToc: "Daftar Isi", navText: "Teks", navFull: "Penuh",
+        readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
+        setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
+        searchPlaceholder: "Cari dalam buku...", searchNotFound: "Tidak ditemukan.",
+        aiTitle: "Penjelasan", aiLoading: "Mencari referensi...", noInternet: "Tidak ada koneksi internet.",
+        deleteNoteConfirm: "Hapus catatan/highlight ini?",
+        editTitle: "Edit Detail", editBookTitle: "Judul Buku", editBookCover: "Gambar Sampul", editBookShape: "Bentuk Kartu", editCancel: "Batal", editSave: "Simpan", optCancel: "Batal", themeLight: "Mode Terang", themeDark: "Mode Gelap", amoledLabel: "AMOLED (Hitam Pekat)",
+        shapeDyn: "Dinamis", shapeRound: "Bulat", shapeSquare: "Kotak",
+        rawBakTitle: "Data Backup Mentah", rawBakDesc: "Karena batasan sistem perangkat, silakan salin teks di bawah ini dan simpan ke dalam Note/Pesan WhatsApp/File teks dengan aman.", rawBakCopy: "Salin Teks", rawBakClose: "Tutup",
+        rawResTitle: "Pulihkan Data", rawResDesc: "Paste teks mentah (JSON) backup lu di kotak ini, ATAU pilih file JSON dari perangkat.", rawResFile: "Pilih File", rawResProcess: "Proses Teks", rawResClose: "Batal",
+        setAiConfig: "Konfigurasi AI", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Tambahkan API Key untuk mendapatkan penjelasan pintar langsung dari AI Gemini. (Disarankan pakai Gemini 2.5 Flash Lite biar enteng).", keySaved: "API Key berhasil disimpan.",
+        
+        // Terjemahan Baru buat UI Statistik
+        statTitle: "Statistik", statTotal: "Koleksi", statReading: "Dibaca", statCompleted: "Selesai", statNotes: "Catatan"
     }
 };
+
+// PALET WARNA MATERIAL 3
+window.M3_PALETTES = {
+    'orchid': {
+        light: '--md-sys-color-primary: 104, 52, 226; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 233, 221, 255; --md-sys-color-on-primary-container: 34, 0, 93; --md-sys-color-secondary-container: 232, 222, 248; --md-sys-color-on-secondary-container: 29, 25, 43; --md-sys-color-tertiary-container: 255, 216, 228; --md-sys-color-on-tertiary-container: 49, 17, 29; --md-sys-color-background: 254, 247, 255; --md-sys-color-on-background: 29, 27, 32; --md-sys-color-surface: 254, 247, 255; --md-sys-color-on-surface: 29, 27, 32; --md-sys-color-surface-variant: 231, 224, 236; --md-sys-color-on-surface-variant: 73, 69, 79;',
+        dark: '--md-sys-color-primary: 208, 188, 255; --md-sys-color-on-primary: 56, 30, 114; --md-sys-color-primary-container: 79, 55, 139; --md-sys-color-on-primary-container: 233, 221, 255; --md-sys-color-secondary-container: 74, 68, 88; --md-sys-color-on-secondary-container: 232, 222, 248; --md-sys-color-tertiary-container: 99, 59, 72; --md-sys-color-on-tertiary-container: 255, 216, 228; --md-sys-color-background: 20, 18, 24; --md-sys-color-on-background: 230, 224, 233; --md-sys-color-surface: 20, 18, 24; --md-sys-color-on-surface: 230, 224, 233; --md-sys-color-surface-variant: 73, 69, 79; --md-sys-color-on-surface-variant: 202, 196, 208;'
+    },
+    'olive': {
+        light: '--md-sys-color-primary: 76, 102, 43; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 205, 237, 163; --md-sys-color-on-primary-container: 17, 32, 0; --md-sys-color-secondary-container: 217, 226, 203; --md-sys-color-on-secondary-container: 21, 25, 17; --md-sys-color-tertiary-container: 191, 234, 223; --md-sys-color-on-tertiary-container: 0, 32, 28; --md-sys-color-background: 254, 252, 245; --md-sys-color-on-background: 26, 28, 24; --md-sys-color-surface: 254, 252, 245; --md-sys-color-on-surface: 26, 28, 24; --md-sys-color-surface-variant: 228, 227, 219; --md-sys-color-on-surface-variant: 68, 72, 63;',
+        dark: '--md-sys-color-primary: 177, 208, 137; --md-sys-color-on-primary: 31, 55, 1; --md-sys-color-primary-container: 45, 78, 15; --md-sys-color-on-primary-container: 205, 237, 163; --md-sys-color-secondary-container: 61, 74, 54; --md-sys-color-on-secondary-container: 217, 226, 203; --md-sys-color-tertiary-container: 30, 78, 70; --md-sys-color-on-tertiary-container: 191, 234, 223; --md-sys-color-background: 26, 28, 24; --md-sys-color-on-background: 227, 227, 220; --md-sys-color-surface: 26, 28, 24; --md-sys-color-on-surface: 227, 227, 220; --md-sys-color-surface-variant: 68, 72, 63; --md-sys-color-on-surface-variant: 196, 200, 187;'
+    },
+    'coral': {
+        light: '--md-sys-color-primary: 161, 62, 42; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 255, 218, 211; --md-sys-color-on-primary-container: 62, 8, 0; --md-sys-color-secondary-container: 255, 218, 211; --md-sys-color-on-secondary-container: 45, 21, 18; --md-sys-color-tertiary-container: 247, 224, 166; --md-sys-color-on-tertiary-container: 36, 26, 0; --md-sys-color-background: 255, 251, 255; --md-sys-color-on-background: 32, 26, 25; --md-sys-color-surface: 255, 251, 255; --md-sys-color-on-surface: 32, 26, 25; --md-sys-color-surface-variant: 245, 221, 218; --md-sys-color-on-surface-variant: 83, 67, 65;',
+        dark: '--md-sys-color-primary: 255, 180, 168; --md-sys-color-on-primary: 96, 21, 5; --md-sys-color-primary-container: 125, 41, 23; --md-sys-color-on-primary-container: 255, 218, 211; --md-sys-color-secondary-container: 119, 87, 82; --md-sys-color-on-secondary-container: 255, 218, 211; --md-sys-color-tertiary-container: 85, 69, 25; --md-sys-color-on-tertiary-container: 247, 224, 166; --md-sys-color-background: 32, 26, 25; --md-sys-color-on-background: 236, 224, 223; --md-sys-color-surface: 32, 26, 25; --md-sys-color-on-surface: 236, 224, 223; --md-sys-color-surface-variant: 83, 67, 65; --md-sys-color-on-surface-variant: 216, 194, 191;'
+    },
+    'teal': {
+        light: '--md-sys-color-primary: 0, 106, 96; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 116, 248, 229; --md-sys-color-on-primary-container: 0, 32, 28; --md-sys-color-secondary-container: 204, 228, 224; --md-sys-color-on-secondary-container: 5, 32, 29; --md-sys-color-tertiary-container: 219, 228, 249; --md-sys-color-on-tertiary-container: 10, 28, 43; --md-sys-color-background: 250, 253, 251; --md-sys-color-on-background: 24, 28, 27; --md-sys-color-surface: 250, 253, 251; --md-sys-color-on-surface: 24, 28, 27; --md-sys-color-surface-variant: 218, 229, 226; --md-sys-color-on-surface-variant: 63, 73, 71;',
+        dark: '--md-sys-color-primary: 83, 219, 201; --md-sys-color-on-primary: 0, 55, 49; --md-sys-color-primary-container: 0, 80, 72; --md-sys-color-on-primary-container: 116, 248, 229; --md-sys-color-secondary-container: 51, 75, 72; --md-sys-color-on-secondary-container: 204, 228, 224; --md-sys-color-tertiary-container: 60, 72, 88; --md-sys-color-on-tertiary-container: 219, 228, 249; --md-sys-color-background: 24, 28, 27; --md-sys-color-on-background: 225, 227, 225; --md-sys-color-surface: 24, 28, 27; --md-sys-color-on-surface: 225, 227, 225; --md-sys-color-surface-variant: 63, 73, 71; --md-sys-color-on-surface-variant: 190, 201, 198;'
+    },
+    'lavender': {
+        light: '--md-sys-color-primary: 112, 70, 185; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 236, 220, 255; --md-sys-color-on-primary-container: 37, 0, 89; --md-sys-color-secondary-container: 236, 221, 245; --md-sys-color-on-secondary-container: 33, 24, 42; --md-sys-color-tertiary-container: 255, 217, 227; --md-sys-color-on-tertiary-container: 49, 17, 30; --md-sys-color-background: 255, 251, 255; --md-sys-color-on-background: 28, 27, 30; --md-sys-color-surface: 255, 251, 255; --md-sys-color-on-surface: 28, 27, 30; --md-sys-color-surface-variant: 232, 224, 235; --md-sys-color-on-surface-variant: 74, 69, 78;',
+        dark: '--md-sys-color-primary: 212, 187, 255; --md-sys-color-on-primary: 63, 8, 140; --md-sys-color-primary-container: 87, 43, 161; --md-sys-color-on-primary-container: 236, 220, 255; --md-sys-color-secondary-container: 74, 67, 84; --md-sys-color-on-secondary-container: 236, 221, 245; --md-sys-color-tertiary-container: 99, 59, 73; --md-sys-color-on-tertiary-container: 255, 217, 227; --md-sys-color-background: 28, 27, 30; --md-sys-color-on-background: 230, 225, 229; --md-sys-color-surface: 28, 27, 30; --md-sys-color-on-surface: 230, 225, 229; --md-sys-color-surface-variant: 74, 69, 78; --md-sys-color-on-surface-variant: 203, 196, 206;'
+    },
+    'rose': {
+        light: '--md-sys-color-primary: 172, 50, 68; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 255, 218, 215; --md-sys-color-on-primary-container: 65, 0, 11; --md-sys-color-secondary-container: 255, 218, 214; --md-sys-color-on-secondary-container: 44, 21, 20; --md-sys-color-tertiary-container: 255, 221, 185; --md-sys-color-on-tertiary-container: 39, 25, 0; --md-sys-color-background: 255, 251, 255; --md-sys-color-on-background: 32, 26, 25; --md-sys-color-surface: 255, 251, 255; --md-sys-color-on-surface: 32, 26, 25; --md-sys-color-surface-variant: 245, 221, 219; --md-sys-color-on-surface-variant: 83, 67, 66;',
+        dark: '--md-sys-color-primary: 255, 179, 177; --md-sys-color-on-primary: 104, 0, 22; --md-sys-color-primary-container: 139, 21, 46; --md-sys-color-on-primary-container: 255, 218, 215; --md-sys-color-secondary-container: 119, 86, 83; --md-sys-color-on-secondary-container: 255, 218, 214; --md-sys-color-tertiary-container: 90, 67, 24; --md-sys-color-on-tertiary-container: 255, 221, 185; --md-sys-color-background: 32, 26, 25; --md-sys-color-on-background: 236, 224, 223; --md-sys-color-surface: 32, 26, 25; --md-sys-color-on-surface: 236, 224, 223; --md-sys-color-surface-variant: 83, 67, 66; --md-sys-color-on-surface-variant: 216, 194, 192;'
+    },
+    'lime': {
+        light: '--md-sys-color-primary: 82, 102, 0; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 211, 238, 126; --md-sys-color-on-primary-container: 22, 30, 0; --md-sys-color-secondary-container: 224, 228, 209; --md-sys-color-on-secondary-container: 24, 29, 21; --md-sys-color-tertiary-container: 200, 234, 219; --md-sys-color-on-tertiary-container: 3, 32, 26; --md-sys-color-background: 254, 252, 244; --md-sys-color-on-background: 27, 28, 23; --md-sys-color-surface: 254, 252, 244; --md-sys-color-on-surface: 27, 28, 23; --md-sys-color-surface-variant: 230, 228, 218; --md-sys-color-on-surface-variant: 70, 72, 63;',
+        dark: '--md-sys-color-primary: 184, 209, 100; --md-sys-color-on-primary: 41, 53, 0; --md-sys-color-primary-container: 61, 77, 0; --md-sys-color-on-primary-container: 211, 238, 126; --md-sys-color-secondary-container: 64, 73, 58; --md-sys-color-on-secondary-container: 224, 228, 209; --md-sys-color-tertiary-container: 50, 75, 68; --md-sys-color-on-tertiary-container: 200, 234, 219; --md-sys-color-background: 27, 28, 23; --md-sys-color-on-background: 228, 226, 221; --md-sys-color-surface: 27, 28, 23; --md-sys-color-on-surface: 228, 226, 221; --md-sys-color-surface-variant: 70, 72, 63; --md-sys-color-on-surface-variant: 198, 199, 189;'
+    },
+    'sand': {
+        light: '--md-sys-color-primary: 129, 85, 67; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 255, 219, 206; --md-sys-color-on-primary-container: 50, 18, 5; --md-sys-color-secondary-container: 255, 218, 211; --md-sys-color-on-secondary-container: 45, 22, 16; --md-sys-color-tertiary-container: 230, 240, 179; --md-sys-color-on-tertiary-container: 28, 33, 0; --md-sys-color-background: 255, 251, 255; --md-sys-color-on-background: 32, 26, 24; --md-sys-color-surface: 255, 251, 255; --md-sys-color-on-surface: 32, 26, 24; --md-sys-color-surface-variant: 245, 224, 219; --md-sys-color-on-surface-variant: 83, 67, 63;',
+        dark: '--md-sys-color-primary: 246, 185, 161; --md-sys-color-on-primary: 76, 39, 24; --md-sys-color-primary-container: 102, 61, 45; --md-sys-color-on-primary-container: 255, 219, 206; --md-sys-color-secondary-container: 119, 87, 80; --md-sys-color-on-secondary-container: 255, 218, 211; --md-sys-color-tertiary-container: 74, 82, 33; --md-sys-color-on-tertiary-container: 230, 240, 179; --md-sys-color-background: 32, 26, 24; --md-sys-color-on-background: 236, 224, 221; --md-sys-color-surface: 32, 26, 24; --md-sys-color-on-surface: 236, 224, 221; --md-sys-color-surface-variant: 83, 67, 63; --md-sys-color-on-surface-variant: 216, 194, 189;'
+    },
+    'monochrome': {
+        light: '--md-sys-color-primary: 43, 49, 52; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 218, 226, 230; --md-sys-color-on-primary-container: 12, 24, 27; --md-sys-color-secondary-container: 218, 226, 229; --md-sys-color-on-secondary-container: 24, 28, 30; --md-sys-color-tertiary-container: 226, 225, 236; --md-sys-color-on-tertiary-container: 26, 27, 33; --md-sys-color-background: 250, 252, 253; --md-sys-color-on-background: 25, 28, 29; --md-sys-color-surface: 250, 252, 253; --md-sys-color-on-surface: 25, 28, 29; --md-sys-color-surface-variant: 223, 227, 229; --md-sys-color-on-surface-variant: 66, 71, 74;',
+        dark: '--md-sys-color-primary: 191, 199, 203; --md-sys-color-on-primary: 38, 49, 53; --md-sys-color-primary-container: 56, 74, 78; --md-sys-color-on-primary-container: 218, 226, 230; --md-sys-color-secondary-container: 66, 72, 75; --md-sys-color-on-secondary-container: 218, 226, 229; --md-sys-color-tertiary-container: 71, 70, 78; --md-sys-color-on-tertiary-container: 226, 225, 236; --md-sys-color-background: 25, 28, 29; --md-sys-color-on-background: 224, 227, 228; --md-sys-color-surface: 25, 28, 29; --md-sys-color-on-surface: 224, 227, 228; --md-sys-color-surface-variant: 66, 71, 74; --md-sys-color-on-surface-variant: 195, 200, 202;'
+    },
+    'blueberry': {
+        light: '--md-sys-color-primary: 31, 80, 169; --md-sys-color-on-primary: 255, 255, 255; --md-sys-color-primary-container: 214, 227, 255; --md-sys-color-on-primary-container: 0, 27, 61; --md-sys-color-secondary-container: 216, 226, 255; --md-sys-color-on-secondary-container: 14, 28, 54; --md-sys-color-tertiary-container: 255, 218, 224; --md-sys-color-on-tertiary-container: 51, 17, 24; --md-sys-color-background: 253, 252, 255; --md-sys-color-on-background: 26, 28, 30; --md-sys-color-surface: 253, 252, 255; --md-sys-color-on-surface: 26, 28, 30; --md-sys-color-surface-variant: 224, 226, 236; --md-sys-color-on-surface-variant: 67, 71, 78;',
+        dark: '--md-sys-color-primary: 167, 199, 255; --md-sys-color-on-primary: 0, 46, 106; --md-sys-color-primary-container: 12, 59, 137; --md-sys-color-on-primary-container: 214, 227, 255; --md-sys-color-secondary-container: 59, 72, 102; --md-sys-color-on-secondary-container: 216, 226, 255; --md-sys-color-tertiary-container: 102, 58, 67; --md-sys-color-on-tertiary-container: 255, 218, 224; --md-sys-color-background: 26, 28, 30; --md-sys-color-on-background: 227, 226, 230; --md-sys-color-surface: 26, 28, 30; --md-sys-color-on-surface: 227, 226, 230; --md-sys-color-surface-variant: 67, 71, 78; --md-sys-color-on-surface-variant: 196, 198, 207;'
+    }
+};
+
