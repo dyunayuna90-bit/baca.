@@ -21,7 +21,6 @@ let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 const DOM = {};
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Inisialisasi DOM Elements
     Object.assign(DOM, {
         libView: document.getElementById('library-view'), 
         readView: document.getElementById('reader-view'),
@@ -512,7 +511,6 @@ async function loadLibrary() {
 function renderLibrary(filterText = "") {
     if(!DOM.grid || !DOM.topSlider) return;
     
-    // Clear DOM wadah render
     DOM.grid.innerHTML = ''; 
     DOM.topSlider.innerHTML = '';
     const pinnedGrid = document.getElementById('pinned-book-grid');
@@ -1028,7 +1026,7 @@ window.openBook = function(book) {
         loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
         setTimeout(() => {
-            // FIX SCROLL: Waktu buka buku langsung nge-pas ke posisi terakhir
+            // FIX SCROLL: Waktu buka buku, hitung posisi absolut biar pas di tengah layer
             if (book.lastReadId) { 
                 const target = document.getElementById(book.lastReadId); 
                 const container = DOM.readContent;
@@ -1126,8 +1124,8 @@ window.setupIntersectionObserver = function() {
             }
             updateBookProgress(activeBookId, id, pct);
         }
-    // FIX OBSERVER TEPAT DI TENGAH: Titik baca murni ngukur bagian tengah
-    }, { root: DOM.readContent, rootMargin: '-40% 0px -40% 0px', threshold: 0 }); 
+    // FIX OBSERVER TEPAT DI TENGAH: Presisi baca murni di titik sentral layar.
+    }, { root: DOM.readContent, rootMargin: '-45% 0px -45% 0px', threshold: 0 }); 
     Array.from(DOM.inner.children).forEach(el => observer.observe(el));
 }
 
@@ -1143,7 +1141,7 @@ async function updateBookProgress(bookId, lastNodeId, pct) {
 
 // 10. ANNOTATIONS & IN-BOOK BOOKMARK LOGIC
 
-// FIX AKURASI DOM OFFSETS: Rekam karakter murni tanpa kehalang Tag HTML atau kata yang sama
+// FIX AKURASI DOM OFFSETS: Rekam karakter murni tanpa kehalang Tag HTML atau kata yang sama persis
 function getAbsoluteOffsets(element) {
     const sel = window.getSelection();
     if (sel.rangeCount === 0) return { start: 0, end: 0 };
@@ -1439,12 +1437,10 @@ window.renderBookmarkPanel = function() {
             `;
             
             btn.innerHTML = `
-                <!-- Judul -->
                 <div class="flex items-start justify-between gap-2 mb-2 w-full">
                     <span class="text-sm font-bold text-m3-onSurface leading-tight line-clamp-2 pr-6">${bm.title}</span>
                 </div>
                 
-                <!-- Label Meta / Persentase -->
                 <div class="flex items-center gap-1.5 w-max px-2.5 py-1 rounded-lg ${iconColorCls}">
                     <i data-lucide="bookmark" class="w-3 h-3 fill-current"></i>
                     <span class="text-[9px] font-bold uppercase tracking-wider">${bm.meta || 'Chapter'}</span>
@@ -1548,4 +1544,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
 
