@@ -77,8 +77,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (verDisplay && window.APP_VERSION) verDisplay.textContent = `v${window.APP_VERSION}`;
 });
 
-// [MODIFIKASI] FUNGSI HITUNG STATISTIK USER
-function updateStatistics() {
+// [FITUR BARU]: Fungsi buat update UI Statistik
+window.updateStatistics = function() {
     let totalBooks = library.length;
     let readingBooks = 0;
     let completedBooks = 0;
@@ -100,12 +100,11 @@ function updateStatistics() {
     const valCompleted = document.getElementById('stat-val-completed');
     const valNotes = document.getElementById('stat-val-notes');
     
-    // Nembak angka ke UI pakai animasi cepet (opsional, tapi manis)
     if(valTotal) valTotal.textContent = totalBooks;
     if(valReading) valReading.textContent = readingBooks;
     if(valCompleted) valCompleted.textContent = completedBooks;
     if(valNotes) valNotes.textContent = totalNotes;
-}
+};
 
 // 2. SCROLL & NAVIGATION LISTENERS
 function setupScrollListeners() {
@@ -315,7 +314,7 @@ window.saveGeminiKey = function() {
     const key = document.getElementById('gemini-api-key').value.trim();
     localStorage.setItem('gemini_api_key', key);
     const d = i18n[wikiLang] || i18n['id'];
-    showDialog('Info', d.keySaved, 'check-circle', [{text: 'Oke', primary: true}]);
+    showDialog('Info', d.keySaved || "API Key berhasil disimpan.", 'check-circle', [{text: 'Oke', primary: true}]);
 };
 
 function syncWikiLangUI() {
@@ -698,9 +697,8 @@ function renderLibrary(filterText = "") {
         regularBooks.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
     }
 
-    // [MODIFIKASI] Panggil update stat pas library kelar render
-    updateStatistics();
-
+    updateStatistics(); // PANGGIL STATISTIK SETIAP LIBRARY SELESAI RENDER
+    
     if(window.lucide) window.lucide.createIcons();
     window.updateBatchSelectionUI();
 }
@@ -1215,7 +1213,7 @@ if(document.getElementById('btn-back')) {
     document.getElementById('btn-back').addEventListener('click', () => history.back());
 }
 
-// PANEL LOGIC: Kembali ke kode stabil (Anti-kedip) + Dynamic Scroll yg Aman
+// PANEL LOGIC: Anti-kedip + Dynamic Scroll yg Aman + Swipe aman
 window._closeSidePanelsAction = function(isFromHistory = false) { 
     if (!isFromHistory) { history.back(); return; }
     if(DOM.tocPanel) DOM.tocPanel.classList.add('translate-x-full', 'opacity-0'); 
@@ -1472,6 +1470,8 @@ window.saveBookmarkAnnotation = function() {
                 break;
             }
         }
+        
+        // [PERBAIKAN]: Bikin title chapter buat bookmark gak kepanjangan
         const chapterPreview = closestChapterName.length > 15 ? closestChapterName.substring(0, 15) + '...' : closestChapterName;
 
         const newAnnot = { 
@@ -1534,7 +1534,7 @@ window.deleteAnnotationById = async function(annotId) {
     }
 
     window.renderBookmarkPanel();
-    updateStatistics(); // [MODIFIKASI] Update stat setelah hapus
+    updateStatistics(); // [MODIFIKASI] Update stat setelah hapus bookmark
 };
 
 window.renderBookmarkPanel = function() {
@@ -1597,6 +1597,7 @@ window.renderBookmarkPanel = function() {
                 </div>
             `;
             
+            // POTONG TEKS BOOKMARK SAAT RENDER BIAR LAMA IKUT RAPIH
             let metaText = bm.meta || 'Chapter';
             if (metaText.length > 15) metaText = metaText.substring(0, 15) + '...';
 
@@ -1629,7 +1630,7 @@ window.renderBookmarkPanel = function() {
     }
 };
 
-// 12. SWIPE TO DISMISS LOGIC
+// 12. SWIPE TO DISMISS LOGIC (Aman Anti-Geser)
 function setupSwipeToDismiss() {
     const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
     sheets.forEach(sheetId => {
@@ -1718,4 +1719,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
 
