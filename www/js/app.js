@@ -21,6 +21,7 @@ let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 const DOM = {};
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Inisialisasi DOM Elements
     Object.assign(DOM, {
         libView: document.getElementById('library-view'), 
         readView: document.getElementById('reader-view'),
@@ -69,6 +70,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedKey && document.getElementById('gemini-api-key')) document.getElementById('gemini-api-key').value = savedKey;
     const savedModel = localStorage.getItem('gemini_model');
     if(savedModel && document.getElementById('gemini-model-select')) document.getElementById('gemini-model-select').value = savedModel;
+
+    // Update versi app di layar pengaturan
+    const verDisplay = document.getElementById('app-version-display');
+    if (verDisplay && window.APP_VERSION) verDisplay.textContent = `v${window.APP_VERSION}`;
 });
 
 // 2. SCROLL & NAVIGATION LISTENERS
@@ -219,6 +224,9 @@ function applyLanguage() {
     if(document.getElementById('gemini-api-key')) document.getElementById('gemini-api-key').placeholder = d.geminiPlaceholder;
     setElementText('gemini-desc', d.geminiDesc);
     
+    // Teks Cek Update
+    setElementText('str-btn-update', d.btnUpdate);
+
     setElementText('str-nav-back', d.navBack); setElementText('str-nav-toc', d.navToc);
     setElementText('str-nav-text', d.navText); setElementText('str-nav-full', d.navFull);
     setElementText('str-set-search', d.navSearch);
@@ -359,7 +367,76 @@ window.closeWelcome = function(isFromHistory = false) {
     localStorage.setItem('first_time_seen_v5', 'true');
 };
 
-// 6. BACKUP & RESTORE DATA
+// 6. LOGIKA CEK PEMBARUAN (GITHUB CHECKER)
+function compareVersions(v1, v2) {
+    const p1 = v1.split('.').map(Number);
+    const p2 = v2.split('.').map(Number);
+    for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+        const num1 = p1[i] || 0;
+        const num2 = p2[i] || 0;
+        if (num1 > num2) return 1; // v1 lebih gede
+        if (num1 < num2) return -1; // v2 lebih gede
+    }
+    return 0; // sama
+}
+
+window.checkForUpdate = async function() {
+    const icon = document.getElementById('icon-update-app');
+    const d = typeof i18n !== 'undefined' ? (i18n[wikiLang] || i18n['id']) : {};
+    
+    if(!window.UPDATE_URL) return;
+
+    // Puter icon
+    if(icon) icon.classList.add('animate-spin');
+    
+    try {
+        // Pake parameter ?t buat nembus cache GitHub Raw
+        const res = await fetch(window.UPDATE_URL + '?t=' + new Date().getTime());
+        if (!res.ok) throw new Error("Gagal terhubung ke GitHub");
+        
+        const data = await res.json();
+        const latestVersion = data.version;
+        const currentVersion = window.APP_VERSION;
+
+        if(icon) icon.classList.remove('animate-spin');
+
+        // Komparasi Semver
+        const isNewer = compareVersions(latestVersion, currentVersion) > 0;
+
+        if (isNewer) {
+            showDialog(
+                d.updateAvailableTitle || "Update Tersedia!",
+                (d.updateAvailableDesc || "Versi {v} udah rilis nih. Mau buka halaman download sekarang?").replace('{v}', latestVersion),
+                "arrow-up-circle",
+                [
+                    { text: d.cancel || "Batal", primary: false },
+                    { text: d.btnDownload || "Download", primary: true, action: () => {
+                        window.closeDialog();
+                        if(window.RELEASES_URL) window.open(window.RELEASES_URL, '_blank');
+                    }}
+                ]
+            );
+        } else {
+            showDialog(
+                d.updateLatestTitle || "Sudah Versi Terbaru",
+                d.updateLatestDesc || `Aplikasi lu udah pakai versi paling baru (v${currentVersion}).`,
+                "check-circle",
+                [{ text: "Oke", primary: true }]
+            );
+        }
+    } catch (err) {
+        console.error("Cek update gagal:", err);
+        if(icon) icon.classList.remove('animate-spin');
+        showDialog(
+            "Error",
+            d.updateError || "Gagal ngecek update. Pastiin internet lu nyala.",
+            "wifi-off",
+            [{ text: "Tutup", primary: true }]
+        );
+    }
+};
+
+// 7. BACKUP & RESTORE DATA
 window.exportData = async function() {
     try {
         const data = await localforage.getItem('pdf_epub_master');
@@ -500,7 +577,7 @@ function executeRestoreLogic(jsonString) {
     }
 }
 
-// 7. LIBRARY & BOOK MANAGEMENT
+// 8. LIBRARY & BOOK MANAGEMENT
 async function loadLibrary() { 
     try { 
         library = await localforage.getItem('pdf_epub_master') || []; 
@@ -848,7 +925,7 @@ window.saveBookEdit = async function() {
     }
 }
 
-// 8. TEMA & TIPOGRAFI
+// 9. TEMA & TIPOGRAFI
 function applyThemeToDOM() {
     document.documentElement.classList.toggle('dark', isDark);
     
@@ -974,7 +1051,7 @@ function syncTypoUI() {
 window.changeTypo = function(type, value) { typoPrefs[type] = value; applyTypo(); }
 
 
-// 9. READER INTERACTIONS
+// 10. READER INTERACTIONS
 window.openBook = function(book) {
     activeBookId = book.id; pushAppHistory(`reader-${book.id}`);
     DOM.libView.style.transform = 'scale(0.95)'; DOM.readView.classList.remove('translate-y-full');
@@ -1026,7 +1103,6 @@ window.openBook = function(book) {
         loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
         setTimeout(() => {
-            // FIX SCROLL: Waktu buka buku, hitung posisi absolut biar pas di tengah layer
             if (book.lastReadId) { 
                 const target = document.getElementById(book.lastReadId); 
                 const container = DOM.readContent;
@@ -1124,7 +1200,6 @@ window.setupIntersectionObserver = function() {
             }
             updateBookProgress(activeBookId, id, pct);
         }
-    // FIX OBSERVER TEPAT DI TENGAH: Presisi baca murni di titik sentral layar.
     }, { root: DOM.readContent, rootMargin: '-45% 0px -45% 0px', threshold: 0 }); 
     Array.from(DOM.inner.children).forEach(el => observer.observe(el));
 }
@@ -1139,9 +1214,8 @@ async function updateBookProgress(bookId, lastNodeId, pct) {
     }
 }
 
-// 10. ANNOTATIONS & IN-BOOK BOOKMARK LOGIC
+// 11. ANNOTATIONS & IN-BOOK BOOKMARK LOGIC
 
-// FIX AKURASI DOM OFFSETS: Rekam karakter murni tanpa kehalang Tag HTML atau kata yang sama persis
 function getAbsoluteOffsets(element) {
     const sel = window.getSelection();
     if (sel.rangeCount === 0) return { start: 0, end: 0 };
@@ -1170,7 +1244,6 @@ window.renderNodeText = function(text, annots) {
     let html = text;
     
     if (annots && annots.length > 0) {
-        // Render dari index tertinggi ke terendah biar ga nabrak offset
         let validAnnots = [...annots].filter(a => typeof a.startOff !== 'undefined').sort((a,b) => b.startOff - a.startOff);
         
         validAnnots.forEach(a => {
@@ -1182,7 +1255,6 @@ window.renderNodeText = function(text, annots) {
             html = before + `|||ST_${a.id}|||` + middle + `|||EN_${a.id}|||` + after;
         });
 
-        // Buat backup data lu yg lama (sebelum pake sistem Offset)
         let legacyAnnots = [...annots].filter(a => typeof a.startOff === 'undefined').sort((a,b) => b.text.length - a.text.length);
         legacyAnnots.forEach(a => {
             const esc = a.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1371,7 +1443,6 @@ window.deleteAnnotationById = async function(annotId) {
     window.renderBookmarkPanel();
 };
 
-// FIX UI BOOKMARK PANEL (Card-in-Card Elegan) & SCROLL AKURAT
 window.renderBookmarkPanel = function() {
     if(!DOM.bookmarkList || !DOM.bookmarkPanel || !activeBookId) return;
     const book = library.find(b => b.id === activeBookId);
@@ -1391,7 +1462,6 @@ window.renderBookmarkPanel = function() {
             const btn = document.createElement('div');
             btn.className = "group relative flex flex-col p-4 mb-3 rounded-3xl bg-m3-surface shadow-sm overflow-hidden text-left transition-all hover:shadow-md cursor-pointer";
             
-            // FIX NAVIGASI: Matematika Absolut buat scroll presisi murni ke tengah layar
             btn.onclick = () => {
                 const markTarget = document.querySelector(`mark[data-id="${bm.id}"]`);
                 const paragraphTarget = document.getElementById(`node-${bm.nodeIdx}`);
@@ -1407,10 +1477,9 @@ window.renderBookmarkPanel = function() {
                         container.scrollTo({ top: offset, behavior: 'smooth' });
                     }
                 }
-                history.back(); // Auto tutup panel
+                history.back(); 
             };
             
-            // Logika Warna Label & Background Kutipan (Tanpa Garis Pinggir)
             let iconColorCls = "text-yellow-600 bg-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-400/20";
             let quoteBgCls = "bg-yellow-500/10 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-100";
             
@@ -1423,13 +1492,11 @@ window.renderBookmarkPanel = function() {
                 quoteBgCls = "bg-pink-500/10 text-pink-800 dark:bg-pink-400/10 dark:text-pink-100";
             }
 
-            // Kotak Catatan (Warna Surface Variant)
             let noteHtml = bm.note ? `
                 <div class="mt-3 p-3 rounded-2xl bg-m3-surfaceVariant text-m3-onSurfaceVariant font-bold text-xs leading-relaxed">
                     ${bm.note}
                 </div>` : '';
             
-            // Kotak Kutipan (Warna ngikutin stabilo, di-limit 2 baris, TANPA border kiri)
             let quoteHtml = `
                 <div class="mt-2 p-3 rounded-2xl ${quoteBgCls}">
                     <span class="text-[11px] font-medium opacity-90 italic line-clamp-2 leading-relaxed">"${bm.text}"</span>
@@ -1450,7 +1517,6 @@ window.renderBookmarkPanel = function() {
                 ${quoteHtml}
             `;
 
-            // Tombol Delete 
             const delBtn = document.createElement('button');
             delBtn.className = "absolute top-4 right-4 w-7 h-7 rounded-full text-red-500/40 hover:text-red-500 hover:bg-red-500/10 transition-all flex items-center justify-center";
             delBtn.innerHTML = `<i data-lucide="trash-2" class="w-4 h-4"></i>`;
@@ -1466,7 +1532,7 @@ window.renderBookmarkPanel = function() {
     }
 };
 
-// 11. SWIPE TO DISMISS MODAL SETTINGS
+// 12. SWIPE TO DISMISS MODAL SETTINGS
 document.addEventListener("DOMContentLoaded", () => {
     const settingsSheet = document.getElementById('global-settings-sheet');
     if(settingsSheet) {
@@ -1516,7 +1582,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 12. PWA & CAPACITOR SETUP
+// 13. PWA & CAPACITOR SETUP
 if ('serviceWorker' in navigator) {
     const swCode = `
     const CACHE_NAME = 'baca-pwa-v5';
@@ -1544,5 +1610,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
-
 
