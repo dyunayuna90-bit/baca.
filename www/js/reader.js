@@ -30,366 +30,265 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error(err); 
             } 
             finally { 
-                setTimeout(() => { 
-                    DOM.load.classList.add('hidden'); 
-                    fileInput.value = ''; 
-                }, 500); 
+                setTimeout(() => { DOM.load.classList.add('hidden'); }, 1000); 
+                e.target.value = ''; 
             }
         });
     }
 
     // Listener Pencarian dalam Buku
-    const searchInput = document.getElementById('inbook-search-input');
-    if(searchInput) {
-        searchInput.addEventListener('input', (e) => {
+    if(DOM.searchInput) {
+        DOM.searchInput.addEventListener('input', (e) => {
             clearTimeout(inbookSearchTimeout);
-            inbookSearchTimeout = setTimeout(() => window.executeSearch(), 300);
+            const val = e.target.value.trim().toLowerCase();
+            if (!val || val.length < 2) { 
+                DOM.searchRes.classList.add('hidden'); 
+                clearSearchHighlights();
+                return; 
+            }
+            
+            inbookSearchTimeout = setTimeout(() => {
+                const book = library.find(b => b.id === activeBookId);
+                if (!book) return;
+                
+                const results = [];
+                const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                
+                book.nodes.forEach((node, i) => {
+                    if (node.tag !== 'img' && node.text.toLowerCase().includes(val)) {
+                        let snippet = node.text;
+                        const matchIdx = snippet.toLowerCase().indexOf(val);
+                        let start = Math.max(0, matchIdx - 40);
+                        let end = Math.min(snippet.length, matchIdx + val.length + 40);
+                        let preview = snippet.substring(start, end);
+                        if(start > 0) preview = "..." + preview;
+                        if(end < snippet.length) preview = preview + "...";
+                        
+                        preview = preview.replace(regex, '<mark class="bg-m3-primary text-m3-onPrimary rounded px-0.5">$1</mark>');
+                        
+                        let contextStr = "Chapter / Section";
+                        for(let j=i; j>=0; j--){
+                            if(book.nodes[j].tag === 'h1' || book.nodes[j].tag === 'h2') {
+                                contextStr = book.nodes[j].text.length > 25 ? book.nodes[j].text.substring(0,25)+'...' : book.nodes[j].text;
+                                break;
+                            }
+                        }
+                        
+                        results.push({ nodeIdx: i, preview: preview, context: contextStr });
+                    }
+                });
+
+                renderSearchResults(results, val);
+            }, 600);
         });
     }
 });
 
-// 2. ENGINE PENCARIAN DALAM BUKU (IN-BOOK SEARCH)
-window.executeSearch = function() {
-    const query = DOM.searchInput.value.toLowerCase().trim(); 
+function clearSearchHighlights() {
+    if(!DOM.inner) return;
+    const marks = DOM.inner.querySelectorAll('mark.search-hl');
+    marks.forEach(m => {
+        const parent = m.parentNode;
+        parent.replaceChild(document.createTextNode(m.textContent), m);
+        parent.normalize();
+    });
+}
+
+function renderSearchResults(results, keyword) {
+    if(!DOM.searchRes) return;
     DOM.searchRes.innerHTML = '';
     const d = i18n[wikiLang] || i18n['id'];
     
-    if(!query) { 
-        DOM.searchRes.classList.add('hidden');
-        return; 
-    }
-    
-    document.querySelectorAll('mark.search-hl').forEach(m => m.outerHTML = m.innerHTML);
-
-    const book = library.find(b => b.id === activeBookId); let results = [];
-    book.nodes.forEach((node, idx) => {
-        if(node.tag === 'img') return; 
-        if(node.text.toLowerCase().includes(query)) {
-            let snippet = node.text;
-            if(snippet.length > 60) {
-                const matchIdx = snippet.toLowerCase().indexOf(query); const start = Math.max(0, matchIdx - 20);
-                snippet = "..." + snippet.substring(start, start + 60) + "...";
-            }
-            results.push({ id: `node-${idx}`, text: snippet, isTitle: node.tag === 'h1' || node.tag === 'h2' });
-        }
-    });
-    
     if(results.length === 0) {
-        DOM.searchRes.innerHTML = `<p class="p-3 text-center opacity-60 text-xs">${d.searchNotFound}</p>`;
-    } else {
-        results.forEach(res => {
-            const btn = document.createElement('button');
-            btn.className = `w-full text-left p-3 hover:bg-m3-onSurfaceVariant/10 rounded-xl transition-colors ${res.isTitle ? 'font-bold text-m3-primary' : ''}`;
-            const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const regexUI = new RegExp(`(${escapedQuery})`, 'gi');
-            btn.innerHTML = res.text.replace(regexUI, `<mark class="bg-m3-primary/20 text-m3-primary rounded px-1 font-bold">$1</mark>`);
-            
-            btn.onclick = () => {
-                const target = document.getElementById(res.id);
-                if(target) {
-                    const nodeIdx = parseInt(res.id.split('-')[1]); const activeBook = library.find(b => b.id === activeBookId);
-                    const nodeText = activeBook.nodes[nodeIdx].text; const currentAnnots = (activeBook.annotations || []).filter(a => a.nodeIdx === nodeIdx);
-                    
-                    let hlText = nodeText.replace(regexUI, `|||SRCMARK|||$1|||ENDSRCMARK|||`);
-                    let hlHtml = renderNodeText(hlText, currentAnnots);
-                    hlHtml = hlHtml.replace(/\|\|\|SRCMARK\|\|\|/g, '<mark class="search-hl">').replace(/\|\|\|ENDSRCMARK\|\|\|/g, '</mark>');
-                    
-                    target.innerHTML = hlHtml;
-                    const markEl = target.querySelector('mark.search-hl');
-                    if(markEl) markEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); else target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    setTimeout(() => { 
-                        target.querySelectorAll('mark.search-hl').forEach(m => { m.style.backgroundColor = 'transparent'; m.style.color = 'inherit'; m.style.boxShadow = 'none'; }); 
-                        setTimeout(() => { target.innerHTML = renderNodeText(nodeText, currentAnnots); }, 1500); 
-                    }, 2000);
-                }
-                history.back();
-            };
-            DOM.searchRes.appendChild(btn);
-        });
+        DOM.searchRes.innerHTML = `<div class="p-6 text-center text-sm opacity-60 font-medium">${d.searchNotFound}</div>`;
+        DOM.searchRes.classList.remove('hidden');
+        return;
     }
+    
+    const countHeader = document.createElement('div');
+    countHeader.className = "px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-m3-primary/80 border-b border-m3-surfaceVariant";
+    countHeader.textContent = `${results.length} Found`;
+    DOM.searchRes.appendChild(countHeader);
+
+    results.forEach(res => {
+        const item = document.createElement('div');
+        item.className = "p-4 border-b border-m3-surfaceVariant hover:bg-m3-surface transition-colors cursor-pointer";
+        item.innerHTML = `
+            <div class="text-[10px] font-bold text-m3-primary mb-1 uppercase tracking-widest">${res.context}</div>
+            <div class="text-sm text-m3-onSurface leading-relaxed line-clamp-3">${res.preview}</div>
+        `;
+        
+        item.onclick = () => {
+            const book = library.find(b => b.id === activeBookId);
+            if(!book) return;
+            
+            DOM.searchRes.classList.add('hidden');
+            const targetEl = document.getElementById(`node-${res.nodeIdx}`);
+            const container = DOM.readContent;
+            
+            if(targetEl && container) {
+                clearSearchHighlights();
+                
+                const originalHtml = targetEl.innerHTML;
+                const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                
+                const walker = document.createTreeWalker(targetEl, NodeFilter.SHOW_TEXT, null, false);
+                const textNodes = [];
+                let n;
+                while(n = walker.nextNode()) textNodes.push(n);
+                
+                textNodes.forEach(node => {
+                    const text = node.nodeValue;
+                    if(regex.test(text)) {
+                        const span = document.createElement('span');
+                        span.innerHTML = text.replace(regex, '<mark class="search-hl transition-colors duration-1000">$1</mark>');
+                        node.parentNode.replaceChild(span, node);
+                    }
+                });
+
+                const cRect = container.getBoundingClientRect();
+                const tRect = targetEl.getBoundingClientRect();
+                const offset = tRect.top - cRect.top + container.scrollTop - (cRect.height / 2) + (tRect.height / 2);
+                
+                container.scrollTo({ top: offset, behavior: 'smooth' });
+                
+                setTimeout(() => {
+                    const marks = targetEl.querySelectorAll('mark.search-hl');
+                    marks.forEach(m => {
+                        m.style.backgroundColor = 'transparent';
+                        m.style.color = 'inherit';
+                    });
+                    setTimeout(() => clearSearchHighlights(), 1500);
+                }, 2000);
+            }
+        };
+        
+        DOM.searchRes.appendChild(item);
+    });
     DOM.searchRes.classList.remove('hidden');
 }
 
-// 3. ENGINE AI & DICTIONARY (Kamus Pintar)
-window.lookupDictionary = async function() {
-    if(currentSelection.nodeIdx === -1) return; 
-    const term = currentSelection.text; 
-    hideSelectionMenu(); // Fungsi ini ada di app.js nanti
-    
-    const d = i18n[wikiLang] || i18n['id'];
-    
-    document.getElementById('ai-term').textContent = term;
-    document.getElementById('ai-loading').classList.remove('hidden'); 
-    document.getElementById('ai-content').innerHTML = '';
-    
-    pushAppHistory(`ai-modal`);
-    const m = document.getElementById('ai-modal'); 
-    const s = document.getElementById('ai-sheet');
-    m.classList.remove('hidden'); 
-    requestAnimationFrame(() => { m.classList.remove('opacity-0'); s.classList.remove('translate-y-full', 'scale-75'); });
-    
-    try {
-        const q = encodeURIComponent(term); let wikiHtml = ''; let dictHtml = ''; let geminiHtml = '';
-        const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        const apiKey = localStorage.getItem('gemini_api_key') || '';
-        const model = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
-        const prompt = wikiLang === 'id' 
-                     ? `Jelaskan secara singkat dan jelas mengenai konsep atau definisi "${term}". Maksimal 3 kalimat berfokus pada inti makna.`
-                     : `Explain briefly and clearly the concept or definition of "${term}". Max 3 sentences focusing on the core meaning.`;
-
-        const geminiPromise = apiKey ? fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: { maxOutputTokens: 250, temperature: 0.3 }
-            }),
-            signal: controller.signal
-        }) : Promise.resolve(null);
-
-        const [resWiki, resSearch, resDict, resWiktionary, resGemini] = await Promise.allSettled([
-            fetch(`https://${wikiLang}.wikipedia.org/api/rest_v1/page/summary/${q}`, { signal: controller.signal }),
-            fetch(`https://${wikiLang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${q}&utf8=&format=json&origin=*`, { signal: controller.signal }),
-            fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${q}`, { signal: controller.signal }),
-            fetch(`https://${wikiLang}.wiktionary.org/api/rest_v1/page/definition/${q}`, { signal: controller.signal }),
-            geminiPromise
-        ]);
-        clearTimeout(timeoutId);
-
-        if (resGemini && resGemini.status === 'fulfilled' && resGemini.value && resGemini.value.ok) {
-            try {
-                const dataGemini = await resGemini.value.json();
-                if (dataGemini.candidates && dataGemini.candidates.length > 0) {
-                    const aiText = dataGemini.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-                    const shortModel = model.replace('gemini-', '');
-                    geminiHtml = `<div class="mb-4 p-4 bg-m3-primaryContainer text-m3-onPrimaryContainer rounded-2xl shadow-sm"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5"><span class="font-bold text-xs uppercase tracking-wider text-m3-primary">Gemini AI</span></div><span class="text-[9px] font-bold opacity-70 px-2 py-0.5 bg-black/10 dark:bg-white/10 rounded-full">${shortModel}</span></div><p class="text-sm font-medium leading-relaxed">${aiText}</p></div>`;
-                }
-            } catch(e) {}
-        }
-
-        if (resWiki.status === 'fulfilled' && resWiki.value.ok) {
-            const data = await resWiki.value.json();
-            wikiHtml = `<p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Wikipedia (${wikiLang.toUpperCase()})</p><p class="mb-4 text-sm">${data.extract}</p>`;
-        } else if (resSearch.status === 'fulfilled' && resSearch.value.ok) {
-            const dataSearch = await resSearch.value.json();
-            if(dataSearch.query && dataSearch.query.search.length > 0) {
-                const topHit = dataSearch.query.search[0];
-                wikiHtml = `<p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Wikipedia: ${topHit.title}</p><p class="mb-4 text-sm">${topHit.snippet}...</p>`;
-            }
-        }
-
-        if (resDict.status === 'fulfilled' && resDict.value.ok) {
-            try {
-                const dataDict = await resDict.value.json();
-                if (dataDict && dataDict.length > 0) {
-                    const meanings = dataDict[0].meanings;
-                    let meaningsHtml = meanings.slice(0, 2).map(m => {
-                        const defs = m.definitions.slice(0, 2).map(def => `<li class="mb-1">${def.definition}</li>`).join('');
-                        return `<div class="mb-2"><span class="italic text-xs font-bold text-m3-primary">${m.partOfSpeech}</span><ul class="list-disc pl-4 mt-1 text-sm">${defs}</ul></div>`;
-                    }).join('');
-                    dictHtml += `<div class="mt-4 pt-4"><p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Dictionary (EN)</p>${meaningsHtml}</div>`;
-                }
-            } catch(e) {}
-        }
-
-        if (resWiktionary.status === 'fulfilled' && resWiktionary.value.ok) {
-            try {
-                const dataWikt = await resWiktionary.value.json(); let wiktMeanings = '';
-                Object.keys(dataWikt).forEach(langCode => {
-                    const entries = dataWikt[langCode];
-                    entries.slice(0, 2).forEach(entry => {
-                        if(entry.definitions && entry.definitions.length > 0) {
-                            const defs = entry.definitions.slice(0, 2).map(def => { let text = def.definition.replace(/<[^>]*>?/gm, ''); return `<li class="mb-1">${text}</li>`; }).join('');
-                            wiktMeanings += `<div class="mb-2"><span class="italic text-xs font-bold text-m3-primary">${entry.partOfSpeech || 'Word'}</span><ul class="list-disc pl-4 mt-1 text-sm">${defs}</ul></div>`;
-                        }
-                    });
-                });
-                if(wiktMeanings) { dictHtml += `<div class="mt-4 pt-4"><p class="mb-2 text-xs text-m3-onSurfaceVariant/60 font-bold uppercase tracking-wider block">Wiktionary (${wikiLang.toUpperCase()})</p>${wiktMeanings}</div>`; }
-            } catch(e) {}
-        }
-
-        const extLinks = `
-            <div class="mt-4 pt-4 flex gap-2 flex-wrap items-center">
-                <span class="text-xs font-bold opacity-50 uppercase tracking-wider w-full mb-1">External Search:</span>
-                <a href="https://${wikiLang}.wikipedia.org/wiki/Special:Search?search=${q}" target="_blank" class="text-m3-primary/90 hover:text-m3-primary font-bold inline-flex items-center gap-1 text-xs bg-m3-primary/10 hover:bg-m3-primary/20 transition-all px-3 py-1.5 rounded-full">Wiki <i data-lucide="external-link" class="w-3 h-3"></i></a>
-                <a href="https://kbbi.web.id/${q}" target="_blank" class="text-m3-primary/90 hover:text-m3-primary font-bold inline-flex items-center gap-1 text-xs bg-m3-primary/10 hover:bg-m3-primary/20 transition-all px-3 py-1.5 rounded-full">KBBI <i data-lucide="external-link" class="w-3 h-3"></i></a>
-            </div>
-        `;
-
-        if(!wikiHtml && !dictHtml && !geminiHtml) {
-            document.getElementById('ai-content').innerHTML = `
-                <div class="flex flex-col items-center justify-center p-4 opacity-50 mb-2">
-                    <i data-lucide="ghost" class="w-10 h-10 mb-3"></i>
-                    <p class="text-center font-medium">${d.searchNotFound}</p>
-                </div>
-                ${extLinks}
-            `;
-        } else {
-            document.getElementById('ai-content').innerHTML = geminiHtml + wikiHtml + dictHtml + extLinks;
-        }
-        if(window.lucide) window.lucide.createIcons();
-    } catch(e) {
-        document.getElementById('ai-content').innerHTML = `<p class="text-red-500 font-bold">${d.noInternet}</p>`;
-    } finally {
-        window.getSelection().removeAllRanges(); 
-        document.getElementById('ai-loading').classList.add('hidden');
-    }
-};
-
-window.closeAiModal = function(isFromHistory = false) {
-    if (!isFromHistory) { history.back(); return; }
-    const m = document.getElementById('ai-modal'); 
-    const s = document.getElementById('ai-sheet');
-    s.classList.add('translate-y-full', 'scale-75'); 
-    m.classList.add('opacity-0'); 
-    setTimeout(() => m.classList.add('hidden'), 300);
-};
-
-// 4. ENGINE PDF PARSER
+// 2. FUNGSI EKSTRAK PDF
 async function handlePdf(file, bookTitle) {
-    const d = i18n[wikiLang] || i18n['id'];
-    DOM.loadTxt.textContent = "Opening PDF...";
     const arrayBuffer = await file.arrayBuffer(); 
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise; 
-    const numPages = pdf.numPages;
-    
-    if(numPages === 0) throw new Error("Document is empty.");
-    
-    let allItems = []; let coverBase64 = null;
-    
-    try {
-        DOM.loadTxt.textContent = d.extractingCover;
-        const page1 = await pdf.getPage(1); 
-        const viewport = page1.getViewport({ scale: 0.8 });
-        const canvas = document.createElement('canvas'); 
-        const ctx = canvas.getContext('2d');
-        canvas.height = viewport.height; canvas.width = viewport.width;
-        await page1.render({ canvasContext: ctx, viewport: viewport }).promise; 
-        coverBase64 = canvas.toDataURL('image/jpeg', 0.6);
-    } catch(e) {}
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let parsedNodes = []; 
+    const total = pdf.numPages;
 
-    for (let i = 1; i <= numPages; i++) {
-        const pct = Math.round((i / numPages) * 100);
-        if(i % 5 === 0 || i === numPages) await new Promise(r => setTimeout(r, 0));
-        
-        DOM.loadBar.style.width = `${pct}%`; 
-        DOM.loadPct.textContent = `${pct}%`; 
-        DOM.loadTxt.textContent = `${d.readingPage} ${i}`;
+    const coverCanvas = document.createElement('canvas'); const coverCtx = coverCanvas.getContext('2d');
+    const firstPage = await pdf.getPage(1); const viewport = firstPage.getViewport({ scale: 0.5 });
+    coverCanvas.width = viewport.width; coverCanvas.height = viewport.height;
+    await firstPage.render({ canvasContext: coverCtx, viewport: viewport }).promise;
+    const coverBase64 = coverCanvas.toDataURL('image/jpeg', 0.8);
+
+    for (let i = 1; i <= total; i++) {
+        DOM.loadBar.style.width = `${Math.round((i / total) * 100)}%`; 
+        DOM.loadPct.textContent = `${Math.round((i / total) * 100)}%`;
 
         const page = await pdf.getPage(i); 
-        const viewport = page.getViewport({ scale: 1.0 }); 
-        const pageHeight = viewport.height;
         const textContent = await page.getTextContent();
-        
+        let currentBlock = ""; 
+        let lastY = -1; 
+        let isTitle = false;
+
         textContent.items.forEach(item => {
-            const str = item.str.trim(); if (str === '') return;
-            const yPos = item.transform[5];
-            if (yPos < pageHeight * 0.10 || yPos > pageHeight * 0.90) return;
-            if (/^\d+$/.test(str) || str.toLowerCase() === bookTitle.toLowerCase()) return;
-            allItems.push({ text: item.str, height: item.transform[0], y: yPos });
+            const y = Math.round(item.transform[5]); 
+            const height = item.height;
+            if (lastY !== -1 && Math.abs(y - lastY) > height * 1.5) {
+                if (currentBlock.trim().length > 1) { // CEGAH HURUF TUNGGAL JADI PARAGRAF
+                    let cleanText = currentBlock.trim().replace(/\s+/g, ' ');
+                    parsedNodes.push({ tag: isTitle ? 'h2' : 'p', text: cleanText });
+                }
+                currentBlock = ""; 
+                isTitle = false;
+            }
+            if (height > 18) isTitle = true;
+            currentBlock += item.str + " "; 
+            lastY = y;
         });
+
+        if (currentBlock.trim().length > 1) { 
+            let cleanText = currentBlock.trim().replace(/\s+/g, ' ');
+            parsedNodes.push({ tag: isTitle ? 'h2' : 'p', text: cleanText }); 
+        }
     }
     
-    DOM.loadTxt.textContent = d.formattingText; 
-    await new Promise(r => setTimeout(r, 50));
-    if(allItems.length === 0) throw new Error("This PDF only contains images.");
-
-    const avgHeight = allItems.reduce((acc, i) => acc + i.height, 0) / allItems.length;
-    let parsedNodes = [], currentPar = "", lastY = -1;
-
-    allItems.forEach(item => {
-        if (lastY !== -1 && Math.abs(item.y - lastY) > avgHeight * 1.5) {
-            if (currentPar.trim() !== "") { 
-                const lastChar = currentPar.trim().slice(-1);
-                if (['.', '?', '!', '"', '”', '’', ':'].includes(lastChar)) { 
-                    parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; 
-                } else { 
-                    currentPar += " "; 
-                }
-            }
-        }
-        if (item.height > avgHeight * 1.4) {
-            if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
-            parsedNodes.push({ tag: 'h1', text: item.text.trim() });
-        } else if (item.height > avgHeight * 1.15) {
-            if (currentPar.trim() !== "") { parsedNodes.push({ tag: 'p', text: currentPar.trim() }); currentPar = ""; }
-            parsedNodes.push({ tag: 'h2', text: item.text.trim() });
-        } else { 
-            currentPar += item.text + " "; 
-        }
-        lastY = item.y;
-    });
-    
-    if (currentPar.trim() !== "") parsedNodes.push({ tag: 'p', text: currentPar.trim() });
-
-    let cleanedNodes = [];
-    parsedNodes.forEach(curr => {
-        if (cleanedNodes.length > 0) {
-            let prev = cleanedNodes[cleanedNodes.length-1];
-            if (curr.tag === prev.tag && (curr.tag === 'h1' || curr.tag === 'h2')) { 
-                prev.text += " " + curr.text; return; 
-            }
-        }
-        cleanedNodes.push(curr);
-    });
-    
-    library.push({ id: Date.now().toString(), type: 'pdf', title: bookTitle, nodes: cleanedNodes, pages: numPages, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'square' });
+    library.push({ id: Date.now().toString(), type: 'pdf', title: bookTitle, nodes: parsedNodes, pages: total, progressPct: 0, lastReadId: null, coverBase64: coverBase64, shape: 'square' });
     await localforage.setItem('pdf_epub_master', library); 
     renderLibrary();
 }
 
-// 5. ENGINE EPUB PARSER (XML & JSZip)
+// 3. FUNGSI EKSTRAK EPUB
 async function handleEpub(file, bookTitle) {
-    const d = i18n[wikiLang] || i18n['id'];
-    DOM.loadTxt.textContent = d.extractingEpub; 
-    DOM.loadBar.style.width = '10%'; 
-    DOM.loadPct.textContent = '10%';
-    
-    const zip = await JSZip.loadAsync(file);
-    const containerData = await zip.file("META-INF/container.xml").async("string");
-    const containerDom = new DOMParser().parseFromString(containerData, "text/xml");
-    const rootfile = containerDom.querySelector("rootfile"); 
-    if (!rootfile) throw new Error("Invalid or corrupted EPUB file.");
-    
-    const opfPath = rootfile.getAttribute("full-path"); 
-    const basePath = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+    const zip = await JSZip.loadAsync(file); 
+    let parsedNodes = []; 
+    let coverBase64 = null;
 
-    DOM.loadTxt.textContent = d.analyzingStruct;
-    const opfData = await zip.file(opfPath).async("string"); 
-    const opfDom = new DOMParser().parseFromString(opfData, "text/xml");
-    const manifest = {}; 
-    opfDom.querySelectorAll("manifest > item").forEach(item => { manifest[item.getAttribute("id")] = item.getAttribute("href"); });
-    const spine = []; 
-    opfDom.querySelectorAll("spine > itemref").forEach(ref => { spine.push(manifest[ref.getAttribute("idref")]); });
+    const containerXml = await zip.file("META-INF/container.xml").async("text");
+    const opfPath = (new DOMParser()).parseFromString(containerXml, "text/xml").getElementsByTagName("rootfile")[0].getAttribute("full-path");
+    const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : "";
+    const opfXml = await zip.file(opfPath).async("text");
+    const opfDoc = (new DOMParser()).parseFromString(opfXml, "text/xml");
 
-    let coverBase64 = null; 
-    const coverMeta = opfDom.querySelector("meta[name='cover']");
-    if (coverMeta && manifest[coverMeta.getAttribute("content")]) {
-        const coverPath = basePath + manifest[coverMeta.getAttribute("content")]; 
-        const coverFile = zip.file(coverPath);
-        if (coverFile) { 
-            const base64Str = await coverFile.async("base64"); 
-            coverBase64 = "data:image/jpeg;base64," + base64Str; 
+    const titleEl = opfDoc.getElementsByTagName("dc:title")[0]; 
+    if (titleEl && titleEl.textContent) bookTitle = titleEl.textContent;
+
+    const manifest = {};
+    Array.from(opfDoc.getElementsByTagName("item")).forEach(item => { 
+        manifest[item.getAttribute("id")] = { href: item.getAttribute("href"), mediaType: item.getAttribute("media-type") }; 
+    });
+
+    const metaCover = opfDoc.querySelector("meta[name='cover']");
+    if (metaCover) {
+        const coverId = metaCover.getAttribute("content");
+        if (manifest[coverId]) {
+            let coverPath = opfDir + manifest[coverId].href;
+            const coverFile = zip.file(coverPath);
+            if (coverFile) {
+                const b64 = await coverFile.async("base64");
+                coverBase64 = "data:" + manifest[coverId].mediaType + ";base64," + b64;
+            }
         }
     }
 
-    let parsedNodes = [];
-    for (let i = 0; i < spine.length; i++) {
-        const pct = Math.round(((i+1) / spine.length) * 80) + 20;
-        DOM.loadBar.style.width = `${pct}%`; 
-        DOM.loadPct.textContent = `${pct}%`; 
-        DOM.loadTxt.textContent = `${d.extractingChapter} ${i+1}/${spine.length}`;
-        await new Promise(r => setTimeout(r, 0));
+    if (!coverBase64) {
+        const potentialCover = Object.values(manifest).find(m => m.href.toLowerCase().includes('cover') && m.mediaType.startsWith('image/'));
+        if (potentialCover) {
+            let coverPath = opfDir + potentialCover.href;
+            const coverFile = zip.file(coverPath);
+            if (coverFile) {
+                const b64 = await coverFile.async("base64");
+                coverBase64 = "data:" + potentialCover.mediaType + ";base64," + b64;
+            }
+        }
+    }
 
-        const htmlPath = basePath + spine[i]; 
-        const htmlFile = zip.file(htmlPath); if(!htmlFile) continue;
-        const htmlString = await htmlFile.async("string"); 
-        const doc = new DOMParser().parseFromString(htmlString, "text/html");
-        const elements = doc.body.querySelectorAll('h1, h2, h3, p, img');
+    const spine = Array.from(opfDoc.getElementsByTagName("itemref")).map(item => item.getAttribute("idref"));
+    let order = 0;
+
+    for (const idref of spine) {
+        order++;
+        DOM.loadBar.style.width = `${Math.round((order / spine.length) * 100)}%`;
+        DOM.loadPct.textContent = `${Math.round((order / spine.length) * 100)}%`;
+
+        if (!manifest[idref]) continue;
+        const htmlPath = opfDir + manifest[idref].href; 
+        const htmlFile = zip.file(htmlPath);
+        if (!htmlFile) continue;
+
+        const htmlStr = await htmlFile.async("text");
+        const doc = (new DOMParser()).parseFromString(htmlStr, "text/html");
         
-        for (const el of elements) {
+        // PEMBERSIHAN NODE (Menghapus elemen yg gak penting biar parser fokus)
+        doc.querySelectorAll('script, style, nav, footer, iframe').forEach(el => el.remove());
+
+        const body = doc.body;
+        const walker = document.createTreeWalker(body, NodeFilter.SHOW_ELEMENT, null, false);
+        let el;
+
+        while ((el = walker.nextNode())) {
             const tag = el.tagName.toLowerCase();
+            
             if (tag === 'img' || tag === 'image') {
                 let src = el.getAttribute('src') || el.getAttribute('href');
                 if (src && !src.startsWith('http')) {
@@ -400,13 +299,40 @@ async function handleEpub(file, bookTitle) {
                         parsedNodes.push({ tag: 'img', src: "data:image/jpeg;base64," + b64 }); 
                     }
                 }
-            } else {
-                const text = el.textContent.trim();
-                if (text) { 
-                    let cleanTag = tag; 
-                    if (tag === 'h3') cleanTag = 'h2'; 
-                    parsedNodes.push({ tag: cleanTag, text: text }); 
+            } 
+            else if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'blockquote'].includes(tag)) {
+                // LOGIKA PENCUCIAN OTAK (Pembersihan Teks)
+                let text = el.textContent.trim();
+                
+                // 1. Abaikan Teks Kosong atau Cuma 1 Karakter (Mencegah Drop Cap aneh)
+                if (!text || text.length <= 1) continue;
+                
+                // 2. Berantas Spasi Jarak Jauh (contoh: "B a B : 1")
+                // Kalo jumlah spasi hampir sama dengan jumlah huruf, satukan.
+                const spaceCount = (text.match(/ /g) || []).length;
+                if(spaceCount > text.length / 2) {
+                    text = text.replace(/ /g, '');
+                } else {
+                    text = text.replace(/\s+/g, ' '); // Standar rapihin spasi
                 }
+
+                // 3. Tentukan Tag Akhir Berdasarkan Kualitas Teks
+                let finalTag = 'p'; 
+                
+                if (['h1', 'h2', 'h3'].includes(tag)) {
+                    // Kalo heading kepanjangan (> 120 huruf), itu pasti paragraf nyasar.
+                    // Kalo kependekan (< 3 huruf), itu sampah.
+                    if (text.length > 3 && text.length < 120) {
+                        finalTag = (tag === 'h1') ? 'h1' : 'h2'; 
+                    }
+                }
+
+                parsedNodes.push({ tag: finalTag, text: text });
+                
+                // Loncat ke node selanjutnya tanpa masuk ke child dari elemen ini
+                // biar teks gak keambil 2x (misal: <div> <p>Teks</p> </div>)
+                let nextNode = walker.nextSibling();
+                if(nextNode) el = nextNode; 
             }
         }
     }
@@ -425,4 +351,88 @@ function resolveRelativePath(base, relative) {
         else stack.push(part); 
     }
     return stack.join('/');
+}
+
+// 4. GEMINI AI LOGIC (DICTIONARY / DEFINITION)
+window.askGemini = async function() {
+    const selText = currentSelection.text;
+    if(!selText) return;
+
+    window.hideSelectionMenu();
+    const d = i18n[wikiLang] || i18n['id'];
+
+    const apiKey = localStorage.getItem('gemini_api_key');
+    const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+    
+    if (!apiKey) {
+        showDialog("API Key Required", "Please configure your Gemini API Key in Settings first.", "key", [{text: "Close", primary: true}]);
+        return;
+    }
+    
+    if(!navigator.onLine) {
+        showDialog("Offline", d.noInternet, "wifi-off", [{text: "Tutup", primary: true}]);
+        return;
+    }
+
+    const modal = document.getElementById('ai-modal');
+    const titleEl = document.getElementById('ai-word-title');
+    const contentEl = document.getElementById('ai-content');
+    const loadState = document.getElementById('ai-loading-state');
+    
+    titleEl.textContent = selText.length > 25 ? selText.substring(0, 25) + '...' : selText;
+    contentEl.innerHTML = '';
+    contentEl.classList.add('hidden');
+    loadState.classList.remove('hidden');
+    
+    pushAppHistory('ai-modal');
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('ai-sheet').classList.remove('translate-y-full');
+    });
+
+    try {
+        let langInstruction = wikiLang === 'id' ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat.' : 'Use English. Explain the meaning, context, and provide a short example sentence.';
+        let promptText = `Provide a concise dictionary definition and explanation for: "${selText}". ${langInstruction}`;
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }]
+            })
+        });
+
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        
+        const data = await response.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        
+        const formattedText = rawText
+            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-m3-primary font-bold">$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em class="italic opacity-90">$1</em>')
+            .replace(/\n\n/g, '<br><br>')
+            .replace(/\n/g, '<br>');
+            
+        loadState.classList.add('hidden');
+        contentEl.innerHTML = formattedText;
+        contentEl.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error(error);
+        loadState.classList.add('hidden');
+        contentEl.innerHTML = `<div class="text-red-500 font-bold p-4 bg-red-500/10 rounded-2xl flex items-center gap-3"><i data-lucide="alert-triangle"></i><span>Failed to load explanation. Check your API Key or connection.</span></div>`;
+        contentEl.classList.remove('hidden');
+        if(window.lucide) window.lucide.createIcons();
+    }
+}
+
+window.closeAiModal = function(isFromHistory = false) {
+    if (!isFromHistory) { history.back(); return; }
+    const m = document.getElementById('ai-modal');
+    const s = document.getElementById('ai-sheet');
+    
+    s.classList.add('translate-y-full');
+    m.classList.add('opacity-0');
+    setTimeout(() => m.classList.add('hidden'), 300);
 }
