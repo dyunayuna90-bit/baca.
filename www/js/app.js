@@ -77,6 +77,36 @@ document.addEventListener("DOMContentLoaded", () => {
     if (verDisplay && window.APP_VERSION) verDisplay.textContent = `v${window.APP_VERSION}`;
 });
 
+// [MODIFIKASI] FUNGSI HITUNG STATISTIK USER
+function updateStatistics() {
+    let totalBooks = library.length;
+    let readingBooks = 0;
+    let completedBooks = 0;
+    let totalNotes = 0;
+
+    library.forEach(book => {
+        let pct = parseInt(book.progressPct) || 0;
+        
+        if (pct > 0 && pct < 100) readingBooks++;
+        else if (pct === 100) completedBooks++;
+        
+        if (book.annotations && Array.isArray(book.annotations)) {
+            totalNotes += book.annotations.length;
+        }
+    });
+
+    const valTotal = document.getElementById('stat-val-total');
+    const valReading = document.getElementById('stat-val-reading');
+    const valCompleted = document.getElementById('stat-val-completed');
+    const valNotes = document.getElementById('stat-val-notes');
+    
+    // Nembak angka ke UI pakai animasi cepet (opsional, tapi manis)
+    if(valTotal) valTotal.textContent = totalBooks;
+    if(valReading) valReading.textContent = readingBooks;
+    if(valCompleted) valCompleted.textContent = completedBooks;
+    if(valNotes) valNotes.textContent = totalNotes;
+}
+
 // 2. SCROLL & NAVIGATION LISTENERS
 function setupScrollListeners() {
     const libScroll = document.getElementById('library-content-scroll');
@@ -262,6 +292,13 @@ function applyLanguage() {
     if (themeLabel) themeLabel.textContent = isDark ? d.themeDark : d.themeLight;
 
     updateBatchSelectionUI();
+
+    // Menerjemahkan Label Statistik
+    setElementText('str-stat-title', d.statTitle || "Statistik Membaca");
+    setElementText('str-stat-total', d.statTotal || "Koleksi");
+    setElementText('str-stat-reading', d.statReading || "Dibaca");
+    setElementText('str-stat-completed', d.statCompleted || "Selesai");
+    setElementText('str-stat-notes', d.statNotes || "Catatan");
 }
 
 window.setWikiLang = function(lang) {
@@ -390,9 +427,11 @@ window.checkForUpdate = async function() {
     
     if(!window.UPDATE_URL) return;
 
+    // Puter icon
     if(icon) icon.classList.add('animate-spin');
     
     try {
+        // Pake parameter ?t buat nembus cache GitHub Raw
         const res = await fetch(window.UPDATE_URL + '?t=' + new Date().getTime());
         if (!res.ok) throw new Error("Gagal terhubung ke GitHub");
         
@@ -402,6 +441,7 @@ window.checkForUpdate = async function() {
 
         if(icon) icon.classList.remove('animate-spin');
 
+        // Komparasi Semver
         const isNewer = compareVersions(latestVersion, currentVersion) > 0;
 
         if (isNewer) {
@@ -658,6 +698,9 @@ function renderLibrary(filterText = "") {
         regularBooks.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
     }
 
+    // [MODIFIKASI] Panggil update stat pas library kelar render
+    updateStatistics();
+
     if(window.lucide) window.lucide.createIcons();
     window.updateBatchSelectionUI();
 }
@@ -799,7 +842,6 @@ window.openBookOptions = function(id) {
     }
 
     if(window.lucide) window.lucide.createIcons();
-    // Modal opsi sekarang di-slide biar mulus
     openModal('b-opt-modal', 'b-opt-sheet', false); 
 }
 
@@ -1197,8 +1239,6 @@ window.togglePanel = function(panelEl, name, btnId) {
     activePanel = name; 
     updateBottomNavUI(btnId);
 
-    // Dynamic Scroll Daftar Isi (Anti-Layar-Geser)
-    // Pake logika scrollTop manual ketimbang scrollIntoView biar container utama ngga ditarik paksa
     if (name === 'toc' && DOM.tocList) {
         setTimeout(() => {
             const activeTocItem = DOM.tocList.querySelector('.bg-m3-primaryContainer');
@@ -1206,7 +1246,7 @@ window.togglePanel = function(panelEl, name, btnId) {
                 const offset = activeTocItem.offsetTop - (DOM.tocList.clientHeight / 2) + (activeTocItem.clientHeight / 2);
                 DOM.tocList.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
             }
-        }, 250); // Jeda santai biar panel kebuka dulu sempurna
+        }, 250);
     }
 }
 
@@ -1262,7 +1302,7 @@ async function updateBookProgress(bookId, lastNodeId, pct) {
     if(bookIndex > -1) { 
         library[bookIndex].lastReadId = lastNodeId; library[bookIndex].progressPct = pct; 
         if (progressSaveTimeout) clearTimeout(progressSaveTimeout);
-        progressSaveTimeout = setTimeout(() => { localforage.setItem('pdf_epub_master', library); }, 1500);
+        progressSaveTimeout = setTimeout(() => { localforage.setItem('pdf_epub_master', library); updateStatistics(); }, 1500);
     }
 }
 
@@ -1385,6 +1425,7 @@ async function registerAnnotation(annotObj) {
     }
     window.getSelection().removeAllRanges();
     window.renderBookmarkPanel();
+    updateStatistics(); // [MODIFIKASI] Update stat setelah nyatet
 }
 
 window.openBookmarkModal = function(color) {
@@ -1493,6 +1534,7 @@ window.deleteAnnotationById = async function(annotId) {
     }
 
     window.renderBookmarkPanel();
+    updateStatistics(); // [MODIFIKASI] Update stat setelah hapus
 };
 
 window.renderBookmarkPanel = function() {
@@ -1555,7 +1597,6 @@ window.renderBookmarkPanel = function() {
                 </div>
             `;
             
-            // POTONG TEKS BOOKMARK SAAT RENDER (JADI SEMUA BOOKMARK LAMA IKUT RAPIH)
             let metaText = bm.meta || 'Chapter';
             if (metaText.length > 15) metaText = metaText.substring(0, 15) + '...';
 
@@ -1588,9 +1629,8 @@ window.renderBookmarkPanel = function() {
     }
 };
 
-// 12. SWIPE TO DISMISS LOGIC (Anti-Scroll & Aman buat Layout)
+// 12. SWIPE TO DISMISS LOGIC
 function setupSwipeToDismiss() {
-    // A. Bottom Sheets (Geser ke bawah)
     const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
     sheets.forEach(sheetId => {
         const sheet = document.getElementById(sheetId);
@@ -1619,7 +1659,6 @@ function setupSwipeToDismiss() {
         });
     });
 
-    // B. Side Panels (Geser ke kanan)
     const panels = ['toc-panel', 'settings-panel', 'bookmark-panel'];
     panels.forEach(panelId => {
         const panel = document.getElementById(panelId);
@@ -1631,7 +1670,6 @@ function setupSwipeToDismiss() {
         panel.addEventListener('touchmove', (e) => {
             const deltaX = e.touches[0].clientX - touchStartX;
             const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
-            // Hanya deteksi swipe murni horizontal ke KANAN biar scroll ke bawah ga keblokir
             if (deltaX > 0 && deltaX > deltaY) { 
                 isSwipingPanel = true;
                 if(e.cancelable) e.preventDefault();
@@ -1680,3 +1718,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
