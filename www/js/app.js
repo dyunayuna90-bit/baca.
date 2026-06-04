@@ -61,6 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTypo();
     applyThemeToDOM();
     loadLibrary();
+    
+    // INISIALISASI SWIPE GESTURES
+    setupSwipeToDismiss(); 
 
     if (!localStorage.getItem('first_time_seen_v5')) {
         setTimeout(() => { openModal('welcome-modal', 'welcome-sheet', true); }, 500);
@@ -132,7 +135,10 @@ window.addEventListener('popstate', (e) => {
     else if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) { window.closeDialog(true); }
     else if (!document.getElementById('ai-modal').classList.contains('opacity-0')) { closeAiModal(true); }
     else if (!document.getElementById('bookmark-modal').classList.contains('opacity-0')) { _closeModalAction('bookmark-modal', 'bookmark-sheet', true, true); }
+    
+    // [MODIFIKASI] b-opt-modal sekarang pakai false (animasi geser), bukan true (animasi scale)
     else if (!document.getElementById('b-opt-modal').classList.contains('opacity-0')) { _closeModalAction('b-opt-modal', 'b-opt-sheet', false, true); }
+    
     else if (!document.getElementById('edit-modal').classList.contains('opacity-0')) { _closeModalAction('edit-modal', 'edit-sheet', true, true); }
     else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) { _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true); }
     else if (!document.getElementById('welcome-modal').classList.contains('opacity-0')) { closeWelcome(true); }
@@ -299,7 +305,6 @@ window.showDialog = function(title, message, iconStr, buttons) {
     document.getElementById('dialog-title').innerText = title;
     document.getElementById('dialog-message').innerText = message;
     
-    // Pastikan efek muter loading ilang tiap kali panggil dialog baru
     const iconContainer = document.getElementById('dialog-icon-container');
     if(iconContainer) iconContainer.classList.remove('animate-spin');
 
@@ -440,7 +445,7 @@ window.checkForUpdate = async function() {
     }
 };
 
-// 7. BACKUP & RESTORE DATA (DENGAN LOADING ANIMATION)
+// 7. BACKUP & RESTORE DATA
 window.exportData = async function() {
     const d = typeof i18n !== 'undefined' ? (i18n[wikiLang] || i18n['id']) : {};
     try {
@@ -450,32 +455,28 @@ window.exportData = async function() {
             return;
         }
 
-        // Tampilkan loading modal tanpa tombol (user ga bisa skip/close)
         showDialog(
             wikiLang === 'id' ? "Memproses Backup" : "Processing Backup",
             wikiLang === 'id' ? "Mohon tunggu sebentar, menyiapkan file lu..." : "Please wait, preparing your file...",
             "loader", 
-            [] // Kosongin biar ga ada tombol
+            []
         );
         
-        // Puter icon loading
         const iconContainer = document.getElementById('dialog-icon-container');
         if(iconContainer) iconContainer.classList.add('animate-spin');
 
-        // setTimeout ngasih jeda biar UI sempet render modal loading sebelum JS diblokir oleh JSON.stringify
         setTimeout(async () => {
             try {
                 if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
                     const dt = new Date();
                     const fileName = `Baca_Backup_${dt.getFullYear()}${('0'+(dt.getMonth()+1)).slice(-2)}${('0'+dt.getDate()).slice(-2)}_${dt.getTime()}.json`;
                     
-                    // Potong nama file kalo kepanjangan pake '...'
                     let displayFileName = fileName;
                     if (fileName.length > 25) {
                         displayFileName = fileName.substring(0, 16) + "..." + fileName.slice(-10);
                     }
                     
-                    const fullDataStr = JSON.stringify(data); // Proses berat (bikin lag sebentar)
+                    const fullDataStr = JSON.stringify(data);
                     
                     try {
                         await window.Capacitor.Plugins.Filesystem.writeFile({
@@ -485,7 +486,6 @@ window.exportData = async function() {
                             encoding: 'utf8'
                         });
                         
-                        // Timpa dialog loading dengan dialog sukses
                         showDialog(
                             wikiLang === 'id' ? "Backup Sukses" : "Backup Success", 
                             wikiLang === 'id' ? `File backup berhasil disimpan di folder Documents HP lu.\nNama file: ${displayFileName}` : `Backup file saved in your device's Documents folder.\nFile name: ${displayFileName}`, 
@@ -498,7 +498,6 @@ window.exportData = async function() {
                     }
                 }
                 
-                // Kalo ga pake capacitor (di browser biasa/error), lari ke Raw Backup
                 const textOnlyData = data.map(book => {
                     let strippedBook = { ...book };
                     delete strippedBook.coverBase64; 
@@ -508,11 +507,11 @@ window.exportData = async function() {
                 const rawStr = JSON.stringify(textOnlyData);
                 document.getElementById('raw-backup-textarea').value = rawStr;
                 
-                // Tutup loading modal
                 window.closeDialog(true);
                 
                 setTimeout(() => {
                     openModal('raw-backup-modal', 'raw-backup-sheet', true);
+                    
                     setTimeout(() => {
                         showDialog("Info Fallback", 
                             wikiLang === 'id' ? 
@@ -526,7 +525,7 @@ window.exportData = async function() {
                 console.error("Backup failed:", err);
                 showDialog("Error", "Backup gagal: " + err.message, "alert-triangle", [{ text: "Tutup", primary: true }]);
             }
-        }, 150); // Kasih nafas 150ms
+        }, 150);
 
     } catch (err) {
         console.error("Backup failed:", err);
@@ -808,7 +807,9 @@ window.openBookOptions = function(id) {
     }
 
     if(window.lucide) window.lucide.createIcons();
-    openModal('b-opt-modal', 'b-opt-sheet');
+    
+    // [MODIFIKASI] Buka sebagai slide/sheet biasa (isScale bernilai false di argumen ketiga)
+    openModal('b-opt-modal', 'b-opt-sheet', false); 
 }
 
 window.togglePinBook = async function() {
@@ -1141,11 +1142,8 @@ window.openBook = function(book) {
 
         renderBookmarkPanel(); 
 
-        // REVISI LOGIKA LOADING & SCROLLING DISINI
-        // 1. Kasih waktu frame browser buat ngitung ukuran layout DOM yang baru dimasukin
         requestAnimationFrame(() => {
             
-            // 2. Eksekusi lompatan (scroll) instan saat loading screen masih nutupin layar
             if (book.lastReadId) { 
                 const target = document.getElementById(book.lastReadId); 
                 const container = DOM.readContent;
@@ -1159,13 +1157,9 @@ window.openBook = function(book) {
                 DOM.readContent.scrollTo({ top: 0, behavior: 'auto' }); 
             }
             
-            // 3. Kasih jeda biar browser selesai nge-paint posisinya (menghindari lag visual)
             setTimeout(() => {
-                // 4. Tutup loading screen. Sekarang layar langsung ada di posisi stabil.
                 loader.classList.add('opacity-0'); 
                 setTimeout(() => loader.classList.add('hidden'), 300);
-
-                // 5. Baru nyalain observer
                 window.setupIntersectionObserver(); 
             }, 150);
             
@@ -1210,6 +1204,16 @@ window.togglePanel = function(panelEl, name, btnId) {
     const overlay = document.getElementById('side-panel-overlay'); if(overlay) overlay.classList.remove('hidden');
     activePanel = name; 
     updateBottomNavUI(btnId);
+
+    // [MODIFIKASI] Dinamis Scroll TOC: Otomatis scroll daftar isi ke posisi aktif
+    if (name === 'toc' && DOM.tocList) {
+        setTimeout(() => {
+            const activeTocItem = DOM.tocList.querySelector('.bg-m3-primaryContainer');
+            if (activeTocItem) {
+                activeTocItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 150); // Jeda dikit nunggu panel kebuka
+    }
 }
 
 if(document.getElementById('btn-toc')) document.getElementById('btn-toc').onclick = () => togglePanel(DOM.tocPanel, 'toc', 'btn-toc'); 
@@ -1586,21 +1590,26 @@ window.renderBookmarkPanel = function() {
     }
 };
 
-// 12. SWIPE TO DISMISS MODAL SETTINGS
-document.addEventListener("DOMContentLoaded", () => {
-    const settingsSheet = document.getElementById('global-settings-sheet');
-    if(settingsSheet) {
+// 12. SWIPE TO DISMISS UNTUK SEMUA MODAL & SIDE PANEL (PENGGANTI GESTUR KAKU)
+function setupSwipeToDismiss() {
+    // 12A. Setup untuk Bottom Sheet (Di-swipe ke bawah)
+    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
+    
+    sheets.forEach(sheetId => {
+        const sheet = document.getElementById(sheetId);
+        if (!sheet) return;
+
         let touchStartY = 0;
         let initialScrollTop = 0;
         let isPulling = false;
 
-        settingsSheet.addEventListener('touchstart', (e) => {
+        sheet.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
-            initialScrollTop = settingsSheet.scrollTop;
-            settingsSheet.style.transition = 'none'; 
+            initialScrollTop = sheet.scrollTop;
+            sheet.style.transition = 'none'; 
         }, { passive: true });
 
-        settingsSheet.addEventListener('touchmove', (e) => {
+        sheet.addEventListener('touchmove', (e) => {
             if (initialScrollTop <= 0) {
                 const touchCurrentY = e.touches[0].clientY;
                 const deltaY = touchCurrentY - touchStartY;
@@ -1608,33 +1617,81 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (deltaY > 0) { 
                     isPulling = true;
                     if(e.cancelable) e.preventDefault(); 
-                    const pullDistance = deltaY * 0.4;
-                    settingsSheet.style.transform = `translateY(${pullDistance}px)`;
+                    const pullDistance = deltaY * 0.5;
+                    sheet.style.transform = `translateY(${pullDistance}px)`;
                 }
             }
         }, { passive: false });
 
-        settingsSheet.addEventListener('touchend', (e) => {
+        sheet.addEventListener('touchend', (e) => {
             if (!isPulling) return;
             isPulling = false;
             
             const touchEndY = e.changedTouches[0].clientY;
             const deltaY = touchEndY - touchStartY;
 
-            if (deltaY > 80) { 
-                settingsSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
-                settingsSheet.style.transform = 'translateY(100%)'; 
+            sheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+            
+            if (deltaY > 100) { 
+                sheet.style.transform = 'translateY(100%)'; 
                 setTimeout(() => {
                     history.back(); 
-                    setTimeout(() => { settingsSheet.style.transform = ''; }, 100);
+                    setTimeout(() => { sheet.style.transform = ''; }, 100);
                 }, 100);
             } else {
-                settingsSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
-                settingsSheet.style.transform = ''; 
+                sheet.style.transform = ''; 
             }
         });
-    }
-});
+    });
+
+    // 12B. Setup untuk Side Panel Reader (Di-swipe ke kanan/samping)
+    const panels = ['toc-panel', 'settings-panel', 'bookmark-panel'];
+    
+    panels.forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if(!panel) return;
+        
+        let touchStartX = 0;
+        let isSwipingPanel = false;
+        
+        panel.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            panel.style.transition = 'none';
+        }, { passive: true });
+        
+        panel.addEventListener('touchmove', (e) => {
+            const touchCurrentX = e.touches[0].clientX;
+            const deltaX = touchCurrentX - touchStartX;
+
+            if (deltaX > 0) { // Kalau diswipe ke Kanan
+                isSwipingPanel = true;
+                panel.style.transform = `translateX(${deltaX}px)`;
+            }
+        }, { passive: true });
+        
+        panel.addEventListener('touchend', (e) => {
+            if (!isSwipingPanel) return;
+            isSwipingPanel = false;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const deltaX = touchEndX - touchStartX;
+
+            panel.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease';
+            
+            if (deltaX > 80) { // Cukup jauh digeser, maka tutup
+                panel.style.transform = 'translateX(100%)';
+                panel.style.opacity = '0';
+                
+                setTimeout(() => {
+                    history.back(); 
+                    setTimeout(() => { panel.style.transform = ''; }, 100);
+                }, 100);
+            } else { // Balikin lagi
+                panel.style.transform = 'translateX(0)';
+            }
+        });
+    });
+}
 
 // 13. PWA & CAPACITOR SETUP
 if ('serviceWorker' in navigator) {
@@ -1664,4 +1721,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
 
