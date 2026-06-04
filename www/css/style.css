@@ -1,5 +1,21 @@
 * {
     outline: none !important;
+    /* BLOKIR SELEKSI TEKS GLOBAL & POPUP NATIVE */
+    -webkit-touch-callout: none; 
+    -webkit-user-select: none;   
+    user-select: none;           
+}
+
+/* PENGECUALIAN 1: Area isi buku tetap bisa di-blok */
+.reader-dynamic-text, .reader-dynamic-text * {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+
+/* PENGECUALIAN 2: Input & Textarea (Search, Bookmark) tetap berfungsi normal */
+input, textarea {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
 }
 
 /* Fix text selection color (blok teks) */
