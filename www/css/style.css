@@ -62,17 +62,9 @@ html, body {
 .search-active { gap: 0px !important; }
 .search-active .btn-settings { width: 0px !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; transform: scale(0.5); border: none; }
 
-/* MODIFIKASI TRANSISI MODAL & PANEL (Disesuaikan buat Swipe Gestures) */
 .modal-overlay { transition: opacity 0.3s ease; }
-/* Hapus border-radius dari transisi biar pas ditarik bawah ga keliatan aneh, pake translate Y murni */
-.modal-content { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1); }
+.modal-content { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), border-radius 0.3s ease; transform-origin: bottom; }
 .side-panel { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease; }
-
-/* Mencegah default browser gesture (kayak pull-to-refresh) di modal/panel saat kita mau swipe-dismiss */
-#global-settings-sheet, #b-opt-sheet, #edit-sheet, #bookmark-sheet, #raw-backup-sheet, #raw-restore-sheet, #welcome-sheet,
-#toc-panel, #settings-panel, #bookmark-panel {
-    overscroll-behavior-y: contain; 
-}
 
 .reader-text-container { column-gap: 2rem; column-rule: 1px solid var(--md-sys-color-surface-variant); }
 @media (min-width: 768px) { .reader-text-container { column-count: 2; } }
