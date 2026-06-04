@@ -21,6 +21,7 @@ let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 const DOM = {};
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Inisialisasi DOM Elements
     Object.assign(DOM, {
         libView: document.getElementById('library-view'), 
         readView: document.getElementById('reader-view'),
@@ -627,7 +628,6 @@ function createBookCard(book, isSlider = false, index = 0) {
     const titleShadow = book.coverBase64 ? 'text-white' : '';
     const barBase = book.coverBase64 ? 'bg-white' : 'bg-m3-primary dark:bg-m3-primaryContainer';
 
-    // Label Indicator untuk Pinned
     let indicators = '';
     if(!isSlider) {
         if(book.isPinned) indicators += `<i data-lucide="pin" class="w-3.5 h-3.5 opacity-90 fill-current"></i>`;
@@ -1028,8 +1028,19 @@ window.openBook = function(book) {
         loader.classList.add('opacity-0'); setTimeout(() => loader.classList.add('hidden'), 300);
 
         setTimeout(() => {
-            if (book.lastReadId) { const target = document.getElementById(book.lastReadId); if (target) target.scrollIntoView({ behavior: 'auto', block: 'center' }); } 
-            else { DOM.readContent.scrollTo(0,0); }
+            // FIX SCROLL: Waktu buka buku langsung nge-pas ke posisi terakhir
+            if (book.lastReadId) { 
+                const target = document.getElementById(book.lastReadId); 
+                const container = DOM.readContent;
+                if (target && container) {
+                    const cRect = container.getBoundingClientRect();
+                    const tRect = target.getBoundingClientRect();
+                    const offset = tRect.top - cRect.top + container.scrollTop - (cRect.height / 2) + (tRect.height / 2);
+                    container.scrollTo({ top: offset, behavior: 'auto' });
+                } 
+            } else { 
+                DOM.readContent.scrollTo(0,0); 
+            }
             setTimeout(() => { window.setupIntersectionObserver(); }, 300);
         }, 100); 
     }, 600); 
@@ -1115,7 +1126,8 @@ window.setupIntersectionObserver = function() {
             }
             updateBookProgress(activeBookId, id, pct);
         }
-    }, { root: DOM.readContent, rootMargin: '-40% 0px -40% 0px', threshold: 0 }); // UPDATE: Fokus cuma murni di tengah layar
+    // FIX OBSERVER TEPAT DI TENGAH: Titik baca murni ngukur bagian tengah
+    }, { root: DOM.readContent, rootMargin: '-40% 0px -40% 0px', threshold: 0 }); 
     Array.from(DOM.inner.children).forEach(el => observer.observe(el));
 }
 
@@ -1131,16 +1143,28 @@ async function updateBookProgress(bookId, lastNodeId, pct) {
 
 // 10. ANNOTATIONS & IN-BOOK BOOKMARK LOGIC
 
-// Fungsi Bantuan Cari Titik Offset Jari (Biar Akurat 100%)
+// FIX AKURASI DOM OFFSETS: Rekam karakter murni tanpa kehalang Tag HTML atau kata yang sama
 function getAbsoluteOffsets(element) {
     const sel = window.getSelection();
     if (sel.rangeCount === 0) return { start: 0, end: 0 };
     const range = sel.getRangeAt(0);
-    const preCaret = range.cloneRange();
-    preCaret.selectNodeContents(element);
-    preCaret.setEnd(range.startContainer, range.startOffset);
-    const start = preCaret.toString().length;
-    return { start, end: start + range.toString().length };
+    
+    function getTextOffset(node, offset) {
+        let len = 0;
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        let n;
+        while ((n = walker.nextNode())) {
+            if (n === node) { len += offset; break; }
+            len += n.nodeValue.length;
+        }
+        return len;
+    }
+
+    let start = getTextOffset(range.startContainer, range.startOffset);
+    let end = getTextOffset(range.endContainer, range.endOffset);
+    
+    if (start > end) { let t = start; start = end; end = t; }
+    return { start, end };
 }
 
 window.renderNodeText = function(text, annots) {
@@ -1148,7 +1172,7 @@ window.renderNodeText = function(text, annots) {
     let html = text;
     
     if (annots && annots.length > 0) {
-        // Logika Baru (Presisi Pake Offsets) - Urut dr belakang biar ga bentrok indeks
+        // Render dari index tertinggi ke terendah biar ga nabrak offset
         let validAnnots = [...annots].filter(a => typeof a.startOff !== 'undefined').sort((a,b) => b.startOff - a.startOff);
         
         validAnnots.forEach(a => {
@@ -1157,11 +1181,10 @@ window.renderNodeText = function(text, annots) {
             const before = html.substring(0, s);
             const middle = html.substring(s, e);
             const after = html.substring(e);
-            // Kasih token unik dlu sblm html di escape
             html = before + `|||ST_${a.id}|||` + middle + `|||EN_${a.id}|||` + after;
         });
 
-        // Fallback untuk data backup lama (Pake Regex Text lawas)
+        // Buat backup data lu yg lama (sebelum pake sistem Offset)
         let legacyAnnots = [...annots].filter(a => typeof a.startOff === 'undefined').sort((a,b) => b.text.length - a.text.length);
         legacyAnnots.forEach(a => {
             const esc = a.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1175,12 +1198,12 @@ window.renderNodeText = function(text, annots) {
     if (annots && annots.length > 0) {
         annots.forEach(a => {
             let colorClass = "";
-            if(a.color === 'yellow') colorClass = "text-yellow-600 bg-yellow-400/20 border-yellow-500 dark:text-yellow-400 dark:bg-yellow-400/20";
-            else if(a.color === 'green') colorClass = "text-green-600 bg-green-500/20 border-green-500 dark:text-green-400 dark:bg-green-400/20";
-            else if(a.color === 'pink') colorClass = "text-pink-600 bg-pink-500/20 border-pink-500 dark:text-pink-400 dark:bg-pink-400/20";
-            else colorClass = "text-m3-primary bg-m3-primary/10 border-m3-primary";
+            if(a.color === 'yellow') colorClass = "text-yellow-600 bg-yellow-400/20 dark:text-yellow-400 dark:bg-yellow-400/20";
+            else if(a.color === 'green') colorClass = "text-green-600 bg-green-500/20 dark:text-green-400 dark:bg-green-400/20";
+            else if(a.color === 'pink') colorClass = "text-pink-600 bg-pink-500/20 dark:text-pink-400 dark:bg-pink-400/20";
+            else colorClass = "text-m3-primary bg-m3-primary/10";
 
-            let markHtml = `<mark class="annot-hl border-b-2 border-dashed ${colorClass} font-medium cursor-pointer transition-all hover:opacity-80 px-1 mx-0.5 rounded-sm" data-id="${a.id}" onclick="window.showAnnotationDetails('${a.id}')">`;
+            let markHtml = `<mark class="annot-hl ${colorClass} font-medium cursor-pointer transition-all hover:opacity-80 px-1 mx-0.5 rounded-md" data-id="${a.id}" onclick="window.showAnnotationDetails('${a.id}')">`;
             html = html.replace(`|||ST_${a.id}|||`, markHtml).replace(`|||EN_${a.id}|||`, '</mark>');
         });
     }
@@ -1200,7 +1223,7 @@ document.addEventListener('selectionchange', () => {
         const nodeEl = curr.closest('[id^="node-"]'); if (!nodeEl) return;
         
         const nodeIdx = parseInt(nodeEl.id.split('-')[1]);
-        const offsets = getAbsoluteOffsets(nodeEl); // Tangkep kordinat murni
+        const offsets = getAbsoluteOffsets(nodeEl);
         currentSelection = { text: text, nodeIdx: nodeIdx, startOff: offsets.start, endOff: offsets.end };
         
         menu.classList.remove('hidden');
@@ -1242,7 +1265,6 @@ async function registerAnnotation(annotObj) {
     window.renderBookmarkPanel();
 }
 
-// BUKA MODAL BOOKMARK DARI CAPSULE WARNA
 window.openBookmarkModal = function(color) {
     if(currentSelection.nodeIdx === -1) return;
     
@@ -1256,7 +1278,6 @@ window.openBookmarkModal = function(color) {
     openModal('bookmark-modal', 'bookmark-sheet', true);
 };
 
-// SAVE BOOKMARK (BARU & EDIT)
 window.saveBookmarkAnnotation = function() {
     const titleVal = document.getElementById('bookmark-input-title').value.trim();
     const noteVal = document.getElementById('bookmark-input-text').value.trim();
@@ -1306,7 +1327,6 @@ window.saveBookmarkAnnotation = function() {
     }
 };
 
-// KLIK TEKS STABILO DI BUKU -> BUKA MODAL EDIT
 window.showAnnotationDetails = function(annotId) {
     event.preventDefault(); event.stopPropagation();
     const book = library.find(b => b.id === activeBookId); if(!book || !book.annotations) return;
@@ -1353,7 +1373,7 @@ window.deleteAnnotationById = async function(annotId) {
     window.renderBookmarkPanel();
 };
 
-// RENDER UI PANEL SIDEBAR BOOKMARK YANG ELEGAN
+// FIX UI BOOKMARK PANEL (Card-in-Card Elegan) & SCROLL AKURAT
 window.renderBookmarkPanel = function() {
     if(!DOM.bookmarkList || !DOM.bookmarkPanel || !activeBookId) return;
     const book = library.find(b => b.id === activeBookId);
@@ -1371,39 +1391,67 @@ window.renderBookmarkPanel = function() {
         
         bookmarks.forEach(bm => {
             const btn = document.createElement('div');
-            btn.className = "group relative flex flex-col p-4 mb-3 rounded-2xl bg-m3-surface shadow-sm overflow-hidden text-left border border-m3-surfaceVariant transition-colors hover:border-m3-primary/30 cursor-pointer";
+            btn.className = "group relative flex flex-col p-4 mb-3 rounded-3xl bg-m3-surface shadow-sm overflow-hidden text-left transition-all hover:shadow-md cursor-pointer";
+            
+            // FIX NAVIGASI: Matematika Absolut buat scroll presisi murni ke tengah layar
             btn.onclick = () => {
-                const target = document.getElementById(`node-${bm.nodeIdx}`);
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    history.back(); // Auto tutup panel
+                const markTarget = document.querySelector(`mark[data-id="${bm.id}"]`);
+                const paragraphTarget = document.getElementById(`node-${bm.nodeIdx}`);
+                const container = DOM.readContent;
+                
+                if (container) {
+                    let targetEl = markTarget || paragraphTarget;
+                    if (targetEl) {
+                        const cRect = container.getBoundingClientRect();
+                        const tRect = targetEl.getBoundingClientRect();
+                        const offset = tRect.top - cRect.top + container.scrollTop - (cRect.height / 2) + (tRect.height / 2);
+                        
+                        container.scrollTo({ top: offset, behavior: 'smooth' });
+                    }
                 }
+                history.back(); // Auto tutup panel
             };
             
-            // Logic Warna Label & Border
+            // Logika Warna Label & Background Kutipan (Tanpa Garis Pinggir)
             let iconColorCls = "text-yellow-600 bg-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-400/20";
-            let borderCls = "border-yellow-500";
-            if (bm.color === 'green') { iconColorCls = "text-green-600 bg-green-500/20 dark:text-green-400 dark:bg-green-400/20"; borderCls = "border-green-500"; }
-            else if (bm.color === 'pink') { iconColorCls = "text-pink-600 bg-pink-500/20 dark:text-pink-400 dark:bg-pink-400/20"; borderCls = "border-pink-500"; }
-
-            // Kotak Catatan Terpisah
-            let noteHtml = bm.note ? `<div class="mt-2 p-2.5 rounded-xl bg-m3-primaryContainer text-m3-onPrimaryContainer font-bold text-[11px] leading-relaxed">${bm.note}</div>` : '';
+            let quoteBgCls = "bg-yellow-500/10 text-yellow-800 dark:bg-yellow-400/10 dark:text-yellow-100";
             
-            // Render UI Baru
+            if (bm.color === 'green') { 
+                iconColorCls = "text-green-600 bg-green-500/20 dark:text-green-400 dark:bg-green-400/20"; 
+                quoteBgCls = "bg-green-500/10 text-green-800 dark:bg-green-400/10 dark:text-green-100";
+            }
+            else if (bm.color === 'pink') { 
+                iconColorCls = "text-pink-600 bg-pink-500/20 dark:text-pink-400 dark:bg-pink-400/20"; 
+                quoteBgCls = "bg-pink-500/10 text-pink-800 dark:bg-pink-400/10 dark:text-pink-100";
+            }
+
+            // Kotak Catatan (Warna Surface Variant)
+            let noteHtml = bm.note ? `
+                <div class="mt-3 p-3 rounded-2xl bg-m3-surfaceVariant text-m3-onSurfaceVariant font-bold text-xs leading-relaxed">
+                    ${bm.note}
+                </div>` : '';
+            
+            // Kotak Kutipan (Warna ngikutin stabilo, di-limit 2 baris, TANPA border kiri)
+            let quoteHtml = `
+                <div class="mt-2 p-3 rounded-2xl ${quoteBgCls}">
+                    <span class="text-[11px] font-medium opacity-90 italic line-clamp-2 leading-relaxed">"${bm.text}"</span>
+                </div>
+            `;
+            
             btn.innerHTML = `
+                <!-- Judul -->
                 <div class="flex items-start justify-between gap-2 mb-2 w-full">
                     <span class="text-sm font-bold text-m3-onSurface leading-tight line-clamp-2 pr-6">${bm.title}</span>
                 </div>
-                <div class="flex items-center gap-1.5 mb-2 w-max px-2 py-0.5 rounded-md ${iconColorCls}">
+                
+                <!-- Label Meta / Persentase -->
+                <div class="flex items-center gap-1.5 w-max px-2.5 py-1 rounded-lg ${iconColorCls}">
                     <i data-lucide="bookmark" class="w-3 h-3 fill-current"></i>
                     <span class="text-[9px] font-bold uppercase tracking-wider">${bm.meta || 'Chapter'}</span>
                 </div>
                 
                 ${noteHtml}
-                
-                <div class="mt-2 p-2.5 rounded-xl bg-m3-surfaceVariant border-l-4 ${borderCls}">
-                    <span class="text-[10px] font-medium opacity-80 italic line-clamp-2 leading-relaxed">"${bm.text}"</span>
-                </div>
+                ${quoteHtml}
             `;
 
             // Tombol Delete 
