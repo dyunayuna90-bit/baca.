@@ -682,6 +682,7 @@ async function loadLibrary() {
 }
 
 function renderLibrary(filterText = "") {
+function renderLibrary(filterText = "") {
     if(!DOM.grid || !DOM.topSlider) return;
     
     DOM.grid.innerHTML = ''; 
@@ -695,8 +696,11 @@ function renderLibrary(filterText = "") {
     const d = i18n[wikiLang] || i18n['id'];
     if(DOM.count) DOM.count.textContent = `${filteredLib.length} ${d.booksCount}`;
     
-    const pinnedBooks = filteredLib.filter(b => b.isPinned);
-    const regularBooks = filteredLib.filter(b => !b.isPinned);
+    // [PERBAIKAN LOGIKA PENCARIAN]: 
+    // Kalo lagi ngetik cari buku, gabung semua buku jadi satu di rak reguler.
+    // Kalo ga nyari, baru pisahin rak Pinned dan Reguler.
+    const pinnedBooks = filterText ? [] : filteredLib.filter(b => b.isPinned);
+    const regularBooks = filterText ? filteredLib : filteredLib.filter(b => !b.isPinned);
 
     let topBooks = [];
     if (!filterText) { topBooks = library.filter(b => b.progressPct > 0).sort((a,b) => b.progressPct - a.progressPct).slice(0, 4); }
@@ -707,7 +711,7 @@ function renderLibrary(filterText = "") {
     } else { DOM.topSection.classList.add('hidden'); }
     
     const pinnedSection = document.getElementById('pinned-books-section');
-    if (pinnedBooks.length > 0 && !filterText) {
+    if (pinnedBooks.length > 0) {
         if(pinnedSection) pinnedSection.classList.remove('hidden');
         pinnedBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(createBookCard(book, false, idx)); });
     } else {
@@ -723,7 +727,7 @@ function renderLibrary(filterText = "") {
         regularBooks.forEach((book, index) => { DOM.grid.appendChild(createBookCard(book, false, index)); });
     }
 
-    updateStatistics(); // PANGGIL STATISTIK SETIAP LIBRARY SELESAI RENDER
+    updateStatistics(); 
     
     if(window.lucide) window.lucide.createIcons();
     window.updateBatchSelectionUI();
