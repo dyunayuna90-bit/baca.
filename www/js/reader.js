@@ -435,8 +435,8 @@ window.lookupDictionary = function() {
     if (apiKey) {
         const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
         let langInstruction = wikiLang === 'id'
-            ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat.'
-            : 'Use English. Explain the meaning, context, and provide a short example sentence.';
+            ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat. Tulis dalam paragraf biasa, tanpa poin atau bullet. Langsung ke penjelasan tanpa kata pembuka.'
+            : 'Use English. Explain the meaning, context, and provide a short example sentence. Write in plain paragraphs, no bullet points. No introductory phrases, go straight to the explanation.';
         let promptText = `Provide a concise dictionary definition and explanation for: "${savedText}". ${langInstruction}`;
 
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${apiKey}`, {
