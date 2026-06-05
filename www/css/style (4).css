@@ -1,0 +1,105 @@
+* {
+    outline: none !important;
+    /* BLOKIR SELEKSI TEKS GLOBAL & POPUP NATIVE */
+    -webkit-touch-callout: none; 
+    -webkit-user-select: none;   
+    user-select: none;           
+}
+
+/* PENGECUALIAN 1: Area isi buku tetap bisa di-blok */
+.reader-dynamic-text, .reader-dynamic-text * {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+
+/* PENGECUALIAN 2: Input & Textarea (Search, Bookmark) tetap berfungsi normal */
+input, textarea {
+    -webkit-user-select: auto !important;
+    user-select: auto !important;
+}
+
+/* Fix text selection color (blok teks) */
+::selection {
+    background-color: var(--md-sys-color-primary) !important;
+    color: var(--md-sys-color-on-primary) !important;
+}
+::-moz-selection {
+    background-color: var(--md-sys-color-primary) !important;
+    color: var(--md-sys-color-on-primary) !important;
+}
+
+html, body {
+    height: 100dvh; width: 100vw; position: fixed; inset: 0; overflow: hidden;
+    background-color: var(--md-sys-color-background); color: var(--md-sys-color-on-background);
+    transition: background-color 0.4s ease, color 0.4s ease; -webkit-tap-highlight-color: transparent;
+}
+
+.btn-morph { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 99px; }
+.btn-morph:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; }
+
+.card-morph { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; user-select: none; -webkit-user-select: none; }
+.card-morph:active { transform: scale(0.92); border-radius: 16px !important; }
+
+.fab-capsule { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 32px; width: 64px; height: 64px; }
+.fab-capsule:active { transform: scale(0.95); width: 104px; border-radius: 20px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; opacity: 1 !important; }
+
+.capsule-group { display: flex; gap: 4px; width: 100%; transition: all 0.4s cubic-bezier(0.2, 0, 0, 1); }
+.capsule-btn { 
+    flex: 1; display: flex; justify-content: center; align-items: center;
+    transition: flex 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s, border-radius 0.3s; 
+    border-radius: 99px; overflow: hidden; white-space: nowrap;
+}
+.capsule-btn:active, .capsule-btn.nav-active { 
+    flex: 1.5; transform: scale(0.95); border-radius: 16px; 
+    background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; opacity: 1 !important;
+}
+
+.search-row { display: flex; align-items: center; gap: 0.75rem; width: 100%; transition: gap 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.search-capsule { flex-grow: 1; display: flex; align-items: center; cursor: pointer; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.btn-settings { width: 56px; height: 56px; overflow: hidden; flex-shrink: 0; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.btn-settings:active { width: 72px; border-radius: 16px; background-color: var(--md-sys-color-surface-variant) !important; color: var(--md-sys-color-on-surface-variant) !important; opacity: 1 !important; }
+
+.search-active { gap: 0px !important; }
+.search-active .btn-settings { width: 0px !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; transform: scale(0.5); border: none; }
+
+.modal-overlay { transition: opacity 0.3s ease; }
+
+/* Hapus delay border-radius dari transisi biar pas ditarik bawah ga keliatan aneh/delay */
+.modal-content { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1); transform-origin: bottom; }
+.side-panel { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease; }
+
+/* Mencegah default browser gesture (kayak pull-to-refresh) di modal/panel saat swipe-dismiss */
+#global-settings-sheet, #b-opt-sheet, #edit-sheet, #bookmark-sheet, #raw-backup-sheet, #raw-restore-sheet, #welcome-sheet,
+#toc-panel, #settings-panel, #bookmark-panel {
+    overscroll-behavior-y: contain; 
+}
+
+.reader-text-container { column-gap: 2rem; column-rule: 1px solid var(--md-sys-color-surface-variant); }
+@media (min-width: 768px) { .reader-text-container { column-count: 2; } }
+
+.progress-smooth { transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+mark.search-hl { background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; border-radius: 4px; padding: 0 4px; transition: background-color 1.5s ease, color 1.5s ease; }
+
+/* Updated Annotations Colors with !important for priority */
+.hl-yellow { background-color: #FDE047 !important; color: #000 !important; }
+.hl-green { background-color: #86EFAC !important; color: #000 !important; }
+.hl-pink { background-color: #F9A8D4 !important; color: #000 !important; }
+.hl-blue { background-color: #93C5FD !important; color: #000 !important; }
+.dark .hl-yellow { background-color: #854D0E !important; color: #FFF !important; }
+.dark .hl-green { background-color: #166534 !important; color: #FFF !important; }
+.dark .hl-pink { background-color: #831843 !important; color: #FFF !important; }
+.dark .hl-blue { background-color: #1E3A8A !important; color: #FFF !important; }
+
+.hide-scroll::-webkit-scrollbar { display: none; }
+.hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+:root { --reader-font: 'Lora', serif; --reader-size: 1.2rem; --reader-align: left; --reader-line-height: 1.8; }
+
+.reader-dynamic-text { word-wrap: break-word; overflow-wrap: anywhere; hyphens: auto; }
+.reader-dynamic-text p { font-family: var(--reader-font) !important; font-size: var(--reader-size) !important; text-align: var(--reader-align) !important; line-height: var(--reader-line-height) !important; max-width: 100%; overflow-x: hidden; }
+.reader-dynamic-text h1 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.8) !important; text-align: left !important; line-height: 1.3 !important; font-weight: bold; margin-top: 2rem; margin-bottom: 1.5rem; color: var(--md-sys-color-primary); }
+.reader-dynamic-text h2 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.4) !important; text-align: left !important; line-height: 1.4 !important; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--md-sys-color-on-surface-variant); border-bottom: 1px solid var(--md-sys-color-surface-variant); padding-bottom: 0.5rem; opacity: 1; }
+::-webkit-scrollbar { width: 0px; }
+
+
