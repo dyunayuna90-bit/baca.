@@ -357,7 +357,116 @@ function resolveRelativePath(base, relative) {
     return stack.join('/');
 }
 
-// 4. GEMINI AI LOGIC (DICTIONARY / DEFINITION)
+// 4. LOOKUP DICTIONARY — Orchestrator Wikipedia + Gemini
+window.lookupDictionary = function() {
+    // Simpan selection SEBELUM hilang
+    const savedText = currentSelection.text;
+    if (!savedText) return;
+
+    const d = i18n[wikiLang] || i18n['id'];
+    const apiKey = localStorage.getItem('gemini_api_key');
+
+    window.hideSelectionMenu();
+
+    // Siapkan modal
+    const modal = document.getElementById('ai-modal');
+    const termEl = document.getElementById('ai-term');
+    const wikiCard = document.getElementById('wiki-card');
+    const wikiContent = document.getElementById('wiki-content');
+    const wikiLoading = document.getElementById('wiki-loading');
+    const geminiCard = document.getElementById('gemini-card');
+    const geminiContent = document.getElementById('gemini-content');
+    const geminiLoading = document.getElementById('gemini-loading');
+
+    // Reset state
+    termEl.textContent = savedText.length > 40 ? savedText.substring(0, 40) + '...' : savedText;
+
+    if (wikiCard) wikiCard.classList.remove('hidden');
+    if (wikiLoading) wikiLoading.classList.remove('hidden');
+    if (wikiContent) { wikiContent.innerHTML = ''; wikiContent.classList.add('hidden'); }
+
+    if (geminiCard) {
+        if (apiKey) {
+            geminiCard.classList.remove('hidden');
+            if (geminiLoading) geminiLoading.classList.remove('hidden');
+            if (geminiContent) { geminiContent.innerHTML = ''; geminiContent.classList.add('hidden'); }
+        } else {
+            geminiCard.classList.add('hidden');
+        }
+    }
+
+    // Buka modal
+    pushAppHistory('ai-modal');
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('ai-sheet').classList.remove('translate-y-full');
+    });
+
+    // Fetch Wikipedia
+    const wikiLangCode = wikiLang === 'id' ? 'id' : 'en';
+    const wikiQuery = encodeURIComponent(savedText.split(' ').slice(0, 4).join(' '));
+    fetch(`https://${wikiLangCode}.wikipedia.org/api/rest_v1/page/summary/${wikiQuery}`)
+        .then(r => r.json())
+        .then(data => {
+            if (wikiLoading) wikiLoading.classList.add('hidden');
+            if (!wikiContent) return;
+            if (data.extract) {
+                wikiContent.innerHTML = `
+                    <p class="text-sm leading-relaxed text-m3-onSurfaceVariant font-medium">${data.extract}</p>
+                    ${data.content_urls ? `<a href="${data.content_urls.mobile.page}" target="_blank" class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-m3-primary opacity-80">Wikipedia <i data-lucide="external-link" class="w-3 h-3"></i></a>` : ''}
+                `;
+                if (window.lucide) window.lucide.createIcons();
+            } else {
+                wikiContent.innerHTML = `<p class="text-sm opacity-50 font-medium">${wikiLang === 'id' ? 'Tidak ditemukan di Wikipedia.' : 'Not found on Wikipedia.'}</p>`;
+            }
+            wikiContent.classList.remove('hidden');
+        })
+        .catch(() => {
+            if (wikiLoading) wikiLoading.classList.add('hidden');
+            if (wikiContent) {
+                wikiContent.innerHTML = `<p class="text-sm opacity-50 font-medium">${wikiLang === 'id' ? 'Gagal memuat Wikipedia.' : 'Failed to load Wikipedia.'}</p>`;
+                wikiContent.classList.remove('hidden');
+            }
+        });
+
+    // Fetch Gemini (kalau ada API key)
+    if (apiKey) {
+        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+        let langInstruction = wikiLang === 'id'
+            ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat.'
+            : 'Use English. Explain the meaning, context, and provide a short example sentence.';
+        let promptText = `Provide a concise dictionary definition and explanation for: "${savedText}". ${langInstruction}`;
+
+        fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        })
+        .then(r => { if (!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); })
+        .then(data => {
+            if (geminiLoading) geminiLoading.classList.add('hidden');
+            if (!geminiContent) return;
+            const rawText = data.candidates[0].content.parts[0].text;
+            const formatted = rawText
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-m3-primary font-bold">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em class="italic opacity-90">$1</em>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+            geminiContent.innerHTML = formatted;
+            geminiContent.classList.remove('hidden');
+        })
+        .catch(() => {
+            if (geminiLoading) geminiLoading.classList.add('hidden');
+            if (geminiContent) {
+                geminiContent.innerHTML = `<div class="text-red-500 text-sm font-bold">${wikiLang === 'id' ? 'Gagal memuat Gemini.' : 'Failed to load Gemini.'}</div>`;
+                geminiContent.classList.remove('hidden');
+            }
+        });
+    }
+};
+
+// 4b. GEMINI AI LOGIC (DICTIONARY / DEFINITION)
 window.askGemini = async function() {
     const selText = currentSelection.text;
     if(!selText) return;
