@@ -707,7 +707,6 @@ function renderLibrary(filterText = "") {
     } else { DOM.topSection.classList.add('hidden'); }
     
     const pinnedSection = document.getElementById('pinned-books-section');
-    // FIX BUG #3: Render pinned book mau lagi di-search atau enggak
     if (pinnedBooks.length > 0) {
         if(pinnedSection) pinnedSection.classList.remove('hidden');
         pinnedBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(createBookCard(book, false, idx)); });
@@ -1396,50 +1395,66 @@ window.renderNodeText = function(text, annots) {
     return html;
 }
 
-document.addEventListener('selectionchange', () => {
+let _selChangeDebounce = null;
+let _isTouchDragging = false;
+
+// Di HP: pakai touchstart/touchend buat deteksi kapan user lagi drag
+document.addEventListener('touchstart', () => { _isTouchDragging = true; }, { passive: true });
+document.addEventListener('touchend', () => {
+    _isTouchDragging = false;
+    // Waktu jari diangkat, baru tampilkan menu
+    if (activeBookId) {
+        clearTimeout(_selChangeDebounce);
+        _selChangeDebounce = setTimeout(_handleSelectionChange, 80);
+    }
+}, { passive: true });
+
+function _handleSelectionChange() {
     if(!activeBookId) return;
     const sel = window.getSelection(); const text = sel.toString().trim(); const menu = document.getElementById('selection-menu');
-    
+
     if (text.length > 0 && sel.rangeCount > 0 && DOM.inner) {
         const range = sel.getRangeAt(0);
         if (!DOM.inner.contains(range.commonAncestorContainer)) return;
 
         let curr = range.commonAncestorContainer;
-        if (curr.nodeType === 3) curr = curr.parentNode; 
+        if (curr.nodeType === 3) curr = curr.parentNode;
         const nodeEl = curr.closest('[id^="node-"]'); if (!nodeEl) return;
-        
+
         const nodeIdx = parseInt(nodeEl.id.split('-')[1]);
         const offsets = getAbsoluteOffsets(nodeEl);
         currentSelection = { text: text, nodeIdx: nodeIdx, startOff: offsets.start, endOff: offsets.end };
-        
-        menu.classList.remove('hidden');
 
+        menu.classList.remove('hidden');
         const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
         let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
         if (targetLeft < padding) targetLeft = padding;
         if (targetLeft + menuWidth > window.innerWidth - padding) targetLeft = window.innerWidth - menuWidth - padding;
         let targetTop = rect.top - 55;
-        if (targetTop < 80) targetTop = rect.bottom + 15; 
+        if (targetTop < 80) targetTop = rect.bottom + 15;
 
         menu.style.top = `${targetTop}px`; menu.style.left = `${targetLeft}px`;
         requestAnimationFrame(() => { menu.classList.remove('opacity-0', 'scale-75'); });
-    } else { window.hideSelectionMenu(); }
+    } else {
+        if (!_isTouchDragging) window.hideSelectionMenu();
+    }
+}
+
+document.addEventListener('selectionchange', () => {
+    if(!activeBookId) return;
+    // Saat masih drag, debounce lebih lama supaya ga berat
+    clearTimeout(_selChangeDebounce);
+    _selChangeDebounce = setTimeout(_handleSelectionChange, _isTouchDragging ? 300 : 50);
 });
 
 if(document.getElementById('reader-content')) {
-    // FIX BUG #4: Cegah menu popup menghilang pas kita cuma mau geser panah handle selector di HP
     document.getElementById('reader-content').addEventListener('mousedown', (e) => { 
-        if(e.target.tagName.toLowerCase() === 'mark') return;
-        // Kasih delay dikit, krn di HP tap bentar kadang memicu mousedown yg reset text sel
-        setTimeout(() => {
-            if(!window.getSelection().toString().trim()) { window.hideSelectionMenu(); } 
-        }, 150);
+        const menu = document.getElementById('selection-menu');
+        // Kalau klik di dalam menu, jangan lakukan apapun
+        if(menu && !menu.classList.contains('hidden') && menu.contains(e.target)) return;
+        // Clear menu hanya kalau memang tidak ada teks terseleksi
+        if(!window.getSelection().toString().trim()) { window.hideSelectionMenu(); } 
     });
-    
-    // Tambah listener touchstart pasif, biar ga ngacau pas drag scroll teks
-    document.getElementById('reader-content').addEventListener('touchstart', (e) => {
-        // Biarkan native text selection handle ini
-    }, {passive: true});
 }
 
 window.hideSelectionMenu = function() {
@@ -1700,23 +1715,13 @@ window.renderBookmarkPanel = function() {
 
 // 12. SWIPE TO DISMISS LOGIC
 function setupSwipeToDismiss() {
-    // FIX FEATURE 1: Tambahin ai-sheet ke dalam sistem dismiss, dan bikin logic cerdas buat ngecek header handle
-    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet', 'ai-sheet'];
+    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
     sheets.forEach(sheetId => {
         const sheet = document.getElementById(sheetId);
         if (!sheet) return;
         let touchStartY = 0; let initialScrollTop = 0; let isPulling = false;
         sheet.addEventListener('touchstart', (e) => {
-            const scrollArea = sheet.querySelector('.overflow-y-auto') || sheet;
-            const isHandle = e.target.closest('.modal-drag-handle');
-            
-            // Cuma aktifkan pull-to-dismiss kalau lu sentuh di area khusus kepala (.modal-drag-handle)
-            // ATAU kalau kontennya udah di paling atas scrollnya.
-            if (!isHandle && scrollArea.scrollTop > 0) return;
-
-            touchStartY = e.touches[0].clientY; 
-            initialScrollTop = scrollArea.scrollTop; 
-            sheet.style.transition = 'none'; 
+            touchStartY = e.touches[0].clientY; initialScrollTop = sheet.scrollTop; sheet.style.transition = 'none'; 
         }, { passive: true });
         sheet.addEventListener('touchmove', (e) => {
             if (initialScrollTop <= 0) {
@@ -1737,6 +1742,40 @@ function setupSwipeToDismiss() {
             } else { sheet.style.transform = ''; }
         });
     });
+
+    // ai-sheet: swipe dismiss HANYA dari drag handle / area header, bukan dari dalam konten scroll
+    const aiSheet = document.getElementById('ai-sheet');
+    if (aiSheet) {
+        // Drag handle = div abu-abu di atas (w-12 h-1.5), dan area header (flex items-center justify-between)
+        // Deteksi: touch mulai di 80px teratas sheet = area aman buat dismiss
+        let aiTouchStartY = 0; let aiIsPulling = false;
+        aiSheet.addEventListener('touchstart', (e) => {
+            aiTouchStartY = e.touches[0].clientY;
+            aiIsPulling = false;
+            aiSheet.style.transition = 'none';
+        }, { passive: true });
+        aiSheet.addEventListener('touchmove', (e) => {
+            // Cek apakah scroll internal (div.flex-1.overflow-y-auto) sudah scroll ke atas
+            const scrollableInner = aiSheet.querySelector('.overflow-y-auto');
+            const innerScrollTop = scrollableInner ? scrollableInner.scrollTop : 0;
+            const deltaY = e.touches[0].clientY - aiTouchStartY;
+            // Hanya aktifkan dismiss kalau: scroll inner udah di atas (0) DAN geser ke bawah
+            if (innerScrollTop <= 0 && deltaY > 0) {
+                aiIsPulling = true;
+                if(e.cancelable) e.preventDefault();
+                aiSheet.style.transform = `translateY(${deltaY * 0.5}px)`;
+            }
+        }, { passive: false });
+        aiSheet.addEventListener('touchend', (e) => {
+            if (!aiIsPulling) return; aiIsPulling = false;
+            const deltaY = e.changedTouches[0].clientY - aiTouchStartY;
+            aiSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+            if (deltaY > 100) {
+                aiSheet.style.transform = 'translateY(100%)';
+                setTimeout(() => { history.back(); setTimeout(() => { aiSheet.style.transform = ''; }, 100); }, 100);
+            } else { aiSheet.style.transform = ''; }
+        });
+    }
 
     const panels = ['toc-panel', 'settings-panel', 'bookmark-panel'];
     panels.forEach(panelId => {
@@ -1797,4 +1836,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500);
 });
+
 
