@@ -9,7 +9,12 @@ if (typeof pdfjsLib !== 'undefined') {
 let inbookSearchTimeout;
 document.addEventListener("DOMContentLoaded", () => {
     // Listener Upload File (PDF/EPUB)
+    // Pake document.getElementById langsung karena nunggu dari DOM di app.js suka balapan (race condition)
     const fileInput = document.getElementById('doc-upload');
+    const loadState = document.getElementById('loading-state');
+    const loadBarEl = document.getElementById('loading-bar');
+    const loadPctEl = document.getElementById('loading-percent');
+
     if (fileInput) {
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
@@ -17,9 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const ext = originalFilename.split('.').pop().toLowerCase(); 
             const bookTitle = originalFilename.replace(/\.[^/.]+$/, "");
             
-            DOM.load.classList.remove('hidden'); 
-            DOM.loadBar.style.width = '0%'; 
-            DOM.loadPct.textContent = '0%';
+            if (loadState) loadState.classList.remove('hidden'); 
+            if (loadBarEl) loadBarEl.style.width = '0%'; 
+            if (loadPctEl) loadPctEl.textContent = '0%';
 
             try {
                 if (ext === 'pdf') await handlePdf(file, bookTitle);
@@ -30,38 +35,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error(err); 
             } 
             finally { 
-                setTimeout(() => { DOM.load.classList.add('hidden'); }, 1000); 
+                setTimeout(() => { if (loadState) loadState.classList.add('hidden'); }, 1000); 
                 e.target.value = ''; 
             }
         });
     }
 
-    // Listener Pencarian dalam Buku
-    // Pakai getElementById langsung buat hindari race condition dengan app.js
+    // FIX BUG #1: Listener Pencarian dalam Buku pake getElementById langsung
     const searchInputEl = document.getElementById('inbook-search-input');
-    const searchResEl = document.getElementById('search-results-panel');
-
     if(searchInputEl) {
         searchInputEl.addEventListener('input', (e) => {
             clearTimeout(inbookSearchTimeout);
             const val = e.target.value.trim().toLowerCase();
+            const searchResPanel = document.getElementById('search-results-panel');
+            
             if (!val || val.length < 2) { 
-                if(searchResEl) searchResEl.classList.add('hidden'); 
+                if (searchResPanel) searchResPanel.classList.add('hidden'); 
                 clearSearchHighlights();
                 return; 
             }
             
             inbookSearchTimeout = setTimeout(() => {
-                const lib = typeof library !== 'undefined' ? library : [];
-                const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
-                const book = lib.find(b => b.id === currentBookId);
-                if (!book || !book.nodes) return;
+                const book = library.find(b => b.id === activeBookId);
+                if (!book) return;
                 
                 const results = [];
                 const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 
                 book.nodes.forEach((node, i) => {
-                    if (node.tag !== 'img' && node.text && node.text.toLowerCase().includes(val)) {
+                    if (node.tag !== 'img' && node.text.toLowerCase().includes(val)) {
                         let snippet = node.text;
                         const matchIdx = snippet.toLowerCase().indexOf(val);
                         let start = Math.max(0, matchIdx - 40);
@@ -85,14 +87,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 renderSearchResults(results, val);
-            }, 400);
+            }, 600);
         });
     }
 });
 
 function clearSearchHighlights() {
-    if(!DOM.inner) return;
-    const marks = DOM.inner.querySelectorAll('mark.search-hl');
+    const innerContainer = document.getElementById('reader-inner');
+    if(!innerContainer) return;
+    const marks = innerContainer.querySelectorAll('mark.search-hl');
     marks.forEach(m => {
         const parent = m.parentNode;
         parent.replaceChild(document.createTextNode(m.textContent), m);
@@ -101,23 +104,22 @@ function clearSearchHighlights() {
 }
 
 function renderSearchResults(results, keyword) {
-    const searchResEl = document.getElementById('search-results-panel');
-    const readContentEl = document.getElementById('reader-content');
-    if(!searchResEl) return;
-    searchResEl.innerHTML = '';
-    const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
-    const d = (typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {});
+    const searchRes = document.getElementById('search-results-panel');
+    if(!searchRes) return;
+    
+    searchRes.innerHTML = '';
+    const d = typeof i18n !== 'undefined' ? (i18n[wikiLang] || i18n['id']) : {};
     
     if(results.length === 0) {
-        searchResEl.innerHTML = `<div class="p-6 text-center text-sm opacity-60 font-medium">${d.searchNotFound || 'Tidak ditemukan'}</div>`;
-        searchResEl.classList.remove('hidden');
+        searchRes.innerHTML = `<div class="p-6 text-center text-sm opacity-60 font-medium">${d.searchNotFound || 'Tidak ditemukan.'}</div>`;
+        searchRes.classList.remove('hidden');
         return;
     }
     
     const countHeader = document.createElement('div');
     countHeader.className = "px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-m3-primary/80 border-b border-m3-surfaceVariant";
     countHeader.textContent = `${results.length} Found`;
-    searchResEl.appendChild(countHeader);
+    searchRes.appendChild(countHeader);
 
     results.forEach(res => {
         const item = document.createElement('div');
@@ -128,18 +130,17 @@ function renderSearchResults(results, keyword) {
         `;
         
         item.onclick = () => {
-            const lib = typeof library !== 'undefined' ? library : [];
-            const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
-            const book = lib.find(b => b.id === currentBookId);
+            const book = library.find(b => b.id === activeBookId);
             if(!book) return;
             
-            searchResEl.classList.add('hidden');
+            searchRes.classList.add('hidden');
             const targetEl = document.getElementById(`node-${res.nodeIdx}`);
-            const container = readContentEl;
+            const container = document.getElementById('reader-content');
             
             if(targetEl && container) {
                 clearSearchHighlights();
                 
+                const originalHtml = targetEl.innerHTML;
                 const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 
                 const walker = document.createTreeWalker(targetEl, NodeFilter.SHOW_TEXT, null, false);
@@ -173,13 +174,16 @@ function renderSearchResults(results, keyword) {
             }
         };
         
-        searchResEl.appendChild(item);
+        searchRes.appendChild(item);
     });
-    searchResEl.classList.remove('hidden');
+    searchRes.classList.remove('hidden');
 }
 
 // 2. FUNGSI EKSTRAK PDF
 async function handlePdf(file, bookTitle) {
+    const loadBarEl = document.getElementById('loading-bar');
+    const loadPctEl = document.getElementById('loading-percent');
+    
     const arrayBuffer = await file.arrayBuffer(); 
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     let parsedNodes = []; 
@@ -192,8 +196,8 @@ async function handlePdf(file, bookTitle) {
     const coverBase64 = coverCanvas.toDataURL('image/jpeg', 0.8);
 
     for (let i = 1; i <= total; i++) {
-        DOM.loadBar.style.width = `${Math.round((i / total) * 100)}%`; 
-        DOM.loadPct.textContent = `${Math.round((i / total) * 100)}%`;
+        if (loadBarEl) loadBarEl.style.width = `${Math.round((i / total) * 100)}%`; 
+        if (loadPctEl) loadPctEl.textContent = `${Math.round((i / total) * 100)}%`;
 
         const page = await pdf.getPage(i); 
         const textContent = await page.getTextContent();
@@ -230,6 +234,9 @@ async function handlePdf(file, bookTitle) {
 
 // 3. FUNGSI EKSTRAK EPUB (REVISI ALGORITMA: ANTI-LAG & ANTI-DUPLIKAT MURNI)
 async function handleEpub(file, bookTitle) {
+    const loadBarEl = document.getElementById('loading-bar');
+    const loadPctEl = document.getElementById('loading-percent');
+    
     const zip = await JSZip.loadAsync(file); 
     let parsedNodes = []; 
     let coverBase64 = null;
@@ -281,8 +288,8 @@ async function handleEpub(file, bookTitle) {
 
     for (const idref of spine) {
         order++;
-        DOM.loadBar.style.width = `${Math.round((order / spine.length) * 100)}%`;
-        DOM.loadPct.textContent = `${Math.round((order / spine.length) * 100)}%`;
+        if (loadBarEl) loadBarEl.style.width = `${Math.round((order / spine.length) * 100)}%`;
+        if (loadPctEl) loadPctEl.textContent = `${Math.round((order / spine.length) * 100)}%`;
 
         if (!manifest[idref]) continue;
         const htmlPath = opfDir + manifest[idref].href; 
@@ -437,20 +444,37 @@ window.lookupDictionary = function() {
             }
         });
 
-    // Fetch Gemini (kalau ada API key)
+    // FIX BUG #2: Fetch Gemini dengan Handling Error yang jelas & perbaikan Model Version
     if (apiKey) {
-        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash-preview-05-20';
+        // Fallback model diganti ke yang pasti ada di semua API (gemini-2.0-flash / 1.5-flash)
+        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.0-flash';
         let langInstruction = wikiLang === 'id'
             ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat. Tulis dalam paragraf biasa, tanpa poin atau bullet. Langsung ke penjelasan tanpa kata pembuka.'
             : 'Use English. Explain the meaning, context, and provide a short example sentence. Write in plain paragraphs, no bullet points. No introductory phrases, go straight to the explanation.';
         let promptText = `Provide a concise dictionary definition and explanation for: "${savedText}". ${langInstruction}`;
 
+        const payload = {
+            contents: [{
+                parts: [{ text: promptText }]
+            }],
+            generationConfig: {
+                temperature: 0.3
+            }
+        };
+
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+            body: JSON.stringify(payload)
         })
-        .then(r => { if (!r.ok) throw new Error(`API Error: ${r.status}`); return r.json(); })
+        .then(async r => { 
+            const data = await r.json();
+            if (!r.ok) {
+                // Biar jelas error 400-nya dari mana (biasanya dari data.error.message API Google)
+                throw new Error(data.error?.message || `API Error: ${r.status}`);
+            }
+            return data; 
+        })
         .then(data => {
             if (geminiLoading) geminiLoading.classList.add('hidden');
             if (!geminiContent) return;
@@ -466,7 +490,8 @@ window.lookupDictionary = function() {
         .catch((err) => {
             if (geminiLoading) geminiLoading.classList.add('hidden');
             if (geminiContent) {
-                geminiContent.innerHTML = `<div class="text-red-500 text-sm font-bold">Error: ${err.message}</div>`;
+                // Tampilkan pesan error murni dari Google biar tau kalau emang model / token salah
+                geminiContent.innerHTML = `<div class="text-red-500 text-sm font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20">Error API: ${err.message}</div>`;
                 geminiContent.classList.remove('hidden');
             }
         });
@@ -478,10 +503,8 @@ window.closeAiModal = function(isFromHistory = false) {
     const m = document.getElementById('ai-modal');
     const s = document.getElementById('ai-sheet');
     
-    s.classList.add('translate-y-full');
-    m.classList.add('opacity-0');
-    setTimeout(() => m.classList.add('hidden'), 300);
+    if(s) s.classList.add('translate-y-full');
+    if(m) m.classList.add('opacity-0');
+    setTimeout(() => { if(m) m.classList.add('hidden'); }, 300);
 }
-
-
 
