@@ -411,9 +411,10 @@ window.lookupDictionary = function() {
         .then(data => {
             if (wikiLoading) wikiLoading.classList.add('hidden');
             if (!wikiContent) return;
-            if (data.extract) {
+            const extract = (data.extract || '').trim();
+            if (extract) {
                 wikiContent.innerHTML = `
-                    <p class="text-sm leading-relaxed text-m3-onSurfaceVariant font-medium">${data.extract}</p>
+                    <p class="text-sm leading-relaxed text-m3-onSurfaceVariant font-medium">${extract}</p>
                     ${data.content_urls ? `<a href="${data.content_urls.mobile.page}" target="_blank" class="mt-3 inline-flex items-center gap-1 text-xs font-bold text-m3-primary opacity-80">Wikipedia <i data-lucide="external-link" class="w-3 h-3"></i></a>` : ''}
                 `;
                 if (window.lucide) window.lucide.createIcons();
