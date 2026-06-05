@@ -75,22 +75,22 @@
                         <h2 class="text-xs font-black uppercase tracking-[0.15em] text-m3-onSecondaryContainer" id="str-stat-title">Statistik</h2>
                     </div>
 
-                    <div class="grid grid-cols-4 gap-1 relative z-10">
-                        <div class="flex flex-col items-center justify-center text-center">
+                    <div class="grid grid-cols-4 gap-2 relative z-10">
+                        <div class="flex flex-col items-center justify-center">
                             <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-total">0</span>
-                            <span class="text-[8px] font-bold uppercase tracking-wide opacity-70 mt-0.5 leading-tight" id="str-stat-total">Koleksi</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-total">Koleksi</span>
                         </div>
-                        <div class="flex flex-col items-center justify-center text-center">
+                        <div class="flex flex-col items-center justify-center">
                             <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-reading">0</span>
-                            <span class="text-[8px] font-bold uppercase tracking-wide opacity-70 mt-0.5 leading-tight" id="str-stat-reading">Dibaca</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-reading">Dibaca</span>
                         </div>
-                        <div class="flex flex-col items-center justify-center text-center">
+                        <div class="flex flex-col items-center justify-center">
                             <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-completed">0</span>
-                            <span class="text-[8px] font-bold uppercase tracking-wide opacity-70 mt-0.5 leading-tight" id="str-stat-completed">Selesai</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-completed">Selesai</span>
                         </div>
-                        <div class="flex flex-col items-center justify-center text-center">
+                        <div class="flex flex-col items-center justify-center">
                             <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-notes">0</span>
-                            <span class="text-[8px] font-bold uppercase tracking-wide opacity-70 mt-0.5 leading-tight" id="str-stat-notes">Catatan</span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-notes">Catatan</span>
                         </div>
                     </div>
                 </div>
@@ -503,19 +503,57 @@
     <div id="ai-modal" onclick="if(event.target === this) history.back()" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[120] flex items-end sm:items-center justify-center opacity-0 pb-0 sm:pb-0 p-0 sm:p-4">
         <div class="modal-content bg-m3-surface w-full max-w-md sm:rounded-[48px] rounded-t-[48px] p-6 pb-12 sm:pb-6 transform translate-y-full flex flex-col max-h-[85vh] border-none" id="ai-sheet">
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 sm:hidden"></div>
+            
+            <!-- Header -->
             <div class="flex items-center justify-between mb-4 shrink-0">
-                <h3 id="str-ai-title" class="text-lg font-bold text-m3-onSurface flex items-center gap-2"><i data-lucide="search" class="w-5 h-5 text-m3-primary"></i> Penjelasan</h3>
-                <button onclick="closeAiModal()" class="w-8 h-8 rounded-full bg-m3-surfaceVariant flex items-center justify-center btn-morph"><i data-lucide="x" class="w-4 h-4"></i></button>
+                <h3 id="str-ai-title" class="text-lg font-bold text-m3-onSurface flex items-center gap-2">
+                    <i data-lucide="search" class="w-5 h-5 text-m3-primary"></i> Penjelasan
+                </h3>
+                <button onclick="closeAiModal()" class="w-8 h-8 rounded-full bg-m3-surfaceVariant flex items-center justify-center btn-morph">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
             </div>
-            
-            <h4 id="ai-term" class="text-xl font-black mb-4 break-words text-m3-primary"></h4>
-            
-            <div class="flex-1 overflow-y-auto min-h-[150px] relative rounded-2xl bg-m3-surfaceVariant p-4 mb-4">
-                <div id="ai-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-m3-surfaceVariant z-10 rounded-2xl">
-                    <div class="w-8 h-8 border-4 border-m3-primary border-t-transparent rounded-full animate-spin mb-3"></div>
-                    <p id="str-ai-loading" class="text-xs font-bold opacity-70 animate-pulse uppercase tracking-wider">Mencari referensi...</p>
+
+            <!-- Term -->
+            <h4 id="ai-term" class="text-xl font-black mb-4 break-words text-m3-primary shrink-0"></h4>
+
+            <!-- Scrollable content area -->
+            <div class="flex-1 overflow-y-auto flex flex-col gap-4 min-h-0">
+
+                <!-- Wikipedia Card -->
+                <div id="wiki-card" class="rounded-2xl bg-m3-surfaceVariant p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-6 h-6 rounded-full bg-m3-surface flex items-center justify-center shrink-0">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-m3-onSurface"></i>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest text-m3-onSurfaceVariant opacity-60">Wikipedia</span>
+                    </div>
+                    <!-- Loading state -->
+                    <div id="wiki-loading" class="flex items-center gap-3 py-2">
+                        <div class="w-5 h-5 border-2 border-m3-primary border-t-transparent rounded-full animate-spin shrink-0"></div>
+                        <p class="text-xs font-bold opacity-50 animate-pulse uppercase tracking-wider">Mencari referensi...</p>
+                    </div>
+                    <!-- Content -->
+                    <div id="wiki-content" class="hidden"></div>
                 </div>
-                <div id="ai-content" class="text-m3-onSurfaceVariant leading-relaxed font-medium"></div>
+
+                <!-- Gemini Card -->
+                <div id="gemini-card" class="hidden rounded-2xl bg-m3-primaryContainer p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-6 h-6 rounded-full bg-m3-primary/20 flex items-center justify-center shrink-0">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-m3-primary"></i>
+                        </div>
+                        <span class="text-xs font-black uppercase tracking-widest text-m3-onPrimaryContainer opacity-70">Gemini AI</span>
+                    </div>
+                    <!-- Loading state -->
+                    <div id="gemini-loading" class="flex items-center gap-3 py-2">
+                        <div class="w-5 h-5 border-2 border-m3-primary border-t-transparent rounded-full animate-spin shrink-0"></div>
+                        <p class="text-xs font-bold opacity-50 animate-pulse uppercase tracking-wider">Memuat AI...</p>
+                    </div>
+                    <!-- Content -->
+                    <div id="gemini-content" class="hidden text-sm leading-relaxed font-medium text-m3-onPrimaryContainer"></div>
+                </div>
+
             </div>
         </div>
     </div>
