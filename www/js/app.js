@@ -1396,18 +1396,18 @@ window.renderNodeText = function(text, annots) {
 }
 
 let _selChangeDebounce = null;
-let _isPointerDown = false;
+let _isTouchDragging = false;
 
-// Lacak state pointer supaya tau kapan user masih lagi drag
-document.addEventListener('pointerdown', () => { _isPointerDown = true; });
-document.addEventListener('pointerup', () => {
-    _isPointerDown = false;
-    // Waktu pointer dilepas, baru update posisi menu sekali
+// Di HP: pakai touchstart/touchend buat deteksi kapan user lagi drag
+document.addEventListener('touchstart', () => { _isTouchDragging = true; }, { passive: true });
+document.addEventListener('touchend', () => {
+    _isTouchDragging = false;
+    // Waktu jari diangkat, baru tampilkan menu
     if (activeBookId) {
         clearTimeout(_selChangeDebounce);
-        _selChangeDebounce = setTimeout(_handleSelectionChange, 50);
+        _selChangeDebounce = setTimeout(_handleSelectionChange, 80);
     }
-});
+}, { passive: true });
 
 function _handleSelectionChange() {
     if(!activeBookId) return;
@@ -1425,10 +1425,6 @@ function _handleSelectionChange() {
         const offsets = getAbsoluteOffsets(nodeEl);
         currentSelection = { text: text, nodeIdx: nodeIdx, startOff: offsets.start, endOff: offsets.end };
 
-        // Kalau masih lagi drag (pointer masih ditekan), cukup simpan data seleksi
-        // tapi jangan tampilkan/gerakkan menu supaya ga berat
-        if (_isPointerDown) return;
-
         menu.classList.remove('hidden');
         const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
         let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
@@ -1440,16 +1436,15 @@ function _handleSelectionChange() {
         menu.style.top = `${targetTop}px`; menu.style.left = `${targetLeft}px`;
         requestAnimationFrame(() => { menu.classList.remove('opacity-0', 'scale-75'); });
     } else {
-        // Jangan hide menu kalau pointer masih ditekan (masih lagi drag)
-        if (!_isPointerDown) window.hideSelectionMenu();
+        if (!_isTouchDragging) window.hideSelectionMenu();
     }
 }
 
 document.addEventListener('selectionchange', () => {
     if(!activeBookId) return;
-    // Kalau lagi drag, debounce ringan — cukup update data, ga perlu render menu
+    // Saat masih drag, debounce lebih lama supaya ga berat
     clearTimeout(_selChangeDebounce);
-    _selChangeDebounce = setTimeout(_handleSelectionChange, _isPointerDown ? 200 : 50);
+    _selChangeDebounce = setTimeout(_handleSelectionChange, _isTouchDragging ? 300 : 50);
 });
 
 if(document.getElementById('reader-content')) {
