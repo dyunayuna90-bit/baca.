@@ -1626,10 +1626,20 @@ window.renderBookmarkPanel = function() {
     const book = library.find(b => b.id === activeBookId);
     if (!book) return;
 
+    // Reset search input tiap kali panel di-render ulang
+    const searchInput = document.getElementById('bookmark-search-input');
+    if (searchInput) searchInput.value = '';
+
+    _renderBookmarkList(book.annotations || []);
+};
+
+// Fungsi internal render list, bisa dipanggil dengan filter
+function _renderBookmarkList(annotations) {
+    if(!DOM.bookmarkList) return;
     DOM.bookmarkList.innerHTML = '';
     const emptyState = document.getElementById('bookmark-empty');
-    
-    const bookmarks = (book.annotations || []).sort((a,b) => a.nodeIdx - b.nodeIdx);
+
+    const bookmarks = [...annotations].sort((a,b) => a.nodeIdx - b.nodeIdx);
 
     if(bookmarks.length === 0) {
         if(emptyState) emptyState.classList.remove('hidden');
@@ -1711,6 +1721,15 @@ window.renderBookmarkPanel = function() {
         });
         if(window.lucide) window.lucide.createIcons();
     }
+}
+
+window.filterBookmarkPanel = function(query) {
+    const book = library.find(b => b.id === activeBookId);
+    if (!book) return;
+    const all = book.annotations || [];
+    const q = query.trim().toLowerCase();
+    const filtered = q ? all.filter(bm => (bm.title || '').toLowerCase().includes(q)) : all;
+    _renderBookmarkList(filtered);
 };
 
 // 12. SWIPE TO DISMISS LOGIC
