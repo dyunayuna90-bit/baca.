@@ -1436,11 +1436,26 @@ window.hideSelectionMenu = function() {
     if (menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
 }
 
+function showToast(msg) {
+    let t = document.getElementById('copy-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'copy-toast';
+        t.className = 'fixed bottom-28 left-1/2 -translate-x-1/2 z-[999] px-5 py-2.5 rounded-full bg-m3-onSurface text-m3-surface text-xs font-bold shadow-lg transition-all duration-300 opacity-0';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.remove('opacity-0');
+    clearTimeout(t._hide);
+    t._hide = setTimeout(() => t.classList.add('opacity-0'), 1500);
+}
+
 window.copySelection = function() {
     const text = currentSelection.text;
     if (!text) return;
     window.hideSelectionMenu();
     window.getSelection().removeAllRanges();
+    showToast(wikiLang === 'id' ? 'Tersalin!' : 'Copied!');
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).catch(() => {
             const ta = document.createElement('textarea');
