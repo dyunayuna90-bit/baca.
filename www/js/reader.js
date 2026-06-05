@@ -367,6 +367,7 @@ window.lookupDictionary = function() {
     const apiKey = localStorage.getItem('gemini_api_key');
 
     window.hideSelectionMenu();
+    window.getSelection().removeAllRanges();
 
     // Siapkan modal
     const modal = document.getElementById('ai-modal');
