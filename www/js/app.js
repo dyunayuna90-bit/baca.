@@ -707,7 +707,7 @@ function renderLibrary(filterText = "") {
     } else { DOM.topSection.classList.add('hidden'); }
     
     const pinnedSection = document.getElementById('pinned-books-section');
-    if (pinnedBooks.length > 0 && !filterText) {
+    if (pinnedBooks.length > 0) {
         if(pinnedSection) pinnedSection.classList.remove('hidden');
         pinnedBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(createBookCard(book, false, idx)); });
     } else {
@@ -1422,11 +1422,35 @@ document.addEventListener('selectionchange', () => {
 
         menu.style.top = `${targetTop}px`; menu.style.left = `${targetLeft}px`;
         requestAnimationFrame(() => { menu.classList.remove('opacity-0', 'scale-75'); });
+
+        // Auto-scroll saat drag selection mendekati tepi atas/bawah reader
+        const container = DOM.readContent;
+        if (container) {
+            const containerRect = container.getBoundingClientRect();
+            const scrollZone = 80; // px dari tepi yang memicu scroll
+            const scrollSpeed = 8;
+            const endRect = range.getBoundingClientRect();
+
+            clearTimeout(window._selScrollTimer);
+            if (endRect.bottom > containerRect.bottom - scrollZone) {
+                window._selScrollTimer = setTimeout(() => {
+                    container.scrollTop += scrollSpeed;
+                }, 16);
+            } else if (endRect.top < containerRect.top + scrollZone) {
+                window._selScrollTimer = setTimeout(() => {
+                    container.scrollTop -= scrollSpeed;
+                }, 16);
+            }
+        }
     } else { window.hideSelectionMenu(); }
 });
 
 if(document.getElementById('reader-content')) {
     document.getElementById('reader-content').addEventListener('mousedown', (e) => { 
+        const menu = document.getElementById('selection-menu');
+        // Kalau klik di dalam menu, jangan lakukan apapun
+        if(menu && !menu.classList.contains('hidden') && menu.contains(e.target)) return;
+        // Clear menu hanya kalau memang tidak ada teks terseleksi
         if(!window.getSelection().toString().trim()) { window.hideSelectionMenu(); } 
     });
 }
@@ -1689,7 +1713,7 @@ window.renderBookmarkPanel = function() {
 
 // 12. SWIPE TO DISMISS LOGIC
 function setupSwipeToDismiss() {
-    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
+    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet', 'ai-sheet'];
     sheets.forEach(sheetId => {
         const sheet = document.getElementById(sheetId);
         if (!sheet) return;
