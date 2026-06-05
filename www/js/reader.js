@@ -453,10 +453,10 @@ window.lookupDictionary = function() {
             geminiContent.innerHTML = formatted;
             geminiContent.classList.remove('hidden');
         })
-        .catch(() => {
+        .catch((err) => {
             if (geminiLoading) geminiLoading.classList.add('hidden');
             if (geminiContent) {
-                geminiContent.innerHTML = `<div class="text-red-500 text-sm font-bold">${wikiLang === 'id' ? 'Gagal memuat Gemini.' : 'Failed to load Gemini.'}</div>`;
+                geminiContent.innerHTML = `<div class="text-red-500 text-sm font-bold">Error: ${err.message}</div>`;
                 geminiContent.classList.remove('hidden');
             }
         });
