@@ -37,25 +37,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Listener Pencarian dalam Buku
-    if(DOM.searchInput) {
-        DOM.searchInput.addEventListener('input', (e) => {
+    // Pakai getElementById langsung buat hindari race condition dengan app.js
+    const searchInputEl = document.getElementById('inbook-search-input');
+    const searchResEl = document.getElementById('search-results-panel');
+
+    if(searchInputEl) {
+        searchInputEl.addEventListener('input', (e) => {
             clearTimeout(inbookSearchTimeout);
             const val = e.target.value.trim().toLowerCase();
             if (!val || val.length < 2) { 
-                DOM.searchRes.classList.add('hidden'); 
+                if(searchResEl) searchResEl.classList.add('hidden'); 
                 clearSearchHighlights();
                 return; 
             }
             
             inbookSearchTimeout = setTimeout(() => {
-                const book = library.find(b => b.id === activeBookId);
-                if (!book) return;
+                const lib = typeof library !== 'undefined' ? library : [];
+                const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
+                const book = lib.find(b => b.id === currentBookId);
+                if (!book || !book.nodes) return;
                 
                 const results = [];
                 const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 
                 book.nodes.forEach((node, i) => {
-                    if (node.tag !== 'img' && node.text.toLowerCase().includes(val)) {
+                    if (node.tag !== 'img' && node.text && node.text.toLowerCase().includes(val)) {
                         let snippet = node.text;
                         const matchIdx = snippet.toLowerCase().indexOf(val);
                         let start = Math.max(0, matchIdx - 40);
@@ -79,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 renderSearchResults(results, val);
-            }, 600);
+            }, 400);
         });
     }
 });
@@ -95,20 +101,23 @@ function clearSearchHighlights() {
 }
 
 function renderSearchResults(results, keyword) {
-    if(!DOM.searchRes) return;
-    DOM.searchRes.innerHTML = '';
-    const d = i18n[wikiLang] || i18n['id'];
+    const searchResEl = document.getElementById('search-results-panel');
+    const readContentEl = document.getElementById('reader-content');
+    if(!searchResEl) return;
+    searchResEl.innerHTML = '';
+    const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+    const d = (typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {});
     
     if(results.length === 0) {
-        DOM.searchRes.innerHTML = `<div class="p-6 text-center text-sm opacity-60 font-medium">${d.searchNotFound}</div>`;
-        DOM.searchRes.classList.remove('hidden');
+        searchResEl.innerHTML = `<div class="p-6 text-center text-sm opacity-60 font-medium">${d.searchNotFound || 'Tidak ditemukan'}</div>`;
+        searchResEl.classList.remove('hidden');
         return;
     }
     
     const countHeader = document.createElement('div');
     countHeader.className = "px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-m3-primary/80 border-b border-m3-surfaceVariant";
     countHeader.textContent = `${results.length} Found`;
-    DOM.searchRes.appendChild(countHeader);
+    searchResEl.appendChild(countHeader);
 
     results.forEach(res => {
         const item = document.createElement('div');
@@ -119,17 +128,18 @@ function renderSearchResults(results, keyword) {
         `;
         
         item.onclick = () => {
-            const book = library.find(b => b.id === activeBookId);
+            const lib = typeof library !== 'undefined' ? library : [];
+            const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
+            const book = lib.find(b => b.id === currentBookId);
             if(!book) return;
             
-            DOM.searchRes.classList.add('hidden');
+            searchResEl.classList.add('hidden');
             const targetEl = document.getElementById(`node-${res.nodeIdx}`);
-            const container = DOM.readContent;
+            const container = readContentEl;
             
             if(targetEl && container) {
                 clearSearchHighlights();
                 
-                const originalHtml = targetEl.innerHTML;
                 const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 
                 const walker = document.createTreeWalker(targetEl, NodeFilter.SHOW_TEXT, null, false);
@@ -163,9 +173,9 @@ function renderSearchResults(results, keyword) {
             }
         };
         
-        DOM.searchRes.appendChild(item);
+        searchResEl.appendChild(item);
     });
-    DOM.searchRes.classList.remove('hidden');
+    searchResEl.classList.remove('hidden');
 }
 
 // 2. FUNGSI EKSTRAK PDF
@@ -429,7 +439,7 @@ window.lookupDictionary = function() {
 
     // Fetch Gemini (kalau ada API key)
     if (apiKey) {
-        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
+        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash-preview-05-20';
         let langInstruction = wikiLang === 'id'
             ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat. Tulis dalam paragraf biasa, tanpa poin atau bullet. Langsung ke penjelasan tanpa kata pembuka.'
             : 'Use English. Explain the meaning, context, and provide a short example sentence. Write in plain paragraphs, no bullet points. No introductory phrases, go straight to the explanation.';
@@ -462,80 +472,6 @@ window.lookupDictionary = function() {
         });
     }
 };
-
-// 4b. GEMINI AI LOGIC (DICTIONARY / DEFINITION)
-window.askGemini = async function() {
-    const selText = currentSelection.text;
-    if(!selText) return;
-
-    window.hideSelectionMenu();
-    const d = i18n[wikiLang] || i18n['id'];
-
-    const apiKey = localStorage.getItem('gemini_api_key');
-    const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash';
-    
-    if (!apiKey) {
-        showDialog("API Key Required", "Please configure your Gemini API Key in Settings first.", "key", [{text: "Close", primary: true}]);
-        return;
-    }
-    
-    if(!navigator.onLine) {
-        showDialog("Offline", d.noInternet, "wifi-off", [{text: "Tutup", primary: true}]);
-        return;
-    }
-
-    const modal = document.getElementById('ai-modal');
-    const titleEl = document.getElementById('ai-word-title');
-    const contentEl = document.getElementById('ai-content');
-    const loadState = document.getElementById('ai-loading-state');
-    
-    titleEl.textContent = selText.length > 25 ? selText.substring(0, 25) + '...' : selText;
-    contentEl.innerHTML = '';
-    contentEl.classList.add('hidden');
-    loadState.classList.remove('hidden');
-    
-    pushAppHistory('ai-modal');
-    modal.classList.remove('hidden');
-    requestAnimationFrame(() => {
-        modal.classList.remove('opacity-0');
-        document.getElementById('ai-sheet').classList.remove('translate-y-full');
-    });
-
-    try {
-        let langInstruction = wikiLang === 'id' ? 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat.' : 'Use English. Explain the meaning, context, and provide a short example sentence.';
-        let promptText = `Provide a concise dictionary definition and explanation for: "${selText}". ${langInstruction}`;
-        
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: promptText }] }]
-            })
-        });
-
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        
-        const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
-        
-        const formattedText = rawText
-            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-m3-primary font-bold">$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em class="italic opacity-90">$1</em>')
-            .replace(/\n\n/g, '<br><br>')
-            .replace(/\n/g, '<br>');
-            
-        loadState.classList.add('hidden');
-        contentEl.innerHTML = formattedText;
-        contentEl.classList.remove('hidden');
-        
-    } catch (error) {
-        console.error(error);
-        loadState.classList.add('hidden');
-        contentEl.innerHTML = `<div class="text-red-500 font-bold p-4 bg-red-500/10 rounded-2xl flex items-center gap-3"><i data-lucide="alert-triangle"></i><span>Failed to load explanation. Check your API Key or connection.</span></div>`;
-        contentEl.classList.remove('hidden');
-        if(window.lucide) window.lucide.createIcons();
-    }
-}
 
 window.closeAiModal = function(isFromHistory = false) {
     if (!isFromHistory) { history.back(); return; }
