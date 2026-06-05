@@ -1,4 +1,3 @@
-```css
 * {
     outline: none !important;
     /* BLOKIR SELEKSI TEKS GLOBAL & POPUP NATIVE */
@@ -70,5 +69,3 @@ html, body {
 .card-morph:active { transform: scale(0.96); box-shadow: none !important; }
 .btn-morph { transition: transform 0.1s ease, opacity 0.2s ease; }
 .btn-morph:active { transform: scale(0.92); opacity: 0.8; }
-
-```
