@@ -1395,54 +1395,61 @@ window.renderNodeText = function(text, annots) {
     return html;
 }
 
-document.addEventListener('selectionchange', () => {
+let _selChangeDebounce = null;
+let _isPointerDown = false;
+
+// Lacak state pointer supaya tau kapan user masih lagi drag
+document.addEventListener('pointerdown', () => { _isPointerDown = true; });
+document.addEventListener('pointerup', () => {
+    _isPointerDown = false;
+    // Waktu pointer dilepas, baru update posisi menu sekali
+    if (activeBookId) {
+        clearTimeout(_selChangeDebounce);
+        _selChangeDebounce = setTimeout(_handleSelectionChange, 50);
+    }
+});
+
+function _handleSelectionChange() {
     if(!activeBookId) return;
     const sel = window.getSelection(); const text = sel.toString().trim(); const menu = document.getElementById('selection-menu');
-    
+
     if (text.length > 0 && sel.rangeCount > 0 && DOM.inner) {
         const range = sel.getRangeAt(0);
         if (!DOM.inner.contains(range.commonAncestorContainer)) return;
 
         let curr = range.commonAncestorContainer;
-        if (curr.nodeType === 3) curr = curr.parentNode; 
+        if (curr.nodeType === 3) curr = curr.parentNode;
         const nodeEl = curr.closest('[id^="node-"]'); if (!nodeEl) return;
-        
+
         const nodeIdx = parseInt(nodeEl.id.split('-')[1]);
         const offsets = getAbsoluteOffsets(nodeEl);
         currentSelection = { text: text, nodeIdx: nodeIdx, startOff: offsets.start, endOff: offsets.end };
-        
-        menu.classList.remove('hidden');
 
+        // Kalau masih lagi drag (pointer masih ditekan), cukup simpan data seleksi
+        // tapi jangan tampilkan/gerakkan menu supaya ga berat
+        if (_isPointerDown) return;
+
+        menu.classList.remove('hidden');
         const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
         let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
         if (targetLeft < padding) targetLeft = padding;
         if (targetLeft + menuWidth > window.innerWidth - padding) targetLeft = window.innerWidth - menuWidth - padding;
         let targetTop = rect.top - 55;
-        if (targetTop < 80) targetTop = rect.bottom + 15; 
+        if (targetTop < 80) targetTop = rect.bottom + 15;
 
         menu.style.top = `${targetTop}px`; menu.style.left = `${targetLeft}px`;
         requestAnimationFrame(() => { menu.classList.remove('opacity-0', 'scale-75'); });
+    } else {
+        // Jangan hide menu kalau pointer masih ditekan (masih lagi drag)
+        if (!_isPointerDown) window.hideSelectionMenu();
+    }
+}
 
-        // Auto-scroll saat drag selection mendekati tepi atas/bawah reader
-        const container = DOM.readContent;
-        if (container) {
-            const containerRect = container.getBoundingClientRect();
-            const scrollZone = 80; // px dari tepi yang memicu scroll
-            const scrollSpeed = 8;
-            const endRect = range.getBoundingClientRect();
-
-            clearTimeout(window._selScrollTimer);
-            if (endRect.bottom > containerRect.bottom - scrollZone) {
-                window._selScrollTimer = setTimeout(() => {
-                    container.scrollTop += scrollSpeed;
-                }, 16);
-            } else if (endRect.top < containerRect.top + scrollZone) {
-                window._selScrollTimer = setTimeout(() => {
-                    container.scrollTop -= scrollSpeed;
-                }, 16);
-            }
-        }
-    } else { window.hideSelectionMenu(); }
+document.addEventListener('selectionchange', () => {
+    if(!activeBookId) return;
+    // Kalau lagi drag, debounce ringan — cukup update data, ga perlu render menu
+    clearTimeout(_selChangeDebounce);
+    _selChangeDebounce = setTimeout(_handleSelectionChange, _isPointerDown ? 200 : 50);
 });
 
 if(document.getElementById('reader-content')) {
@@ -1713,7 +1720,7 @@ window.renderBookmarkPanel = function() {
 
 // 12. SWIPE TO DISMISS LOGIC
 function setupSwipeToDismiss() {
-    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet', 'ai-sheet'];
+    const sheets = ['global-settings-sheet', 'b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'welcome-sheet'];
     sheets.forEach(sheetId => {
         const sheet = document.getElementById(sheetId);
         if (!sheet) return;
@@ -1740,6 +1747,40 @@ function setupSwipeToDismiss() {
             } else { sheet.style.transform = ''; }
         });
     });
+
+    // ai-sheet: swipe dismiss HANYA dari drag handle / area header, bukan dari dalam konten scroll
+    const aiSheet = document.getElementById('ai-sheet');
+    if (aiSheet) {
+        // Drag handle = div abu-abu di atas (w-12 h-1.5), dan area header (flex items-center justify-between)
+        // Deteksi: touch mulai di 80px teratas sheet = area aman buat dismiss
+        let aiTouchStartY = 0; let aiIsPulling = false;
+        aiSheet.addEventListener('touchstart', (e) => {
+            aiTouchStartY = e.touches[0].clientY;
+            aiIsPulling = false;
+            aiSheet.style.transition = 'none';
+        }, { passive: true });
+        aiSheet.addEventListener('touchmove', (e) => {
+            // Cek apakah scroll internal (div.flex-1.overflow-y-auto) sudah scroll ke atas
+            const scrollableInner = aiSheet.querySelector('.overflow-y-auto');
+            const innerScrollTop = scrollableInner ? scrollableInner.scrollTop : 0;
+            const deltaY = e.touches[0].clientY - aiTouchStartY;
+            // Hanya aktifkan dismiss kalau: scroll inner udah di atas (0) DAN geser ke bawah
+            if (innerScrollTop <= 0 && deltaY > 0) {
+                aiIsPulling = true;
+                if(e.cancelable) e.preventDefault();
+                aiSheet.style.transform = `translateY(${deltaY * 0.5}px)`;
+            }
+        }, { passive: false });
+        aiSheet.addEventListener('touchend', (e) => {
+            if (!aiIsPulling) return; aiIsPulling = false;
+            const deltaY = e.changedTouches[0].clientY - aiTouchStartY;
+            aiSheet.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+            if (deltaY > 100) {
+                aiSheet.style.transform = 'translateY(100%)';
+                setTimeout(() => { history.back(); setTimeout(() => { aiSheet.style.transform = ''; }, 100); }, 100);
+            } else { aiSheet.style.transform = ''; }
+        });
+    }
 
     const panels = ['toc-panel', 'settings-panel', 'bookmark-panel'];
     panels.forEach(panelId => {
