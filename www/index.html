@@ -173,7 +173,11 @@
 
             <!-- Panel Bookmark -->
             <div id="bookmark-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
-                <h3 id="str-bookmark-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="bookmark"></i> Bookmark</h3>
+                <h3 id="str-bookmark-title" class="text-lg font-bold mb-4 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="bookmark"></i> Bookmark</h3>
+                <div class="relative mb-4">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50 text-m3-onSurface pointer-events-none"></i>
+                    <input type="text" id="bookmark-search-input" oninput="filterBookmarkPanel(this.value)" class="w-full bg-m3-surface text-m3-onSurface text-sm font-bold pl-9 pr-3 py-2.5 rounded-2xl border-none outline-none placeholder:opacity-50" placeholder="Cari judul bookmark...">
+                </div>
                 <div id="bookmark-list" class="space-y-2 flex flex-col pb-20"></div>
                 <div id="bookmark-empty" class="text-sm opacity-50 p-3 text-center hidden font-bold" id="str-bookmark-empty">Belum ada pembatas buku.</div>
             </div>
