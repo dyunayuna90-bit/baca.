@@ -359,17 +359,14 @@ function resolveRelativePath(base, relative) {
 
 // 4. LOOKUP DICTIONARY — Orchestrator Wikipedia + Gemini
 window.lookupDictionary = function() {
-    // Simpan selection SEBELUM hilang
     const savedText = currentSelection.text;
     if (!savedText) return;
 
-    const d = i18n[wikiLang] || i18n['id'];
     const apiKey = localStorage.getItem('gemini_api_key');
 
     window.hideSelectionMenu();
     window.getSelection().removeAllRanges();
 
-    // Siapkan modal
     const modal = document.getElementById('ai-modal');
     const termEl = document.getElementById('ai-term');
     const wikiCard = document.getElementById('wiki-card');
@@ -379,7 +376,6 @@ window.lookupDictionary = function() {
     const geminiContent = document.getElementById('gemini-content');
     const geminiLoading = document.getElementById('gemini-loading');
 
-    // Reset state
     termEl.textContent = savedText.length > 40 ? savedText.substring(0, 40) + '...' : savedText;
 
     if (wikiCard) wikiCard.classList.remove('hidden');
@@ -396,7 +392,6 @@ window.lookupDictionary = function() {
         }
     }
 
-    // Buka modal
     pushAppHistory('ai-modal');
     modal.classList.remove('hidden');
     requestAnimationFrame(() => {
@@ -551,5 +546,6 @@ window.closeAiModal = function(isFromHistory = false) {
     m.classList.add('opacity-0');
     setTimeout(() => m.classList.add('hidden'), 300);
 }
+
 
 
