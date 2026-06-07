@@ -1,4 +1,4 @@
-window.APP_VERSION = "2.0.5";
+window.APP_VERSION = "2.0.6";
 window.UPDATE_URL = "https://raw.githubusercontent.com/dyunayuna90-bit/baca./main/package.json";
 window.RELEASES_URL = "https://github.com/dyunayuna90-bit/baca./releases/latest";
 
