@@ -183,7 +183,7 @@
             </div>
 
             <!-- MODE CANVAS (Layout Asli) -->
-            <div id="canvas-container" class="hidden absolute inset-0 overflow-hidden w-full h-full bg-m3-bg select-none" style="padding-top: 56px; padding-bottom: 96px;">
+            <div id="canvas-container" class="hidden absolute inset-0 overflow-hidden w-full h-full bg-m3-bg select-none" style="padding-top: 56px; padding-bottom: 0px;">
                 <div id="canvas-zoom-viewport" class="w-full h-full overflow-hidden flex items-center justify-center">
                     <!-- Wrapper: di-center oleh flex parent, transform-origin center agar zoom tidak loncat -->
                     <div id="canvas-wrapper" class="shadow-lg bg-white flex-shrink-0" style="transform-origin: center center;">
@@ -191,24 +191,7 @@
                     </div>
                 </div>
                 
-                <!-- CANVAS PAGE CONTROLLER -->
-                <div id="canvas-page-controller" class="hidden absolute left-1/2 -translate-x-1/2 bg-m3-surfaceVariant text-m3-onSurfaceVariant px-4 py-2.5 rounded-full shadow-lg z-30 flex items-center gap-3 border border-m3-surfaceVariant/20" style="bottom: 12px;">
-                    <button onclick="window.prevCanvasPage()" class="w-9 h-9 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors btn-morph">
-                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
-                    </button>
-                    <div class="flex items-center gap-1 text-xs font-black tracking-wide">
-                        <span id="canvas-page-num" class="text-m3-primary">1</span>
-                        <span class="opacity-50">/</span>
-                        <span id="canvas-page-total">1</span>
-                    </div>
-                    <button onclick="window.nextCanvasPage()" class="w-9 h-9 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors btn-morph">
-                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
-                    </button>
-                    <div class="w-[1px] h-5 bg-m3-onSurfaceVariant/20 mx-1"></div>
-                    <button onclick="window.showJumpToPageDialog()" class="w-9 h-9 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors text-m3-primary btn-morph" title="Lompat Halaman">
-                        <i data-lucide="hash" class="w-4 h-4"></i>
-                    </button>
-                </div>
+
             </div>
 
             <div id="side-panel-overlay" class="hidden absolute inset-0 bg-black/20 z-30 transition-opacity"></div>
@@ -297,6 +280,18 @@
         <!-- PROGRESS BAR -->
         <div id="progress-container" class="h-1 w-full bg-m3-surfaceVariant shrink-0 z-40 relative">
             <div id="reading-progress-bar" class="h-full bg-m3-primary progress-smooth w-0"></div>
+        </div>
+
+        <!-- CANVAS PAGE INDICATOR (di atas bottom bar, hanya canvas mode) -->
+        <div id="canvas-page-indicator-bar" class="hidden bg-m3-surfaceVariant/80 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2">
+            <div class="flex items-center gap-1 text-xs font-black tracking-wide text-m3-onSurfaceVariant">
+                <span id="canvas-page-num" class="text-m3-primary">1</span>
+                <span class="opacity-40">/</span>
+                <span id="canvas-page-total">1</span>
+            </div>
+            <button onclick="window.showJumpToPageDialog()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors ml-1" title="Lompat Halaman">
+                <i data-lucide="hash" class="w-3.5 h-3.5"></i>
+            </button>
         </div>
 
         <!-- BOTTOM NAV BAR -->
