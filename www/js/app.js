@@ -98,7 +98,14 @@ document.addEventListener("DOMContentLoaded", () => {
     applyLanguage();
     applyTypo();
     applyThemeToDOM();
-    loadLibrary();
+    loadLibrary().finally(() => {
+        // Sembunyikan splash screen setelah library siap
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 500);
+        }
+    });
     setupSwipeToDismiss(); // Nyalain Gestur Aman
 
     if (!localStorage.getItem('first_time_seen_v5')) {
@@ -901,8 +908,7 @@ async function executeRestoreLogic(jsonString) {
         // Set berisi id buku yang user minta skip (abaikan)
         const skippedIds = new Set();
 
-        // Langsung ke dialog konfirmasi utama — mode PDF tidak dipaksa ganti
-        _showMainConfirm();
+        // ── definisikan dulu sebelum dipanggil ──
 
         const _doRestore = async () => {
             window.closeDialog();
@@ -926,7 +932,6 @@ async function executeRestoreLogic(jsonString) {
                 const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
                 if (existingIndex > -1) {
                     // Jangan paksa ganti pdfMode — pertahankan mode yang sudah ada di library
-                    // Hanya restore progres, catatan, dan metadata non-mode
                     mergedLibrary[existingIndex] = {
                         ...mergedLibrary[existingIndex],
                         progressPct: meta.progressPct,
@@ -984,7 +989,7 @@ async function executeRestoreLogic(jsonString) {
             );
         };
 
-        // Tampilkan dialog konfirmasi utama langsung
+        // Tampilkan dialog konfirmasi utama
         _showMainConfirm();
 
     } catch (err) {
