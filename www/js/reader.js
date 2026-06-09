@@ -297,6 +297,8 @@ async function processMultipleFiles(files) {
         const strScroll = d.pdfModeBtnScroll || "Mode Scroll (Teks)";
         const strCanvas = d.pdfModeBtnCanvas || "Mode Canvas (Asli)";
         const strAlreadyInLib = d.alreadyInLib || "Buku sudah ada di rak";
+        const strScrollWillDelete = d.pdfScrollWillDelete || "Scroll → Canvas (⚠️ versi Scroll terhapus)";
+        const strCanvasWillDelete = d.pdfCanvasWillDelete || "Canvas → Scroll (⚠️ versi Canvas terhapus)";
         
         fileModes.forEach((m, idx) => {
             const shortTitle = m.title.length > 30 ? m.title.substring(0, 30) + '...' : m.title;
@@ -324,19 +326,19 @@ async function processMultipleFiles(files) {
                     rowOpacity = 'opacity-40';
                     controlHtml = `<span class="text-[10px] bg-m3-surfaceVariant text-m3-onSurfaceVariant px-2 py-1 rounded-md font-bold">${strAlreadyInLib}</span>`;
                 } else if (em && em.hasCanvas) {
-                    // Sudah ada di canvas → kunci ke scroll saja
+                    // Sudah ada di canvas → kunci ke scroll saja, peringatkan canvas akan terhapus
                     m._lockedMode = 'scroll';
                     controlHtml = `
-                        <span class="text-[10px] bg-m3-primaryContainer text-m3-onPrimaryContainer px-2 py-1 rounded-md font-bold flex items-center gap-1">
-                            <span>🔒</span> ${strScroll}
+                        <span class="text-[10px] bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-1 rounded-md font-bold flex items-center gap-1 leading-tight">
+                            <i data-lucide="alert-triangle" class="w-3 h-3 shrink-0"></i> ${strCanvasWillDelete}
                         </span>
                     `;
                 } else if (em && em.hasScroll) {
-                    // Sudah ada di scroll → kunci ke canvas saja
+                    // Sudah ada di scroll → kunci ke canvas saja, peringatkan scroll akan terhapus
                     m._lockedMode = 'canvas';
                     controlHtml = `
-                        <span class="text-[10px] bg-m3-primaryContainer text-m3-onPrimaryContainer px-2 py-1 rounded-md font-bold flex items-center gap-1">
-                            <span>🔒</span> ${strCanvas}
+                        <span class="text-[10px] bg-red-500/15 text-red-600 dark:text-red-400 px-2 py-1 rounded-md font-bold flex items-center gap-1 leading-tight">
+                            <i data-lucide="alert-triangle" class="w-3 h-3 shrink-0"></i> ${strScrollWillDelete}
                         </span>
                     `;
                 } else {
