@@ -112,42 +112,60 @@ let _importDoneCount = 0;
 async function processMultipleFiles(files) {
     const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
     const d = typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {};
-    
-    // Tahap 1: Cek Duplikat Buku di Library
-    let duplicates = [];
-    let newFiles = [];
-    
-    for(let f of files) {
-        const bookId = btoa(unescape(encodeURIComponent(f.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
-        const existingIndex = typeof library !== 'undefined' ? library.findIndex(b => b.id === bookId) : -1;
-        
-        if(existingIndex > -1) {
-            duplicates.push({file: f, id: bookId, title: f.name.replace(/\.[^/.]+$/, "")});
+
+    // Helper: ambil ID asli buku dari nama file (sama dengan yang dipakai saat import)
+    function _getBookId(file) {
+        return btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    }
+
+    // Helper: cek mode yang sudah ada di library untuk ID buku tertentu
+    function _getExistingModes(bookId) {
+        const lib = typeof library !== 'undefined' ? library : [];
+        const existing = lib.filter(b => b.id === bookId);
+        const hasScroll = existing.some(b => b.type === 'pdf' && (b.pdfMode || 'scroll') !== 'canvas');
+        const hasCanvas = existing.some(b => b.type === 'pdf' && b.pdfMode === 'canvas');
+        const hasNonPdf = existing.some(b => b.type !== 'pdf');
+        return { hasScroll, hasCanvas, both: hasScroll && hasCanvas, hasNonPdf, found: existing.length > 0 };
+    }
+
+    // Tahap 1: Pisahkan file PDF dari non-PDF, dan cek duplikat untuk non-PDF
+    let pdfFiles    = [];
+    let nonPdfFiles = [];
+    let dupNonPdf   = [];   // non-PDF yang sudah ada persis di library
+
+    for (let f of files) {
+        const ext = f.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf') {
+            pdfFiles.push(f);
         } else {
-            newFiles.push(f);
+            const bookId = _getBookId(f);
+            const em = _getExistingModes(bookId);
+            if (em.found) {
+                dupNonPdf.push({ file: f, id: bookId, title: f.name.replace(/\.[^/.]+$/, "") });
+            } else {
+                nonPdfFiles.push(f);
+            }
         }
     }
-    
-    let filesToProcess = [...newFiles];
-    
-    // Tahap 2: Modal Konfirmasi Duplikat
-    if(duplicates.length > 0) {
+
+    // Tahap 2: Dialog konfirmasi duplikat untuk non-PDF saja
+    let filesToProcess = [...nonPdfFiles];
+
+    if (dupNonPdf.length > 0) {
         let dupListHtml = `<div class="max-h-40 overflow-y-auto mt-2 mb-2 bg-m3-surfaceVariant/30 rounded-xl p-2 text-left">`;
-        duplicates.forEach(dup => {
-            dupListHtml += `<div class="text-xs text-m3-onSurface opacity-80 mb-1 truncate whitespace-nowrap overflow-hidden text-ellipsis">- ${dup.title}</div>`;
+        dupNonPdf.forEach(dup => {
+            dupListHtml += `<div class="text-xs text-m3-onSurface opacity-80 mb-1 truncate">- ${dup.title}</div>`;
         });
         dupListHtml += `</div>`;
-        
+
         const action = await new Promise((resolve) => {
             let isResolved = false;
-            // Interval pengaman: jika user swipe kebawah untuk tutup modal, anggap Batal!
             const checkHidden = setInterval(() => {
                 if (document.getElementById('custom-dialog').classList.contains('hidden')) {
                     clearInterval(checkHidden);
                     if (!isResolved) resolve('CANCEL');
                 }
             }, 300);
-
             window.showDialog(
                 d.uploadDuplicateTitle || "Buku Sudah Ada",
                 (d.uploadDuplicateDesc || "Buku berikut sudah ada di rakmu. Tambahkan lagi (sebagai file baru) atau lewati saja?") + dupListHtml,
@@ -158,34 +176,21 @@ async function processMultipleFiles(files) {
                 ]
             );
         });
-        
-        if (action === 'CANCEL') return;
+
+        if (action === 'CANCEL' && pdfFiles.length === 0) return;
         if (action === 'ADD') {
-            duplicates.forEach(dup => {
-                dup.file._isDuplicate = true; // Tandai agar ID di-generate unik nantinya
-                filesToProcess.push(dup.file);
-            });
+            dupNonPdf.forEach(dup => { dup.file._isDuplicate = true; filesToProcess.push(dup.file); });
         }
-        
-        // Jeda bentar agar animasi tutup dialog selesai, tampilkan spinner
-        if (typeof window.showGlobalLoading === 'function') {
-            window.showGlobalLoading(d.loadingDocs || 'Menganalisa dokumen...');
-        }
+
+        if (typeof window.showGlobalLoading === 'function') window.showGlobalLoading(d.loadingDocs || 'Menganalisa dokumen...');
         await new Promise(r => setTimeout(r, 350));
         if (typeof window.hideGlobalLoading === 'function') window.hideGlobalLoading();
     }
-    
+
+    // Gabungkan PDF ke dalam filesToProcess (PDF akan lewat mode-selection sendiri)
+    for (let f of pdfFiles) filesToProcess.push(f);
+
     if (filesToProcess.length === 0) return;
-    
-    // Helper: Cek apakah file PDF sudah ada di rak tertentu berdasarkan ID buku
-    // Digunakan nanti di tahap pemilihan mode agar tombol dikunci atau diabaikan
-    function _getPdfExistingModes(bookId) {
-        const lib = typeof library !== 'undefined' ? library : [];
-        const existing = lib.filter(b => b.id === bookId && b.type === 'pdf');
-        const hasScroll = existing.some(b => (b.pdfMode || 'scroll') === 'scroll');
-        const hasCanvas = existing.some(b => b.pdfMode === 'canvas');
-        return { hasScroll, hasCanvas, both: hasScroll && hasCanvas };
-    }
     
     // Tahap 3: Pre-flight scan (Mendeteksi file PDF)
     const hasPdf = filesToProcess.some(f => f.name.toLowerCase().endsWith('.pdf'));
@@ -239,13 +244,12 @@ async function processMultipleFiles(files) {
         DOM.load.classList.add('hidden');
         if (typeof window.hideGlobalLoading === 'function') window.hideGlobalLoading();
         
-        // Tahap 4: Modal Batch Options (Mode Pemilihan Canvas/Scroll)
-        // Tandai setiap file PDF dengan info mode yang sudah ada di library (jika ada)
+        // Tahap 4: Modal Batch Options — tandai setiap PDF dengan info mode yang sudah ada di library
         fileModes.forEach(m => {
             if (m.ext === 'pdf' && !m.file._isDuplicate) {
-                const bookId = btoa(unescape(encodeURIComponent(m.file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+                const bookId = _getBookId(m.file);
                 m._bookId = bookId;
-                m._existingModes = _getPdfExistingModes(bookId);
+                m._existingModes = _getExistingModes(bookId);
             }
         });
 
