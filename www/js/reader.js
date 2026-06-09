@@ -128,15 +128,23 @@ async function processMultipleFiles(files) {
         return { hasScroll, hasCanvas, both: hasScroll && hasCanvas, hasNonPdf, found: existing.length > 0 };
     }
 
-    // Tahap 1: Pisahkan file PDF dari non-PDF, dan cek duplikat untuk non-PDF
-    let pdfFiles    = [];
-    let nonPdfFiles = [];
-    let dupNonPdf   = [];   // non-PDF yang sudah ada persis di library
+    // Tahap 1: Pisahkan file PDF dari non-PDF, dan cek duplikat
+    let pdfFiles       = [];
+    let nonPdfFiles    = [];
+    let dupNonPdf      = [];   // non-PDF yang sudah ada persis di library
+    let dupBothPdf     = [];   // PDF yang sudah ada di KEDUA mode (scroll & canvas) → harus ditolak total
 
     for (let f of files) {
         const ext = f.name.split('.').pop().toLowerCase();
         if (ext === 'pdf') {
-            pdfFiles.push(f);
+            const bookId = _getBookId(f);
+            const em = _getExistingModes(bookId);
+            if (em.both) {
+                // Sudah ada di scroll DAN canvas — tolak, tidak boleh ditambahkan lagi
+                dupBothPdf.push({ file: f, id: bookId, title: f.name.replace(/\.[^/.]+$/, "") });
+            } else {
+                pdfFiles.push(f);
+            }
         } else {
             const bookId = _getBookId(f);
             const em = _getExistingModes(bookId);
@@ -146,6 +154,38 @@ async function processMultipleFiles(files) {
                 nonPdfFiles.push(f);
             }
         }
+    }
+
+    // Tahap 1b: Tampilkan notif untuk PDF yang sudah ada di kedua rak → tidak bisa ditambahkan
+    if (dupBothPdf.length > 0) {
+        let dupBothListHtml = `<div class="max-h-40 overflow-y-auto mt-2 mb-2 bg-m3-surfaceVariant/30 rounded-xl p-2 text-left">`;
+        dupBothPdf.forEach(dup => {
+            dupBothListHtml += `<div class="text-xs text-m3-onSurface opacity-80 mb-1 truncate">📚 ${dup.title}</div>`;
+        });
+        dupBothListHtml += `</div>`;
+
+        const hasSomethingElse = pdfFiles.length > 0 || nonPdfFiles.length > 0;
+
+        await new Promise((resolve) => {
+            let isResolved = false;
+            const checkHidden = setInterval(() => {
+                if (document.getElementById('custom-dialog').classList.contains('hidden')) {
+                    clearInterval(checkHidden);
+                    if (!isResolved) resolve();
+                }
+            }, 300);
+            window.showDialog(
+                d.pdfBothModesTitle || "Buku Sudah Ada di Rak",
+                (d.pdfBothModesDesc || "Buku berikut sudah ada di kedua rak (Scroll & Canvas). Tidak dapat ditambahkan lagi.") + dupBothListHtml,
+                "book-x",
+                [
+                    { text: d.btnClose || "Oke", primary: true, action: () => { isResolved = true; window.closeDialog(); resolve(); } }
+                ]
+            );
+        });
+
+        // Jika tidak ada file lain yang perlu diproses, keluar
+        if (!hasSomethingElse && dupNonPdf.length === 0) return;
     }
 
     // Tahap 2: Dialog konfirmasi duplikat untuk non-PDF saja
