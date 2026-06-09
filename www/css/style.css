@@ -64,13 +64,26 @@ html, body {
 
 .modal-overlay { transition: opacity 0.3s ease; }
 
+/* Fix 2: Hapus semua blur dari modal overlay — ganti dengan low-light gelap */
+[id$="-modal"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Kecualikan elemen non-overlay di dalam modal */
+[id$="-sheet"], [id$="-sheet"] * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
 /* Hapus delay border-radius dari transisi biar pas ditarik bawah ga keliatan aneh/delay */
 .modal-content { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1); transform-origin: bottom; }
 .side-panel { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease; }
 
 /* Mencegah default browser gesture (kayak pull-to-refresh) di modal/panel saat swipe-dismiss */
 #global-settings-sheet, #b-opt-sheet, #edit-sheet, #bookmark-sheet, #raw-backup-sheet, #raw-restore-sheet, #welcome-sheet,
-#toc-panel, #settings-panel, #bookmark-panel {
+#toc-panel, #settings-panel, #bookmark-panel, #pdf-mode-sheet, #custom-dialog-sheet {
     overscroll-behavior-y: contain; 
 }
 
@@ -102,4 +115,121 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
 .reader-dynamic-text h2 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.4) !important; text-align: left !important; line-height: 1.4 !important; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--md-sys-color-on-surface-variant); border-bottom: 1px solid var(--md-sys-color-surface-variant); padding-bottom: 0.5rem; opacity: 1; }
 ::-webkit-scrollbar { width: 0px; }
 
+/* ===================================================================
+   STYLE BARU UNTUK DUAL-MODE PDF (PHASE 3 & PERBAIKAN)
+   =================================================================== */
+
+/* Viewport Zoom & Container Canvas PDF.js murni */
+#canvas-zoom-viewport {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    display: flex;
+    align-items: center; /* Diubah agar kotak kanvas ada tepat di tengah vertikal */
+    justify-content: center; /* Tepat di tengah horizontal */
+    width: 100%;
+    height: 100%;
+}
+
+/* Wrapper Canvas dengan transisi scaling untuk pinch-to-zoom dan panning */
+#canvas-wrapper {
+    touch-action: none; /* Cegah gesture browser native saat pinch zoom */
+    transform-origin: center center;
+    transition: transform 0.1s ease-out;
+    width: 100%; /* Lebar penuh supaya gak ada sisa kanan-kiri yang aneh */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Halaman PDF Canvas murni */
+#pdf-canvas {
+    background-color: #FFFFFF;
+    transition: filter 0.3s ease;
+    width: 100% !important; /* Paksa width penuh, height menyesuaikan aspek rasio PDF */
+    height: auto !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Shadow halus untuk light mode */
+    border: none !important;
+    outline: none !important;
+}
+
+/* Efek Dark Mode murni untuk Mode Canvas */
+.dark #pdf-canvas {
+    filter: invert(0.92) hue-rotate(180deg);
+    box-shadow: none !important; /* Hapus border/glow putih di dark mode */
+    border: none !important;
+}
+
+/* AMOLED Mode khusus untuk Canvas agar lebih pekat */
+.dark[data-theme="amoled"] #pdf-canvas,
+html[data-amoled="true"] .dark #pdf-canvas {
+    filter: invert(1) hue-rotate(180deg) contrast(1.1);
+}
+
+/* Fix 3: Grey out AMOLED button saat light mode aktif (AMOLED butuh dark mode) */
+#theme-btn-amoled.amoled-unavailable {
+    opacity: 0.35 !important;
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+.ui-disabled-group {
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    transition: opacity 0.3s ease;
+}
+
+/* Kustomisasi gaya navigasi bottom-controller pada Canvas Mode */
+#canvas-page-controller {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    bottom: 90px !important; /* Di posisikan kebawahan, persis diatas bar utama */
+    top: auto !important; /* Hapus setting top default agar nurut bottom */
+    background-color: var(--md-sys-color-surface) !important; /* Warna solid, bye blur */
+    backdrop-filter: none !important; 
+    -webkit-backdrop-filter: none !important;
+    border: none !important; /* Hilangkan garis putih tipis */
+}
+
+/* Capsule dark mode */
+.dark #canvas-page-controller {
+    background-color: var(--md-sys-color-surface-variant) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    border: none !important;
+}
+
+/* Badge Mode di pojok atas Cover Buku */
+.book-badge {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* ===================================================================
+   TAMBAHAN CLASS TOGGLE UNTUK MENYEMBUNYIKAN JUDUL BUKU
+   =================================================================== */
+body.hide-book-titles [id^="title-"],
+body.hide-book-titles [id^="pct-"],
+body.hide-book-titles [id^="book-icon-"] {
+    display: none !important;
+}
+
+/* Progress bar tetap tampil di hide-titles mode — hanya container teks pct yang disembunyiin */
+/* bg-black/20 dan bar jangan disembunyiin */
+
+body.hide-book-titles .card-morph > div:last-child {
+    justify-content: flex-end !important;
+    align-items: stretch !important;
+    height: 100% !important;
+    margin-top: 0 !important;
+}
+
+body.hide-book-titles .card-morph [id^="top-icons-"] {
+    justify-content: flex-start !important;
+    margin-bottom: auto;
+    margin-top: 0;
+}
+
+/* Badge tetap kecil di hide-titles mode — sama seperti saat judul aktif */
+body.hide-book-titles .book-badge {
+    font-size: 0.55rem;
+    padding: 2px 8px;
+}
 
