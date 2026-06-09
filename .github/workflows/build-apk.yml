@@ -33,13 +33,19 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Patch AndroidManifest for Storage Permission
+      - name: Patch AndroidManifest for Storage Permission & Cleartext Traffic
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
-          # Tambah permission READ_EXTERNAL_STORAGE (Android <= 12)
+          
+          # 1. Tambah permission READ_EXTERNAL_STORAGE (Android <= 12)
           # dan READ_MEDIA_* (Android 13+) sebelum tag <application>
           sed -i 's|<application|<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <application|' $MANIFEST
-          echo "=== AndroidManifest.xml (cek permission) ==="
+          
+          # 2. Injeksi usesCleartextTraffic="true" ke dalam tag <application>
+          # Ini wajib biar API Archive.org (yang kadang lempar http biasa) ga diblokir Android 9+
+          sed -i 's|<application|<application android:usesCleartextTraffic="true" |' $MANIFEST
+          
+          echo "=== AndroidManifest.xml (cek permission & cleartext) ==="
           cat $MANIFEST
 
       - name: Sync Version & Force Ultimate Fullscreen
@@ -89,3 +95,4 @@ jobs:
         with:
           name: Baca-App-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
