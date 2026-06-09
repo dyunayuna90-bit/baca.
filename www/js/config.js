@@ -115,7 +115,7 @@ const i18n = {
         updateError: "Gagal ngecek update. Pastiin internet lu nyala atau Repo Github lu udah bener.",
         btnDownload: "Download",
 
-        navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navText: "Teks", navFull: "Penuh",
+        navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navJumpPage: "Lompat ke Halaman", navText: "Teks", navFull: "Penuh",
         readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
         setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
         searchPlaceholder: "Cari dalam buku...", searchNotFound: "Tidak ditemukan.",
@@ -195,7 +195,9 @@ const i18n = {
         importFailedCount: "{n} gagal:",
         folderNoFiles: "Tidak ada file PDF, EPUB, TXT, atau MD di folder ini.",
         pdfBothModesTitle: "Buku Sudah Ada di Rak",
-        pdfBothModesDesc: "Buku berikut sudah ada di kedua rak (Scroll & Canvas). Tidak dapat ditambahkan lagi."
+        pdfBothModesDesc: "Buku berikut sudah ada di kedua rak (Scroll & Canvas). Tidak dapat ditambahkan lagi.",
+        pdfScrollWillDelete: "Canvas (versi Scroll akan dihapus)",
+        pdfCanvasWillDelete: "Scroll (versi Canvas akan dihapus)"
     },
     en: {
         libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
@@ -236,7 +238,7 @@ const i18n = {
         updateError: "Failed to check for updates. Check your internet connection.",
         btnDownload: "Download",
 
-        navBack: "Back", navToc: "Contents", navSearch: "Search", navText: "Text", navFull: "Full",
+        navBack: "Back", navToc: "Contents", navSearch: "Search", navJumpPage: "Jump to Page", navText: "Text", navFull: "Full",
         readerLoading: "Loading Book...", tocTitle: "Table of Contents", setTitle: "Appearance",
         setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
         searchPlaceholder: "Search in book...", searchNotFound: "Not found.",
@@ -316,7 +318,9 @@ const i18n = {
         importFailedCount: "{n} failed:",
         folderNoFiles: "No PDF, EPUB, TXT, or MD files found in this folder.",
         pdfBothModesTitle: "Book Already in Shelf",
-        pdfBothModesDesc: "The following book is already in both shelves (Scroll & Canvas). It cannot be added again."
+        pdfBothModesDesc: "The following book is already in both shelves (Scroll & Canvas). It cannot be added again.",
+        pdfScrollWillDelete: "Canvas (Scroll version will be deleted)",
+        pdfCanvasWillDelete: "Scroll (Canvas version will be deleted)"
     },
     es: {
         libEmpty: "La biblioteca está vacía.", searchBooks: "Buscar libros...", loadingDocs: "Leyendo documento...", 
@@ -357,7 +361,7 @@ const i18n = {
         updateError: "Error al comprobar actualizaciones. Revisa tu conexión a internet.",
         btnDownload: "Descargar",
 
-        navBack: "Atrás", navToc: "Índice", navSearch: "Buscar", navText: "Texto", navFull: "Completo",
+        navBack: "Atrás", navToc: "Índice", navSearch: "Buscar", navJumpPage: "Ir a Página", navText: "Texto", navFull: "Completo",
         readerLoading: "Cargando libro...", tocTitle: "Índice", setTitle: "Apariencia",
         setTheme: "Modo de tema", setSize: "Tamaño del texto", setAlign: "Alineación", setFont: "Tipo de letra",
         searchPlaceholder: "Buscar en el libro...", searchNotFound: "No encontrado.",
@@ -437,6 +441,8 @@ const i18n = {
         importFailedCount: "{n} fallidos:",
         folderNoFiles: "No se encontraron archivos PDF, EPUB, TXT o MD en esta carpeta.",
         pdfBothModesTitle: "El Libro Ya Está en el Estante",
-        pdfBothModesDesc: "El siguiente libro ya está en ambos estantes (Scroll & Canvas). No se puede añadir de nuevo."
+        pdfBothModesDesc: "El siguiente libro ya está en ambos estantes (Scroll & Canvas). No se puede añadir de nuevo.",
+        pdfScrollWillDelete: "Canvas (versión Scroll se eliminará)",
+        pdfCanvasWillDelete: "Scroll (versión Canvas se eliminará)"
     }
 };
