@@ -843,7 +843,10 @@ window.importDataFile = async function(event) {
 
                             const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
                             if (existingIndex > -1) {
+                                // Pertahankan pdfMode lokal — jangan timpa dengan mode dari backup
+                                const existingPdfMode = mergedLibrary[existingIndex].pdfMode;
                                 mergedLibrary[existingIndex] = { ...mergedLibrary[existingIndex], ...b };
+                                if (existingPdfMode) mergedLibrary[existingIndex].pdfMode = existingPdfMode;
                             } else {
                                 mergedLibrary.push(b);
                             }
@@ -895,19 +898,11 @@ async function executeRestoreLogic(jsonString) {
         const isValid = parsedData.every(b => b.id && b.title);
         if (!isValid) throw new Error("Data backup rusak atau tidak kompatibel.");
 
-        // --- Deteksi konflik mode PDF ---
-        // buku PDF yang id-nya sama di library tapi pdfMode berbeda (canvas vs scroll)
-        const pdfModeConflicts = parsedData.filter(b => {
-            if (b.type !== 'pdf') return false;
-            const existing = library.find(lib => lib.id === b.id);
-            if (!existing) return false;
-            const existingMode = existing.pdfMode || 'scroll';
-            const backupMode = b.pdfMode || 'scroll';
-            return existingMode !== backupMode;
-        });
-
         // Set berisi id buku yang user minta skip (abaikan)
         const skippedIds = new Set();
+
+        // Langsung ke dialog konfirmasi utama — mode PDF tidak dipaksa ganti
+        _showMainConfirm();
 
         const _doRestore = async () => {
             window.closeDialog();
@@ -930,14 +925,16 @@ async function executeRestoreLogic(jsonString) {
 
                 const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
                 if (existingIndex > -1) {
+                    // Jangan paksa ganti pdfMode — pertahankan mode yang sudah ada di library
+                    // Hanya restore progres, catatan, dan metadata non-mode
                     mergedLibrary[existingIndex] = {
                         ...mergedLibrary[existingIndex],
                         progressPct: meta.progressPct,
                         lastReadId: meta.lastReadId,
                         annotations: meta.annotations || [],
                         isPinned: meta.isPinned,
-                        title: meta.title,
-                        pdfMode: meta.pdfMode || 'scroll'
+                        title: meta.title
+                        // pdfMode TIDAK diubah — tetap ikut library lokal
                     };
                 } else {
                     mergedLibrary.push(meta);
@@ -987,94 +984,8 @@ async function executeRestoreLogic(jsonString) {
             );
         };
 
-        // Jika ada konflik mode PDF → tampilkan dialog peringatan dulu
-        if (pdfModeConflicts.length > 0) {
-            // Bangun daftar buku konflik dengan label mode dan tombol Lewati/Abaikan per baris
-            // Gunakan data-id agar state skippedIds bisa diupdate saat tombol diklik
-            const _labelMode = (mode) => {
-                const m = mode || 'scroll';
-                if (wikiLang === 'id') return m === 'canvas' ? 'Canvas' : 'Scroll';
-                if (wikiLang === 'es') return m === 'canvas' ? 'Canvas' : 'Desplazamiento';
-                return m === 'canvas' ? 'Canvas' : 'Scroll';
-            };
-            const _switchLabel = (backupMode) => {
-                const target = backupMode === 'canvas' ? 'canvas' : 'scroll';
-                if (wikiLang === 'id') return `Ganti ke ${_labelMode(target)}`;
-                if (wikiLang === 'es') return `Cambiar a ${_labelMode(target)}`;
-                return `Switch to ${_labelMode(target)}`;
-            };
-            const _skipLabel = () => {
-                if (wikiLang === 'id') return 'Lewati';
-                if (wikiLang === 'es') return 'Saltar';
-                return 'Skip';
-            };
-            const _undoSkipLabel = () => {
-                if (wikiLang === 'id') return 'Batal Lewati';
-                if (wikiLang === 'es') return 'Cancelar Saltar';
-                return 'Undo Skip';
-            };
-
-            const listId = 'pdf-conflict-list-' + Date.now();
-            let listHtml = `<div id="${listId}" class="mt-3 mb-1 flex flex-col gap-2 max-h-52 overflow-y-auto">`;
-            pdfModeConflicts.forEach(b => {
-                const shortTitle = b.title.length > 28 ? b.title.substring(0, 28) + '…' : b.title;
-                const backupMode = b.pdfMode || 'scroll';
-                listHtml += `
-                    <div id="conflict-row-${b.id}" class="flex items-center justify-between gap-2 bg-m3-surfaceVariant/60 rounded-2xl px-3 py-2">
-                        <div class="flex flex-col min-w-0">
-                            <span class="text-xs font-bold text-m3-onSurface truncate">${shortTitle}</span>
-                            <span class="text-[10px] font-bold text-m3-primary mt-0.5">${_switchLabel(backupMode)}</span>
-                        </div>
-                        <button
-                            id="conflict-skip-btn-${b.id}"
-                            onclick="window._togglePdfConflictSkip('${b.id}')"
-                            class="shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-full bg-m3-surface text-m3-onSurfaceVariant btn-morph transition-all">
-                            ${_skipLabel()}
-                        </button>
-                    </div>`;
-            });
-            listHtml += `</div>`;
-
-            const warnTitle  = wikiLang === 'id' ? "Konflik Mode PDF" : (wikiLang === 'es' ? "Conflicto de Modo PDF" : "PDF Mode Conflict");
-            const warnDesc   = wikiLang === 'id'
-                ? `${pdfModeConflicts.length} buku PDF di bawah ini memiliki mode yang berbeda antara library dan backup. Setiap buku akan <b>diganti modenya</b> sesuai backup — kamu perlu upload ulang file aslinya. Tekan <b>Lewati</b> di baris buku yang ingin kamu abaikan.`
-                : (wikiLang === 'es'
-                    ? `${pdfModeConflicts.length} libros PDF tienen un modo diferente entre la biblioteca y la copia. Se <b>cambiará el modo</b> según la copia — deberás volver a subir el archivo original. Pulsa <b>Saltar</b> en los libros que quieras ignorar.`
-                    : `${pdfModeConflicts.length} PDF book(s) below have a different mode between your library and the backup. Their <b>mode will be switched</b> to match the backup — you'll need to re-upload the original file. Tap <b>Skip</b> on any book you want to leave unchanged.`);
-
-            // Expose fungsi toggle skip agar bisa dipanggil dari onclick inline
-            window._togglePdfConflictSkip = (bookId) => {
-                const btn = document.getElementById(`conflict-skip-btn-${bookId}`);
-                const row = document.getElementById(`conflict-row-${bookId}`);
-                if (skippedIds.has(bookId)) {
-                    skippedIds.delete(bookId);
-                    if (btn) btn.textContent = _skipLabel();
-                    if (row) row.classList.remove('opacity-40');
-                } else {
-                    skippedIds.add(bookId);
-                    if (btn) btn.textContent = _undoSkipLabel();
-                    if (row) row.classList.add('opacity-40');
-                }
-                if (window.lucide) window.lucide.createIcons();
-            };
-
-            showDialog(
-                warnTitle,
-                warnDesc + listHtml,
-                "alert-triangle",
-                [
-                    { text: wikiLang === 'id' ? "Batal" : (wikiLang === 'es' ? "Cancelar" : "Cancel"), primary: false },
-                    { text: wikiLang === 'id' ? "Lanjut" : (wikiLang === 'es' ? "Continuar" : "Continue"), primary: true, action: () => {
-                        window.closeDialog();
-                        // Kecil jeda supaya dialog tutup dulu, baru buka dialog konfirmasi utama
-                        setTimeout(_showMainConfirm, 350);
-                    }}
-                ]
-            );
-        } else {
-            // Tidak ada konflik → langsung ke dialog konfirmasi utama
-            _showMainConfirm();
-        }
+        // Tampilkan dialog konfirmasi utama langsung
+        _showMainConfirm();
 
     } catch (err) {
         console.error("Restore failed:", err);
@@ -1711,6 +1622,7 @@ window.openBook = async function(book) {
     if (isCanvas) {
         DOM.readContent.classList.add('hidden');
         if (DOM.canvasContainer) DOM.canvasContainer.classList.remove('hidden');
+        if (DOM.canvasContainer) DOM.canvasContainer.style.paddingTop = '56px'; // reset saat buka buku
         if (DOM.canvasWarning) DOM.canvasWarning.classList.remove('hidden');
         if (canvasCtrl) canvasCtrl.classList.remove('hidden');
 
@@ -1904,14 +1816,38 @@ function _resetCanvasTransform() {
     if (w) { w.style.transition = 'none'; w.style.transform = 'translate(0px,0px) scale(1)'; }
 }
 
-window.showJumpToPageDialog = function() {
-    const d     = i18n[wikiLang] || i18n['id'];
-    const total = currentPdfDoc ? currentPdfDoc.numPages : 1;
-    const pStr  = prompt(`${d.txtPageGo || 'Pergi ke halaman'} (1-${total}):`, currentCanvasPage);
-    if (pStr) {
-        const p = parseInt(pStr);
-        if (p >= 1 && p <= total) { currentCanvasPage = p; _resetCanvasTransform(); renderCanvasPage(p); }
+window.toggleJumpBar = function() {
+    const bar = document.getElementById('canvas-jump-bar');
+    const input = document.getElementById('canvas-jump-input');
+    if (!bar) return;
+    if (bar.classList.contains('hidden')) {
+        bar.classList.remove('hidden');
+        if (input) { input.value = ''; input.focus(); }
+    } else {
+        window.hideJumpBar();
     }
+};
+
+window.hideJumpBar = function() {
+    const bar = document.getElementById('canvas-jump-bar');
+    if (bar) bar.classList.add('hidden');
+};
+
+window.executeJumpToPage = function() {
+    const input = document.getElementById('canvas-jump-input');
+    if (!input || !currentPdfDoc) return;
+    const p = parseInt(input.value);
+    const total = currentPdfDoc.numPages;
+    if (p >= 1 && p <= total) {
+        currentCanvasPage = p;
+        _resetCanvasTransform();
+        renderCanvasPage(p);
+        window.hideJumpBar();
+    }
+};
+
+window.showJumpToPageDialog = function() {
+    window.toggleJumpBar();
 };
 
 // --- GESTURE CANVAS ---
@@ -2190,6 +2126,7 @@ window._closeReaderAction = function(isFromHistory = false) {
     }
 
     renderLibrary(DOM.globalSearch.value); activeBookId = null;
+    window.hideJumpBar();
     window.getSelection().removeAllRanges();
     const menu = document.getElementById('selection-menu');
     if(menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
@@ -2249,6 +2186,7 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
     const progContainer = document.getElementById('progress-container');
     const floatHeader   = document.getElementById('reader-floating-header');
     const canvasCtrl    = document.getElementById('canvas-page-controller');
+    const canvasContainer = document.getElementById('canvas-container');
     
     if (bottomBar.classList.contains('hidden')) {
         // Keluar immersive
@@ -2257,6 +2195,8 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
         progContainer.classList.remove('hidden');
         floatHeader.classList.remove('-translate-y-[150%]', 'opacity-0');
         floatHeader.classList.add('translate-y-0', 'opacity-100');
+        // Kembalikan padding canvas ke normal (ada floating header)
+        if (canvasContainer) canvasContainer.style.paddingTop = '56px';
         // Tampilkan kembali capsule canvas jika sedang di canvas mode
         if (canvasCtrl && !document.getElementById('canvas-container').classList.contains('hidden')) {
             canvasCtrl.classList.remove('hidden');
@@ -2267,8 +2207,11 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
         floatHeader.classList.add('-translate-y-[150%]', 'opacity-0');
         floatHeader.classList.remove('translate-y-0', 'opacity-100');
         progContainer.classList.add('hidden');
+        // Di immersive, hapus padding atas canvas agar PDF mulai dari atas layar
+        if (canvasContainer) canvasContainer.style.paddingTop = '0px';
         // Sembunyikan capsule canvas saat immersive
         if (canvasCtrl) canvasCtrl.classList.add('hidden');
+        window.hideJumpBar(); // sembunyikan jump bar saat immersive
         updateBottomNavUI(null);
         if (activePanel) { _closeSidePanelsAction(); }
     }
