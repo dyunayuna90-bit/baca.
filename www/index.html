@@ -73,6 +73,20 @@
                     <i data-lucide="settings"></i>
                 </button>
             </div>
+
+            <!-- MODE TOGGLE: Library / Archive.org — muncul saat search aktif -->
+            <div id="search-mode-row" class="hidden flex gap-2 mt-2.5 items-center">
+                <button id="search-mode-local" onclick="window.setSearchMode('local')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-m3-primary text-m3-onPrimary btn-morph flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="library" class="w-3 h-3"></i> Library
+                </button>
+                <button id="search-mode-archive" onclick="window.setSearchMode('archive')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-m3-surfaceVariant text-m3-onSurfaceVariant btn-morph flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="globe" class="w-3 h-3"></i> Internet Archive
+                </button>
+                <span id="offline-badge" class="hidden ml-auto flex items-center gap-1 text-[9px] font-bold text-red-500 shrink-0">
+                    <i data-lucide="wifi-off" class="w-3 h-3"></i> Offline
+                </span>
+            </div>
+
         </header>
 
         <div id="library-content-scroll" class="flex-1 overflow-y-auto overflow-x-hidden w-full px-5 pb-32 relative">
@@ -125,7 +139,7 @@
                     </div>
 
                     <!-- Chart Area — collapsed by default -->
-                    <div id="stat-chart-area" class="overflow-hidden" style="max-height:0; opacity:0;">
+                    <div id="stat-chart-area" class="overflow-hidden" style="height:0px; opacity:0;">
                         <div class="mt-5 pt-4 border-t border-m3-onSecondaryContainer/15 relative z-10">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60" id="str-stat-chart-title">Aktivitas Membaca</span>
@@ -138,7 +152,27 @@
                 </div>
             </section>
 
-            <!-- VIEW: SEMUA BUKU -->
+            <!-- ARCHIVE RESULTS PANEL — di bawah statistik -->
+            <div id="archive-results-panel" class="hidden mb-6 flex flex-col gap-2.5 overflow-y-auto pb-2">
+                <div id="archive-state-loading" class="hidden flex items-center justify-center gap-3 py-8">
+                    <div class="w-6 h-6 border-[3px] border-m3-primary border-t-transparent rounded-full animate-spin shrink-0"></div>
+                    <span class="text-xs font-bold text-m3-onBg opacity-60">Mencari di arsip...</span>
+                </div>
+                <div id="archive-state-offline" class="hidden flex flex-col items-center justify-center py-8 gap-2 opacity-50">
+                    <i data-lucide="wifi-off" class="w-10 h-10 text-m3-onBg"></i>
+                    <span class="text-xs font-bold text-m3-onBg text-center">Tidak ada koneksi internet.</span>
+                </div>
+                <div id="archive-state-empty" class="hidden flex flex-col items-center justify-center py-8 gap-2 opacity-50">
+                    <i data-lucide="search-x" class="w-10 h-10 text-m3-onBg"></i>
+                    <span class="text-xs font-bold text-m3-onBg">Tidak ada hasil. Coba kata lain.</span>
+                </div>
+                <div id="archive-state-error" class="hidden flex flex-col items-center justify-center py-8 gap-2 opacity-50">
+                    <i data-lucide="alert-circle" class="w-10 h-10 text-m3-onBg"></i>
+                    <span id="archive-error-text" class="text-xs font-bold text-m3-onBg text-center">Gagal mencari.</span>
+                </div>
+                <div id="archive-cards" class="flex flex-col gap-2.5"></div>
+            </div>
+
             <div id="continue-reading-section" class="hidden mb-8 -mx-5 mt-2">
                 <h2 id="str-continue-reading" class="text-base font-bold mb-4 text-m3-onBg px-5 tracking-tight">Lanjutkan Membaca</h2>
                 <div id="top-books-slider" class="flex gap-3 overflow-x-auto snap-x snap-proximity px-5 pb-2 hide-scroll" style="scroll-padding-left: 1.25rem;">
