@@ -193,7 +193,9 @@ const i18n = {
         importDoneTitle: "Selesai Import",
         importSuccessCount: "{n} buku berhasil diimpor.",
         importFailedCount: "{n} gagal:",
-        folderNoFiles: "Tidak ada file PDF, EPUB, TXT, atau MD di folder ini."
+        folderNoFiles: "Tidak ada file PDF, EPUB, TXT, atau MD di folder ini.",
+        pdfBothModesTitle: "Buku Sudah Ada di Rak",
+        pdfBothModesDesc: "Buku berikut sudah ada di kedua rak (Scroll & Canvas). Tidak dapat ditambahkan lagi."
     },
     en: {
         libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
@@ -312,7 +314,9 @@ const i18n = {
         importDoneTitle: "Import Complete",
         importSuccessCount: "{n} books imported successfully.",
         importFailedCount: "{n} failed:",
-        folderNoFiles: "No PDF, EPUB, TXT, or MD files found in this folder."
+        folderNoFiles: "No PDF, EPUB, TXT, or MD files found in this folder.",
+        pdfBothModesTitle: "Book Already in Shelf",
+        pdfBothModesDesc: "The following book is already in both shelves (Scroll & Canvas). It cannot be added again."
     },
     es: {
         libEmpty: "La biblioteca está vacía.", searchBooks: "Buscar libros...", loadingDocs: "Leyendo documento...", 
@@ -431,6 +435,8 @@ const i18n = {
         importDoneTitle: "Importación Completa",
         importSuccessCount: "{n} libros importados con éxito.",
         importFailedCount: "{n} fallidos:",
-        folderNoFiles: "No se encontraron archivos PDF, EPUB, TXT o MD en esta carpeta."
+        folderNoFiles: "No se encontraron archivos PDF, EPUB, TXT o MD en esta carpeta.",
+        pdfBothModesTitle: "El Libro Ya Está en el Estante",
+        pdfBothModesDesc: "El siguiente libro ya está en ambos estantes (Scroll & Canvas). No se puede añadir de nuevo."
     }
 };
