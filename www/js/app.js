@@ -149,7 +149,166 @@ window.updateStatistics = function() {
     if(valReading) valReading.textContent = readingBooks;
     if(valCompleted) valCompleted.textContent = completedBooks;
     if(valNotes) valNotes.textContent = totalNotes;
+
+    // Catat aktivitas hari ini (1 "unit" = setiap kali updateStatistics dipanggil saat membaca)
+    recordReadingActivity();
 };
+
+// Simpan & ambil data aktivitas membaca harian
+function recordReadingActivity() {
+    try {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const raw = localStorage.getItem('reading_activity_v1');
+        const act = raw ? JSON.parse(raw) : {};
+        act[today] = (act[today] || 0) + 1;
+        // Hapus data lebih dari 30 hari
+        const keys = Object.keys(act).sort();
+        if (keys.length > 30) keys.slice(0, keys.length - 30).forEach(k => delete act[k]);
+        localStorage.setItem('reading_activity_v1', JSON.stringify(act));
+    } catch(e) {}
+}
+
+function getReadingActivity(days = 7) {
+    try {
+        const raw = localStorage.getItem('reading_activity_v1');
+        const act = raw ? JSON.parse(raw) : {};
+        const result = [];
+        for (let i = days - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            const label = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+            result.push({ label, value: act[key] || 0 });
+        }
+        return result;
+    } catch(e) { return []; }
+}
+
+let _statChartOpen = false;
+window.toggleStatChart = function() {
+    _statChartOpen = !_statChartOpen;
+    const area = document.getElementById('stat-chart-area');
+    const icon = document.getElementById('stat-expand-icon');
+    const label = document.getElementById('str-stat-expand');
+    const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+    const d = typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {};
+
+    if (_statChartOpen) {
+        area.style.maxHeight = '280px';
+        area.style.opacity = '1';
+        if (icon) { icon.setAttribute('data-lucide', 'chevron-up'); if(window.lucide) window.lucide.createIcons({nodes: [icon]}); }
+        if (label) label.textContent = d.statCollapse || 'Tutup Grafik';
+        setTimeout(() => renderStatChart(), 100);
+    } else {
+        area.style.maxHeight = '0';
+        area.style.opacity = '0';
+        if (icon) { icon.setAttribute('data-lucide', 'bar-chart-2'); if(window.lucide) window.lucide.createIcons({nodes: [icon]}); }
+        if (label) label.textContent = d.statExpand || 'Lihat Grafik';
+    }
+};
+
+let _statChartInstance = null;
+function renderStatChart() {
+    const canvas = document.getElementById('stat-chart-canvas');
+    const emptyEl = document.getElementById('stat-chart-empty');
+    if (!canvas) return;
+
+    const data = getReadingActivity(7);
+    const hasData = data.some(d => d.value > 0);
+
+    if (!hasData) {
+        canvas.classList.add('hidden');
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        return;
+    }
+    canvas.classList.remove('hidden');
+    if (emptyEl) emptyEl.classList.add('hidden');
+
+    // Ambil warna dari CSS variable
+    const style = getComputedStyle(document.documentElement);
+    const primary = style.getPropertyValue('--md-sys-color-primary').trim() || '#6750A4';
+    const onSecCont = style.getPropertyValue('--md-sys-color-on-secondary-container').trim() || '#1C1B1F';
+
+    // Destroy chart lama kalau ada
+    if (_statChartInstance) { try { _statChartInstance.destroy(); } catch(e) {} _statChartInstance = null; }
+
+    const ctx = canvas.getContext('2d');
+    const labels = data.map(d => d.label);
+    const values = data.map(d => d.value);
+    const maxVal = Math.max(...values, 1);
+
+    // Gambar chart manual (tanpa library) — simple line chart M3 style
+    const W = canvas.parentElement.clientWidth || 300;
+    const H = 120;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    const pad = { top: 16, right: 12, bottom: 28, left: 12 };
+    const cW = W - pad.left - pad.right;
+    const cH = H - pad.top - pad.bottom;
+    const n = data.length;
+    const stepX = cW / Math.max(n - 1, 1);
+
+    const toX = (i) => pad.left + i * stepX;
+    const toY = (v) => pad.top + cH - (v / maxVal) * cH;
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
+    grad.addColorStop(0, primary + '55');
+    grad.addColorStop(1, primary + '00');
+
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(values[0]));
+    for (let i = 1; i < n; i++) {
+        const cpx = (toX(i - 1) + toX(i)) / 2;
+        ctx.bezierCurveTo(cpx, toY(values[i - 1]), cpx, toY(values[i]), toX(i), toY(values[i]));
+    }
+    ctx.lineTo(toX(n - 1), pad.top + cH);
+    ctx.lineTo(toX(0), pad.top + cH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(values[0]));
+    for (let i = 1; i < n; i++) {
+        const cpx = (toX(i - 1) + toX(i)) / 2;
+        ctx.bezierCurveTo(cpx, toY(values[i - 1]), cpx, toY(values[i]), toX(i), toY(values[i]));
+    }
+    ctx.strokeStyle = primary;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Dots
+    for (let i = 0; i < n; i++) {
+        ctx.beginPath();
+        ctx.arc(toX(i), toY(values[i]), values[i] > 0 ? 4 : 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = values[i] > 0 ? primary : primary + '60';
+        ctx.fill();
+        if (values[i] > 0) {
+            ctx.strokeStyle = '#ffffff88';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+    }
+
+    // X labels
+    ctx.fillStyle = onSecCont;
+    ctx.globalAlpha = 0.5;
+    ctx.font = `bold ${9 * (W > 250 ? 1 : 0.85)}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    for (let i = 0; i < n; i++) {
+        ctx.fillText(labels[i], toX(i), H - 6);
+    }
+    ctx.globalAlpha = 1;
+}
 
 // 2. SCROLL & NAVIGATION LISTENERS
 function setupScrollListeners() {
@@ -209,8 +368,8 @@ window.addEventListener('popstate', (e) => {
     else if (!document.getElementById('bookmark-modal').classList.contains('opacity-0')) { _closeModalAction('bookmark-modal', 'bookmark-sheet', true, true); }
     else if (!document.getElementById('b-opt-modal').classList.contains('opacity-0')) { _closeModalAction('b-opt-modal', 'b-opt-sheet', false, true); }
     else if (!document.getElementById('edit-modal').classList.contains('opacity-0')) { _closeModalAction('edit-modal', 'edit-sheet', true, true); }
-    else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) { _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true); }
     else if (!document.getElementById('welcome-modal').classList.contains('opacity-0')) { closeWelcome(true); }
+    else if (!document.getElementById('global-settings-modal').classList.contains('opacity-0')) { _closeModalAction('global-settings-modal', 'global-settings-sheet', false, true); }
     else if (!document.getElementById('backup-type-modal').classList.contains('opacity-0')) { _closeModalAction('backup-type-modal', 'backup-type-sheet', true, true); }
     else if (!document.getElementById('pdf-mode-modal').classList.contains('opacity-0')) { _closeModalAction('pdf-mode-modal', 'pdf-mode-sheet', true, true); }
     else if (isBatchDeleteMode) { window.toggleBatchDelete(true); }
@@ -310,10 +469,16 @@ function applyLanguage() {
     setElementText('str-wel-title', d.welcomeTitle); setElementText('str-wel-desc', d.welcomeDesc);
     setElementText('str-wel-backup', d.welBackup); 
     if(document.getElementById('str-wel-backup-desc')) document.getElementById('str-wel-backup-desc').innerHTML = d.welBackupDesc;
+    setElementText('str-wel-canvas', d.welCanvas);
+    if(document.getElementById('str-wel-canvas-desc')) document.getElementById('str-wel-canvas-desc').innerHTML = d.welCanvasDesc;
     setElementText('str-wel-format', d.welFormat); 
     if(document.getElementById('str-wel-format-desc')) document.getElementById('str-wel-format-desc').innerHTML = d.welFormatDesc;
     setElementText('str-wel-privacy', d.welPrivacy); setElementText('str-wel-privacy-desc', d.welPrivacyDesc);
     setElementText('str-wel-btn', d.welBtn);
+    setElementText('str-stat-expand', d.statExpand || 'Lihat Grafik');
+    setElementText('str-stat-chart-title', d.statChartTitle || 'Aktivitas Membaca');
+    if(document.getElementById('str-stat-chart-days')) document.getElementById('str-stat-chart-days').textContent = '7 ' + (d.statChartDays || 'hari terakhir');
+    if(document.getElementById('stat-chart-empty')) document.getElementById('stat-chart-empty').textContent = d.statChartEmpty || 'Belum ada data aktivitas membaca.';
     
     setElementText('str-set-main-title', d.setMainTitle); setElementText('str-set-palette', d.setPalette);
     setElementText('str-set-lang', d.setLang); setElementText('str-set-info', d.setInfo);
@@ -1758,9 +1923,12 @@ async function renderCanvasPage(pageNum) {
         const wrapper    = document.getElementById('canvas-wrapper');
         if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
 
-        const pixelRatio = window.devicePixelRatio || 1;
-        const cW         = vpEl.clientWidth;
-        const cH         = vpEl.clientHeight;
+        const pixelRatio  = window.devicePixelRatio || 1;
+        // Render pada resolusi tinggi agar tetap tajam saat di-zoom
+        // renderScale = 3× baseline, dikali devicePixelRatio — capped 6× agar tidak OOM
+        const renderScale = Math.min(pixelRatio * 3, 6);
+        const cW          = vpEl.clientWidth;
+        const cH          = vpEl.clientHeight;
 
         // Fit lebar canvas = lebar container
         const nat     = page.getViewport({ scale: 1 });
@@ -1768,8 +1936,9 @@ async function renderCanvasPage(pageNum) {
         const dW      = Math.floor(fit.width);
         const dH      = Math.floor(fit.height);
 
-        canvas.width        = dW * pixelRatio;
-        canvas.height       = dH * pixelRatio;
+        // Canvas internal resolution = display size × renderScale (HD)
+        canvas.width        = dW * renderScale;
+        canvas.height       = dH * renderScale;
         canvas.style.width  = dW + 'px';
         canvas.style.height = dH + 'px';
         wrapper.style.width  = dW + 'px';
@@ -1781,10 +1950,14 @@ async function renderCanvasPage(pageNum) {
         wrapper._cW = cW;
         wrapper._cH = cH;
 
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled    = true;
+        ctx.imageSmoothingQuality    = 'high';
+
         await page.render({
-            canvasContext: canvas.getContext('2d'),
+            canvasContext: ctx,
             viewport: fit,
-            transform: [pixelRatio, 0, 0, pixelRatio, 0, 0]
+            transform: [renderScale, 0, 0, renderScale, 0, 0]
         }).promise;
 
         const lbl = document.getElementById('canvas-page-num');
