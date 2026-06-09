@@ -255,11 +255,25 @@
 
                     <div id="setting-group-search">
                         <label id="str-set-search" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Pencarian</label>
-                        <div class="search-capsule bg-m3-surface p-1 rounded-full relative flex items-center h-14 border-none transition-all duration-300">
-                            <i data-lucide="search" class="w-5 h-5 ml-4 opacity-70 text-m3-onSurface shrink-0 pointer-events-none"></i>
-                            <input type="text" id="inbook-search-input" class="w-full bg-transparent border-none outline-none py-2 pl-3 pr-4 text-sm font-bold text-m3-onSurface placeholder:opacity-60" placeholder="Cari dalam buku...">
+                        <!-- Scroll mode: pencarian teks -->
+                        <div id="search-scroll-area">
+                            <div class="search-capsule bg-m3-surface p-1 rounded-full relative flex items-center h-14 border-none transition-all duration-300">
+                                <i data-lucide="search" class="w-5 h-5 ml-4 opacity-70 text-m3-onSurface shrink-0 pointer-events-none"></i>
+                                <input type="text" id="inbook-search-input" class="w-full bg-transparent border-none outline-none py-2 pl-3 pr-4 text-sm font-bold text-m3-onSurface placeholder:opacity-60" placeholder="Cari dalam buku...">
+                            </div>
+                            <div id="search-results-panel" class="hidden mt-3 max-h-48 overflow-y-auto rounded-2xl bg-m3-surface text-xs shadow-md border-none pointer-events-auto flex-col gap-1 p-2"></div>
                         </div>
-                        <div id="search-results-panel" class="hidden mt-3 max-h-48 overflow-y-auto rounded-2xl bg-m3-surface text-xs shadow-md border-none pointer-events-auto flex-col gap-1 p-2"></div>
+                        <!-- Canvas mode: lompat ke halaman -->
+                        <div id="search-canvas-area" class="hidden">
+                            <div class="flex items-center gap-2 bg-m3-surface p-2 pl-4 rounded-full h-14">
+                                <i data-lucide="corner-down-right" class="w-5 h-5 opacity-70 text-m3-primary shrink-0 pointer-events-none"></i>
+                                <input type="number" id="canvas-jump-input" min="1"
+                                    class="flex-1 bg-transparent border-none outline-none text-sm font-bold text-m3-onSurface placeholder:opacity-60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                    placeholder="Halaman..."
+                                    onkeydown="if(event.key==='Enter') window.executeJumpToPage()">
+                                <button onclick="window.executeJumpToPage()" class="px-4 py-2 bg-m3-primary text-m3-onPrimary rounded-full font-bold text-xs btn-morph shrink-0">Go</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="setting-group-theme">
@@ -322,7 +336,7 @@
         <div id="canvas-page-indicator-bar" class="hidden bg-m3-surfaceVariant/80 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2" style="display:none !important">
             <!-- This element is kept for backward compat, logic moved to canvas-page-controller -->
         </div>
-        <!-- Canvas Page Controller: prev/next + nomor halaman + tombol jump -->
+        <!-- Canvas Page Controller: prev/next + nomor halaman -->
         <div id="canvas-page-controller" class="hidden bg-m3-surfaceVariant/90 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2">
             <button onclick="window.prevCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Sebelumnya">
                 <i data-lucide="chevron-left" class="w-4 h-4"></i>
@@ -334,10 +348,6 @@
             </div>
             <button onclick="window.nextCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Berikutnya">
                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </button>
-            <div class="w-px h-4 bg-m3-onSurfaceVariant/20 mx-1"></div>
-            <button onclick="window.toggleJumpBar()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Lompat ke Halaman">
-                <i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i>
             </button>
         </div>
 
