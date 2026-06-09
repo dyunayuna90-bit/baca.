@@ -28,7 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 return ['pdf', 'epub', 'txt', 'md'].includes(ext);
             });
             if (!files.length) {
-                showDialog("Info", "Tidak ada file PDF, EPUB, TXT, atau MD di folder ini.", "info", [{text: "Oke", primary: true}]);
+                const langNow = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+                const dNow = typeof i18n !== 'undefined' ? (i18n[langNow] || i18n['id']) : {};
+                const noFilesMsg = dNow.folderNoFiles || "Tidak ada file PDF, EPUB, TXT, atau MD di folder ini.";
+                showDialog("Info", noFilesMsg, "info", [{text: dNow.btnClose || "Oke", primary: true}]);
                 return;
             }
             await processMultipleFiles(files);
@@ -54,7 +57,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 const lib = typeof library !== 'undefined' ? library : [];
                 const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
                 const book = lib.find(b => b.id === currentBookId);
-                if (!book || !book.nodes) return;
+                if (!book) return;
+
+                // Jika buku adalah Mode Canvas, hentikan fitur pencarian teks dinamis
+                if (book.pdfMode === 'canvas') {
+                    if(searchResEl) {
+                        searchResEl.innerHTML = `<div class="p-4 text-center text-xs opacity-60 font-bold">${i18n[wikiLang].pdfCanvasWarning}</div>`;
+                        searchResEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                if (!book.nodes) return;
                 
                 const results = [];
                 const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -71,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         
                         preview = preview.replace(regex, '<mark class="bg-m3-primary text-m3-onPrimary rounded px-0.5">$1</mark>');
                         
-                        let contextStr = "Chapter / Section";
+                        let contextStr = typeof wikiLang !== 'undefined' ? (wikiLang === 'id' ? "Bab / Seksi" : (wikiLang === 'es' ? "Capítulo / Sección" : "Chapter / Section")) : "Chapter / Section";
                         for(let j=i; j>=0; j--){
                             if(book.nodes[j].tag === 'h1' || book.nodes[j].tag === 'h2') {
                                 contextStr = book.nodes[j].text.length > 25 ? book.nodes[j].text.substring(0,25)+'...' : book.nodes[j].text;
@@ -90,19 +104,222 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // 1b. PROSES BANYAK FILE SEKALIGUS (multi-select atau folder scan)
-// Queue system: kalau ada proses yang sedang berjalan, tambahkan ke antrian
 let _importQueue = [];
 let _importRunning = false;
 let _importTotalQueued = 0;
 let _importDoneCount = 0;
 
 async function processMultipleFiles(files) {
-    // Tambahkan semua file ke queue global
-    for (const f of files) _importQueue.push(f);
-    _importTotalQueued += files.length;
+    const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+    const d = typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {};
+    
+    // Tahap 1: Cek Duplikat Buku di Library
+    let duplicates = [];
+    let newFiles = [];
+    
+    for(let f of files) {
+        const bookId = btoa(unescape(encodeURIComponent(f.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+        const existingIndex = typeof library !== 'undefined' ? library.findIndex(b => b.id === bookId) : -1;
+        
+        if(existingIndex > -1) {
+            duplicates.push({file: f, id: bookId, title: f.name.replace(/\.[^/.]+$/, "")});
+        } else {
+            newFiles.push(f);
+        }
+    }
+    
+    let filesToProcess = [...newFiles];
+    
+    // Tahap 2: Modal Konfirmasi Duplikat
+    if(duplicates.length > 0) {
+        let dupListHtml = `<div class="max-h-40 overflow-y-auto mt-2 mb-2 bg-m3-surfaceVariant/30 rounded-xl p-2 text-left">`;
+        duplicates.forEach(dup => {
+            dupListHtml += `<div class="text-xs text-m3-onSurface opacity-80 mb-1 truncate whitespace-nowrap overflow-hidden text-ellipsis">- ${dup.title}</div>`;
+        });
+        dupListHtml += `</div>`;
+        
+        const action = await new Promise((resolve) => {
+            let isResolved = false;
+            // Interval pengaman: jika user swipe kebawah untuk tutup modal, anggap Batal!
+            const checkHidden = setInterval(() => {
+                if (document.getElementById('custom-dialog').classList.contains('hidden')) {
+                    clearInterval(checkHidden);
+                    if (!isResolved) resolve('CANCEL');
+                }
+            }, 300);
 
-    // Jika sudah ada runner aktif, cukup tambah ke queue — runner terus drain
-    // Update label total supaya angka (1/2) langsung berubah tanpa flicker
+            window.showDialog(
+                d.uploadDuplicateTitle || "Buku Sudah Ada",
+                (d.uploadDuplicateDesc || "Buku berikut sudah ada di rakmu. Tambahkan lagi (sebagai file baru) atau lewati saja?") + dupListHtml,
+                "copy",
+                [
+                    { text: d.btnSkip || "Lewati", primary: false, action: () => { isResolved = true; window.closeDialog(); resolve('SKIP'); } },
+                    { text: d.btnAddAnyway || "Tambahkan Saja", primary: true, action: () => { isResolved = true; window.closeDialog(); resolve('ADD'); } }
+                ]
+            );
+        });
+        
+        if (action === 'CANCEL') return;
+        if (action === 'ADD') {
+            duplicates.forEach(dup => {
+                dup.file._isDuplicate = true; // Tandai agar ID di-generate unik nantinya
+                filesToProcess.push(dup.file);
+            });
+        }
+        
+        // Jeda bentar agar animasi tutup dialog selesai, tampilkan spinner
+        if (typeof window.showGlobalLoading === 'function') {
+            window.showGlobalLoading(d.loadingDocs || 'Menganalisa dokumen...');
+        }
+        await new Promise(r => setTimeout(r, 350));
+        if (typeof window.hideGlobalLoading === 'function') window.hideGlobalLoading();
+    }
+    
+    if (filesToProcess.length === 0) return;
+    
+    // Tahap 3: Pre-flight scan (Mendeteksi file PDF)
+    const hasPdf = filesToProcess.some(f => f.name.toLowerCase().endsWith('.pdf'));
+    let fileModes = []; 
+    
+    if (hasPdf) {
+        // Tampilkan animasi loading analisa
+        DOM.load.classList.remove('hidden');
+        if(DOM.loadTxt) DOM.loadTxt.textContent = d.loadingDocs || "Menganalisa dokumen...";
+        DOM.loadBar.style.width = '100%';
+        if(DOM.loadPct) DOM.loadPct.textContent = '...';
+        // Juga tampilkan global spinner supaya user tahu
+        if (typeof window.showGlobalLoading === 'function') {
+            window.showGlobalLoading(d.loadingDocs || 'Menganalisa dokumen...');
+        }
+        
+        for (let f of filesToProcess) {
+            const ext = f.name.split('.').pop().toLowerCase();
+            const title = f.name.replace(/\.[^/.]+$/, "");
+            
+            if (ext === 'pdf') {
+                let isScannedOrOcr = false;
+                let numPages = 1;
+                try {
+                    const arrayBuffer = await f.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+                    numPages = pdf.numPages;
+                    let textScanSample = "";
+                    const scanLimit = Math.min(numPages, 2);
+                    for (let p = 1; p <= scanLimit; p++) {
+                        try {
+                            const page = await pdf.getPage(p);
+                            const content = await page.getTextContent();
+                            content.items.forEach(item => { if (item.str) textScanSample += item.str.trim(); });
+                        } catch (e) {}
+                    }
+                    const cleanedScanText = textScanSample.replace(/\s+/g, '').trim();
+                    isScannedOrOcr = cleanedScanText.length < 30;
+                } catch(err) { console.error("Gagal pre-scan PDF", err); }
+                
+                fileModes.push({
+                    file: f, title: title, ext: ext,
+                    type: isScannedOrOcr ? 'pdf-canvas-forced' : 'pdf-choice',
+                    pdfNumPages: numPages
+                });
+            } else {
+                fileModes.push({ file: f, title: title, ext: ext, type: 'auto' });
+            }
+        }
+        
+        DOM.load.classList.add('hidden');
+        if (typeof window.hideGlobalLoading === 'function') window.hideGlobalLoading();
+        
+        // Tahap 4: Modal Batch Options (Mode Pemilihan Canvas/Scroll)
+        let batchHtml = `<div class="max-h-[50vh] overflow-y-auto mt-2 mb-2 p-1 text-left flex flex-col gap-3">`;
+        const strScroll = d.pdfModeBtnScroll || "Mode Scroll (Teks)";
+        const strCanvas = d.pdfModeBtnCanvas || "Mode Canvas (Asli)";
+        
+        fileModes.forEach((m, idx) => {
+            const shortTitle = m.title.length > 30 ? m.title.substring(0, 30) + '...' : m.title;
+            let controlHtml = '';
+            
+            if (m.type === 'auto') {
+                controlHtml = `<span class="text-[10px] bg-m3-surfaceVariant text-m3-onSurfaceVariant px-2 py-1 rounded-md font-bold opacity-70">Otomatis (${m.ext.toUpperCase()})</span>`;
+            } else if (m.type === 'pdf-canvas-forced') {
+                controlHtml = `<span class="text-[10px] bg-m3-secondaryContainer text-m3-onSecondaryContainer px-2 py-1 rounded-md font-bold">Canvas (Pindaian)</span>`;
+            } else if (m.type === 'pdf-choice') {
+                controlHtml = `
+                    <select id="mode-select-${idx}" class="text-xs bg-m3-primaryContainer text-m3-onPrimaryContainer px-2 py-1 rounded-md font-bold border-none outline-none">
+                        <option value="scroll">${strScroll}</option>
+                        <option value="canvas">${strCanvas}</option>
+                    </select>
+                `;
+            }
+            
+            batchHtml += `
+                <div class="flex flex-col border-b border-m3-surfaceVariant/50 pb-2">
+                    <span class="text-xs font-bold text-m3-onSurface mb-1 truncate">${shortTitle}</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] opacity-60 uppercase">${m.ext}</span>
+                        ${controlHtml}
+                    </div>
+                </div>
+            `;
+        });
+        batchHtml += `</div>`;
+        
+        const batchAction = await new Promise((resolve) => {
+            let isResolved = false;
+            // Deteksi salah gesture/swipe untuk membatalkan seluruh proses
+            const checkHidden = setInterval(() => {
+                if (document.getElementById('custom-dialog').classList.contains('hidden')) {
+                    clearInterval(checkHidden);
+                    if (!isResolved) resolve('CANCEL');
+                }
+            }, 300);
+
+            window.showDialog(
+                d.batchPdfTitle || "Pilih Mode PDF",
+                (d.batchPdfDesc || "Pilih mode membaca untuk PDF yang baru diunggah:") + batchHtml,
+                "settings",
+                [
+                    { text: d.cancel || "Batal", primary: false, action: () => { isResolved = true; window.closeDialog(); resolve('CANCEL'); } },
+                    { text: d.btnStartProcess || "Mulai Proses", primary: true, action: () => { 
+                        fileModes.forEach((m, idx) => {
+                            if (m.type === 'pdf-choice') {
+                                const sel = document.getElementById(`mode-select-${idx}`);
+                                if (sel) m.finalMode = sel.value;
+                            } else if (m.type === 'pdf-canvas-forced') {
+                                m.finalMode = 'canvas';
+                            }
+                        });
+                        isResolved = true; window.closeDialog(); resolve('START'); 
+                    } }
+                ]
+            );
+        });
+        
+        if (batchAction === 'CANCEL') return;
+        // Spinner saat jeda antara modal batch → mulai proses import
+        if (typeof window.showGlobalLoading === 'function') {
+            const dL = typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {};
+            window.showGlobalLoading(dL.loadingDocs || 'Menyiapkan proses...');
+        }
+        await new Promise(r => setTimeout(r, 350));
+        if (typeof window.hideGlobalLoading === 'function') window.hideGlobalLoading();
+        
+    } else {
+        // Jika tidak ada PDF sama sekali, langsung saja
+        for (let f of filesToProcess) {
+            fileModes.push({
+                file: f, title: f.name.replace(/\.[^/.]+$/, ""), ext: f.name.split('.').pop().toLowerCase(), type: 'auto'
+            });
+        }
+    }
+    
+    // Tahap 5: Eksekusi Queue Upload & Tarik layar ke atas
+    const libScroll = document.getElementById('library-content-scroll');
+    if (libScroll) libScroll.scrollTo({ top: 0, behavior: 'smooth' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    for (const m of fileModes) { _importQueue.push(m); }
+    _importTotalQueued += fileModes.length;
+    
     if (_importRunning) {
         if (DOM.loadTxt) {
             const currentLabel = DOM.loadTxt.textContent;
@@ -111,69 +328,71 @@ async function processMultipleFiles(files) {
         }
         return;
     }
-
-    // Mulai runner
+    
     _importRunning = true;
     _importDoneCount = 0;
     const failed = [];
     let imported = 0;
 
-    // Pastikan card terlihat dan tidak di-hide oleh timeout lama
     DOM.load.classList.remove('hidden');
 
     while (_importQueue.length > 0) {
-        const file = _importQueue.shift();
-        const originalFilename = file.name;
-        const ext = originalFilename.split('.').pop().toLowerCase();
-        const bookTitle = originalFilename.replace(/\.[^/.]+$/, "");
-
+        const m = _importQueue.shift();
+        const ext = m.ext;
+        let bookTitle = m.title;
         const currentIdx = _importDoneCount + 1;
         const totalNow = _importTotalQueued;
+        
+        // Singkat nama file agar tidak beleber di UI Loading
+        const displayTitle = bookTitle.length > 25 ? bookTitle.substring(0, 25) + "..." : bookTitle;
+        
         DOM.loadBar.style.width = '0%';
-        DOM.loadPct.textContent = '0%';
-        if (DOM.loadTxt) DOM.loadTxt.textContent = `(${currentIdx}/${totalNow}) ${bookTitle}`;
+        if(DOM.loadPct) DOM.loadPct.textContent = '0%';
+        if (DOM.loadTxt) DOM.loadTxt.textContent = `(${currentIdx}/${totalNow}) ${displayTitle}`;
 
         try {
-            if (ext === 'pdf') await handlePdf(file, bookTitle);
-            else if (ext === 'epub') await handleEpub(file, bookTitle);
-            else if (ext === 'txt') await handleTxt(file, bookTitle);
-            else if (ext === 'md') await handleMd(file, bookTitle);
-            else { _importDoneCount++; continue; }
+            if (ext === 'pdf') {
+                await processPdfDirect(m.file, bookTitle, m.finalMode, m.pdfNumPages);
+            } else if (ext === 'epub') {
+                await handleEpub(m.file, bookTitle);
+            } else if (ext === 'txt') {
+                await handleTxt(m.file, bookTitle);
+            } else if (ext === 'md') {
+                await handleMd(m.file, bookTitle);
+            }
             imported++;
         } catch (err) {
             console.error(`Gagal import: ${bookTitle}`, err);
-            failed.push(bookTitle);
+            failed.push(displayTitle);
         }
         _importDoneCount++;
 
-        // Update label total secara real-time setelah setiap buku selesai
-        // (supaya kalau ada buku ditambahkan di tengah jalan, totalnya langsung update)
         const nextIdx = _importDoneCount + 1;
-        const nextTotal = _importTotalQueued;
         if (_importQueue.length > 0 && DOM.loadTxt) {
-            const nextFile = _importQueue[0];
-            const nextTitle = nextFile.name.replace(/\.[^/.]+$/, "");
-            DOM.loadTxt.textContent = `(${nextIdx}/${nextTotal}) ${nextTitle}`;
+            const nextM = _importQueue[0];
+            const nextTitle = nextM.title.length > 25 ? nextM.title.substring(0, 25) + "..." : nextM.title;
+            DOM.loadTxt.textContent = `(${nextIdx}/${totalNow}) ${nextTitle}`;
         }
     }
 
-    // Semua selesai — reset state
     _importRunning = false;
     const grandTotal = _importTotalQueued;
     _importTotalQueued = 0;
     _importDoneCount = 0;
 
     DOM.loadBar.style.width = '100%';
-    DOM.loadPct.textContent = '100%';
-    // Hide card dengan delay supaya user sempat lihat 100%
+    if(DOM.loadPct) DOM.loadPct.textContent = '100%';
     setTimeout(() => { DOM.load.classList.add('hidden'); }, 900);
-    if (DOM.loadTxt) DOM.loadTxt.textContent = 'Reading Document...';
-
-    let summary = `${imported} buku berhasil diimpor.`;
-    if (failed.length > 0) summary += `\n${failed.length} gagal: ${failed.join(', ')}`;
+    if (DOM.loadTxt) DOM.loadTxt.textContent = d.loadingDocs || 'Reading Document...';
 
     if (grandTotal > 1 || failed.length > 0) {
-        showDialog("Selesai Import", summary, "check-circle", [{ text: "Oke", primary: true }]);
+        const importedStr = d.importSuccessCount ? d.importSuccessCount.replace('{n}', imported) : `${imported} buku berhasil diimpor.`;
+        let summary = importedStr;
+        if (failed.length > 0) {
+            const failedStr = d.importFailedCount ? d.importFailedCount.replace('{n}', failed.length) : `${failed.length} gagal:`;
+            summary += `\n${failedStr} ${failed.join(', ')}`;
+        }
+        showDialog(d.importDoneTitle || "Selesai Import", summary, "check-circle", [{ text: d.btnClose || "Oke", primary: true }]);
     }
 }
 
@@ -200,11 +419,15 @@ async function handleTxt(file, bookTitle) {
 
     if (parsedNodes.length === 0) throw new Error("File TXT kosong atau tidak bisa dibaca.");
 
-    // [ID PERMANEN]: ID dari nama file, bukan timestamp — supaya restore + import ulang nyambung otomatis
-    const bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    // ID PERMANEN + CEK DUPLIKAT
+    let bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    if (file._isDuplicate) {
+        bookId = bookId.substring(0, 20) + Date.now().toString(36);
+        bookTitle = bookTitle + " (Copy)";
+    }
     const existingIndex = library.findIndex(b => b.id === bookId);
 
-    // [OPTIMASI DEWA]: Langsung mutilasi data di sumber — teks ke laci sendiri, library cuma KTP
+    // OPTIMASI DEWA: Langsung mutilasi data di sumber — teks ke laci sendiri, library cuma KTP
     await localforage.setItem('content_' + bookId, parsedNodes);
 
     if (existingIndex === -1) {
@@ -271,11 +494,15 @@ async function handleMd(file, bookTitle) {
 
     if (parsedNodes.length === 0) throw new Error("File MD kosong atau tidak valid.");
 
-    // [ID PERMANEN]: ID dari nama file, bukan timestamp
-    const bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    // ID PERMANEN + CEK DUPLIKAT
+    let bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    if (file._isDuplicate) {
+        bookId = bookId.substring(0, 20) + Date.now().toString(36);
+        bookTitle = bookTitle + " (Copy)";
+    }
     const existingIndex = library.findIndex(b => b.id === bookId);
 
-    // [OPTIMASI DEWA]: Langsung mutilasi data di sumber — teks ke laci sendiri, library cuma KTP
+    // OPTIMASI DEWA: Langsung mutilasi data di sumber — teks ke laci sendiri, library cuma KTP
     await localforage.setItem('content_' + bookId, parsedNodes);
 
     if (existingIndex === -1) {
@@ -385,475 +612,415 @@ function renderSearchResults(results, keyword) {
     searchResEl.classList.remove('hidden');
 }
 
-// 2. FUNGSI EKSTRAK PDF — ENGINE GENERASI BARU
-// Strategi: Header/Footer Ghost Detection + Multi-Pass Font Profiling + 
-//           Heading Scoring System + Cross-Page Stitching + TOC Deduplication
-async function handlePdf(file, bookTitle) {
+// 2. FUNGSI EKSTRAK PDF DENGAN LOGIKA PENUH
+async function processPdfDirect(file, bookTitle, finalMode, total) {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let parsedNodes = [];
-    const total = pdf.numPages;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
 
     // --- EKSTRAK COVER ---
-    const coverCanvas = document.createElement('canvas');
-    const coverCtx = coverCanvas.getContext('2d');
-    const firstPage = await pdf.getPage(1);
-    const viewport = firstPage.getViewport({ scale: 0.5 });
-    coverCanvas.width = viewport.width;
-    coverCanvas.height = viewport.height;
-    await firstPage.render({ canvasContext: coverCtx, viewport: viewport }).promise;
-    const coverBase64 = coverCanvas.toDataURL('image/jpeg', 0.8);
+    let coverBase64 = null;
+    try {
+        const coverCanvas = document.createElement('canvas');
+        const coverCtx = coverCanvas.getContext('2d');
+        const firstPage = await pdf.getPage(1);
+        const viewport = firstPage.getViewport({ scale: 0.5 });
+        coverCanvas.width = viewport.width;
+        coverCanvas.height = viewport.height;
+        await firstPage.render({ canvasContext: coverCtx, viewport: viewport }).promise;
+        coverBase64 = coverCanvas.toDataURL('image/jpeg', 0.8);
+    } catch(e) { console.error("Gagal cover PDF", e); }
 
-    // ===================================================================
-    // PASS 1: FULL-DOCUMENT FONT PROFILING + GHOST TEXT DETECTION
-    // Tujuan: cari baseFontSize akurat + deteksi header/footer buku 
-    //         (teks yang muncul berulang di koordinat Y yg sama lintas halaman)
-    // ===================================================================
-    let fontSizeWeights = {};    // { fontSize: totalCharCount }
-    let fontSizeLineCounts = {}; // { fontSize: jumlah baris }
-
-    // Struktur untuk ghost detection: kumpulkan semua teks per "zona Y relatif"
-    // Zona Y: kita normalisasi Y ke persentase tinggi halaman (0.0 - 1.0)
-    // Teks di zona < 8% (atas) atau > 92% (bawah) yang PERSIS SAMA di banyak halaman = ghost
-    const topZoneTexts = {};    // { normalizedText: count }
-    const bottomZoneTexts = {}; // { normalizedText: count }
-
-    // Sample seluruh dokumen untuk profiling (bukan cuma 10 hal)
-    const profilingSample = Math.min(total, 40);
-    let pageHeights = {};
-
-    for (let i = 1; i <= profilingSample; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pViewport = page.getViewport({ scale: 1 });
-        const pageH = pViewport.height;
-        pageHeights[i] = pageH;
-
-        textContent.items.forEach(item => {
-            if (!item.str || item.str.trim().length === 0) return;
-            const h = Math.round(item.height);
-            if (h <= 0) return;
-
-            fontSizeWeights[h] = (fontSizeWeights[h] || 0) + item.str.trim().length;
-            fontSizeLineCounts[h] = (fontSizeLineCounts[h] || 0) + 1;
-
-            // Ghost zone detection
-            const yRatio = item.transform[5] / pageH;
-            const normalizedStr = item.str.trim().toLowerCase().replace(/\s+/g, ' ');
-            if (normalizedStr.length < 3) return;
-
-            if (yRatio > 0.92) {
-                // zona atas (PDF Y-axis terbalik: tinggi = atas)
-                topZoneTexts[normalizedStr] = (topZoneTexts[normalizedStr] || 0) + 1;
-            } else if (yRatio < 0.08) {
-                // zona bawah
-                bottomZoneTexts[normalizedStr] = (bottomZoneTexts[normalizedStr] || 0) + 1;
-            }
-        });
+    let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    if (file._isDuplicate) {
+        newBookId = newBookId.substring(0, 20) + Date.now().toString(36);
+        bookTitle = bookTitle + " (Copy)";
     }
 
-    // Tentukan baseFontSize: font dengan bobot karakter terbanyak
-    let baseFontSize = 12;
-    let maxWeight = 0;
-    for (const [size, weight] of Object.entries(fontSizeWeights)) {
-        if (weight > maxWeight) {
-            maxWeight = weight;
-            baseFontSize = parseInt(size);
-        }
-    }
+    // Helper untuk menyimpan dokumen PDF asli murni (Mode Canvas)
+    const saveAsCanvasMode = async () => {
+        DOM.loadBar.style.width = '50%';
+        if(DOM.loadPct) DOM.loadPct.textContent = '50%';
+        
+        const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+        await localforage.setItem('rawpdf_' + newBookId, pdfBlob);
+        if(coverBase64) await localforage.setItem('cover_' + newBookId, coverBase64);
 
-    // Tentukan threshold ghost: teks yang muncul di > 25% halaman sample = ghost (header/footer buku)
-    const ghostThreshold = Math.max(3, Math.floor(profilingSample * 0.25));
-    const ghostSet = new Set();
-    for (const [txt, count] of Object.entries(topZoneTexts)) {
-        if (count >= ghostThreshold) ghostSet.add(txt);
-    }
-    for (const [txt, count] of Object.entries(bottomZoneTexts)) {
-        if (count >= ghostThreshold) ghostSet.add(txt);
-    }
-    // Tambahkan judul buku sendiri ke ghost set (cegah judul berulang di TOC)
-    const bookTitleNorm = bookTitle.toLowerCase().replace(/\s+/g, ' ').trim();
-    if (bookTitleNorm.length > 2) ghostSet.add(bookTitleNorm);
-
-    // ===================================================================
-    // PASS 2: TENTUKAN THRESHOLD HEADING BERBASIS DATA NYATA
-    // Kita cari distribusi ukuran font: baseFontSize = body, sisanya = kandidat heading
-    // ===================================================================
-
-    // Kumpulkan semua ukuran font yang punya line count signifikan
-    const significantSizes = Object.entries(fontSizeLineCounts)
-        .filter(([, count]) => count >= 2)
-        .map(([size]) => parseInt(size))
-        .sort((a, b) => a - b);
-
-    // Heading level: font yang lebih besar dari baseFontSize secara bermakna
-    // h1Threshold: >= baseFontSize * 1.35 (bab/chapter), h2Threshold: >= baseFontSize * 1.12 (sub-bab)
-    const h1FontThreshold = baseFontSize * 1.35;
-    const h2FontThreshold = baseFontSize * 1.10;
-
-    // ===================================================================
-    // PASS 3: EKSTRAKSI TEKS PER HALAMAN + SMART STITCHING
-    // ===================================================================
-
-    // rawBlocks: array of { text, maxFontSize, pageIndex, yRatio, xCenter, pageWidth }
-    // Kita kumpulkan dulu semua blok mentah SEBELUM tentukan tag-nya
-    let rawBlocks = [];
-    let pendingCarryOver = ""; // teks yang belum selesai kalimatnya, dibawa ke halaman berikut
-
-    for (let i = 1; i <= total; i++) {
-        DOM.loadBar.style.width = `${Math.round((i / total) * 100)}%`;
-        DOM.loadPct.textContent = `${Math.round((i / total) * 100)}%`;
-
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pViewport = page.getViewport({ scale: 1 });
-        const pageH = pViewport.height;
-        const pageW = pViewport.width;
-
-        // Kumpulkan items valid di halaman ini
-        let items = textContent.items.filter(item => item.str !== undefined);
-
-        // Kelompokkan items ke dalam "baris" berdasarkan Y yang sama (toleransi ±2px)
-        let lines = []; // array of { y, items: [...] }
-        for (const item of items) {
-            const y = Math.round(item.transform[5]);
-            const existingLine = lines.find(l => Math.abs(l.y - y) <= 2);
-            if (existingLine) {
-                existingLine.items.push(item);
-            } else {
-                lines.push({ y, items: [item] });
-            }
-        }
-
-        // Urutkan baris dari atas ke bawah (Y descending dalam koordinat PDF)
-        lines.sort((a, b) => b.y - a.y);
-
-        // Hitung X center halaman untuk deteksi teks tengah (judul bab sering di tengah)
-        const pageXCenter = pageW / 2;
-
-        // Proses setiap baris → susun jadi blok
-        let currentBlock = pendingCarryOver;
-        let currentBlockMaxFont = 0;
-        let currentBlockYRatio = -1;
-        let currentBlockXCenter = -1;
-        let lastLineY = -1;
-        pendingCarryOver = "";
-
-        const flushBlock = () => {
-            if (currentBlock.trim().length === 0) return;
-            rawBlocks.push({
-                text: currentBlock.trim(),
-                maxFontSize: currentBlockMaxFont,
-                pageIndex: i,
-                yRatio: currentBlockYRatio,
-                xCenter: currentBlockXCenter,
-                pageWidth: pageW
+        const existingIndex = library.findIndex(b => b.id === newBookId);
+        if (existingIndex === -1) {
+            library.push({
+                id: newBookId,
+                type: 'pdf',
+                pdfMode: 'canvas',
+                title: bookTitle,
+                pages: total,
+                progressPct: 0,
+                lastReadId: 1, 
+                shape: 'square'
             });
-            currentBlock = "";
-            currentBlockMaxFont = 0;
-            currentBlockYRatio = -1;
-            currentBlockXCenter = -1;
-        };
+        } else {
+            library[existingIndex].pages = total;
+            library[existingIndex].title = bookTitle;
+            library[existingIndex].pdfMode = 'canvas';
+        }
 
-        for (const line of lines) {
-            const lineY = line.y;
-            const yRatio = lineY / pageH;
+        await localforage.setItem('pdf_epub_master', library);
+        DOM.loadBar.style.width = '100%';
+        if(DOM.loadPct) DOM.loadPct.textContent = '100%';
+        renderLibrary();
+    };
 
-            // Ambil font terbesar di baris ini
-            let lineMaxFont = 0;
-            let lineStr = "";
-            let lineXSum = 0;
-            let lineXCount = 0;
+    // Helper untuk memproses ekstraksi teks penuh (Mode Scroll)
+    const saveAsScrollMode = async () => {
+        let parsedNodes = [];
 
-            // Urutkan items dalam baris dari kiri ke kanan
-            line.items.sort((a, b) => a.transform[4] - b.transform[4]);
+        // Kebutuhan profiling font & ghost text
+        let fontSizeWeights = {};
+        let fontSizeLineCounts = {};
+        const topZoneTexts = {};
+        const bottomZoneTexts = {};
 
-            for (const item of line.items) {
-                if (!item.str) continue;
-                const h = item.height || 0;
-                if (h > lineMaxFont) lineMaxFont = h;
+        const profilingSample = Math.min(total, 40);
+        for (let i = 1; i <= profilingSample; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pViewport = page.getViewport({ scale: 1 });
+            const pageH = pViewport.height;
 
-                const x = item.transform[4];
-                const w = item.width || 0;
-                lineXSum += x + w / 2;
-                lineXCount++;
+            textContent.items.forEach(item => {
+                if (!item.str || item.str.trim().length === 0) return;
+                const h = Math.round(item.height);
+                if (h <= 0) return;
 
-                // Spatial stitching dalam satu baris
-                if (lineStr.length > 0) {
-                    // Cek gap X
-                    const prevItem = line.items[line.items.indexOf(item) - 1];
-                    if (prevItem) {
-                        const gapX = x - (prevItem.transform[4] + (prevItem.width || 0));
-                        if (gapX > baseFontSize * 0.25 && !lineStr.endsWith(' ')) {
-                            lineStr += ' ';
+                fontSizeWeights[h] = (fontSizeWeights[h] || 0) + item.str.trim().length;
+                fontSizeLineCounts[h] = (fontSizeLineCounts[h] || 0) + 1;
+
+                const yRatio = item.transform[5] / pageH;
+                const normalizedStr = item.str.trim().toLowerCase().replace(/\s+/g, ' ');
+                if (normalizedStr.length < 3) return;
+
+                if (yRatio > 0.92) {
+                    topZoneTexts[normalizedStr] = (topZoneTexts[normalizedStr] || 0) + 1;
+                } else if (yRatio < 0.08) {
+                    bottomZoneTexts[normalizedStr] = (bottomZoneTexts[normalizedStr] || 0) + 1;
+                }
+            });
+        }
+
+        let baseFontSize = 12;
+        let maxWeight = 0;
+        for (const [size, weight] of Object.entries(fontSizeWeights)) {
+            if (weight > maxWeight) {
+                maxWeight = weight;
+                baseFontSize = parseInt(size);
+            }
+        }
+
+        const ghostThreshold = Math.max(3, Math.floor(profilingSample * 0.25));
+        const ghostSet = new Set();
+        for (const [txt, count] of Object.entries(topZoneTexts)) {
+            if (count >= ghostThreshold) ghostSet.add(txt);
+        }
+        for (const [txt, count] of Object.entries(bottomZoneTexts)) {
+            if (count >= ghostThreshold) ghostSet.add(txt);
+        }
+        const bookTitleNorm = bookTitle.toLowerCase().replace(/\s+/g, ' ').trim();
+        if (bookTitleNorm.length > 2) ghostSet.add(bookTitleNorm);
+
+        const h1FontThreshold = baseFontSize * 1.35;
+        const h2FontThreshold = baseFontSize * 1.10;
+
+        let rawBlocks = [];
+        let pendingCarryOver = "";
+
+        for (let i = 1; i <= total; i++) {
+            DOM.loadBar.style.width = `${Math.round((i / total) * 100)}%`;
+            if(DOM.loadPct) DOM.loadPct.textContent = `${Math.round((i / total) * 100)}%`;
+
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pViewport = page.getViewport({ scale: 1 });
+            const pageH = pViewport.height;
+            const pageW = pViewport.width;
+
+            let items = textContent.items.filter(item => item.str !== undefined);
+
+            let lines = [];
+            for (const item of items) {
+                const y = Math.round(item.transform[5]);
+                const existingLine = lines.find(l => Math.abs(l.y - y) <= 2);
+                if (existingLine) {
+                    existingLine.items.push(item);
+                } else {
+                    lines.push({ y, items: [item] });
+                }
+            }
+
+            lines.sort((a, b) => b.y - a.y);
+            const pageXCenter = pageW / 2;
+
+            let currentBlock = pendingCarryOver;
+            let currentBlockMaxFont = 0;
+            let currentBlockYRatio = -1;
+            let currentBlockXCenter = -1;
+            let lastLineY = -1;
+            pendingCarryOver = "";
+
+            const flushBlock = () => {
+                if (currentBlock.trim().length === 0) return;
+                rawBlocks.push({
+                    text: currentBlock.trim(),
+                    maxFontSize: currentBlockMaxFont,
+                    pageIndex: i,
+                    yRatio: currentBlockYRatio,
+                    xCenter: currentBlockXCenter,
+                    pageWidth: pageW
+                });
+                currentBlock = "";
+                currentBlockMaxFont = 0;
+                currentBlockYRatio = -1;
+                currentBlockXCenter = -1;
+            };
+
+            for (const line of lines) {
+                const lineY = line.y;
+                const yRatio = lineY / pageH;
+
+                let lineMaxFont = 0;
+                let lineStr = "";
+                let lineXSum = 0;
+                let lineXCount = 0;
+
+                line.items.sort((a, b) => a.transform[4] - b.transform[4]);
+
+                for (const item of line.items) {
+                    if (!item.str) continue;
+                    const h = item.height || 0;
+                    if (h > lineMaxFont) lineMaxFont = h;
+
+                    const x = item.transform[4];
+                    const w = item.width || 0;
+                    lineXSum += x + w / 2;
+                    lineXCount++;
+
+                    if (lineStr.length > 0) {
+                        const prevItem = line.items[line.items.indexOf(item) - 1];
+                        if (prevItem) {
+                            const gapX = x - (prevItem.transform[4] + (prevItem.width || 0));
+                            if (gapX > baseFontSize * 0.25 && !lineStr.endsWith(' ')) {
+                                lineStr += ' ';
+                            }
                         }
                     }
-                }
 
-                // Hyphenation handling
-                if (lineStr.match(/-\s*$/) && item.str.trim().length > 0) {
-                    lineStr = lineStr.replace(/-\s*$/, '') + item.str.trimStart();
-                } else {
-                    lineStr += item.str;
-                }
-            }
-
-            lineStr = lineStr.replace(/\s+/g, ' ').trim();
-            if (lineStr.length === 0) continue;
-
-            // Cek apakah ini ghost text (header/footer buku)
-            const lineNorm = lineStr.toLowerCase().replace(/\s+/g, ' ');
-            if (ghostSet.has(lineNorm)) continue;
-
-            // Cek apakah ini nomor halaman murni (hanya angka, ±1-4 digit)
-            if (/^\d{1,4}$/.test(lineStr)) continue;
-
-            // Cek apakah ini teks sangat pendek di zona ghost tanpa "nilai konten" (< 5 char)
-            if (lineStr.length < 4 && (yRatio > 0.90 || yRatio < 0.10)) continue;
-
-            const lineXCenter = lineXCount > 0 ? lineXSum / lineXCount : pageXCenter;
-
-            // --- Tentukan apakah baris ini perlu flush block baru ---
-            let shouldFlush = false;
-            if (lastLineY !== -1) {
-                const gapY = Math.abs(lastLineY - lineY);
-                // Flush jika:
-                // 1. Gap besar (> 1.8x baseFont) = pergantian paragraf/section
-                // 2. Font size baris ini berbeda signifikan dengan blok saat ini (kemungkinan heading baru)
-                // 3. Blok saat ini adalah heading (font besar) → selalu flush setelah heading selesai
-                const isBigGap = gapY > (baseFontSize * 1.8);
-                const isFontJump = (lineMaxFont > h2FontThreshold && currentBlockMaxFont <= baseFontSize * 1.05)
-                    || (currentBlockMaxFont > h2FontThreshold && lineMaxFont <= baseFontSize * 1.05);
-
-                if (isBigGap || isFontJump) {
-                    shouldFlush = true;
-                }
-            }
-
-            if (shouldFlush) {
-                flushBlock();
-                currentBlock = lineStr;
-                currentBlockMaxFont = lineMaxFont;
-                currentBlockYRatio = yRatio;
-                currentBlockXCenter = lineXCenter;
-            } else {
-                if (currentBlock.length > 0) {
-                    // Sambung baris: cek hyphenation antar baris
-                    if (currentBlock.match(/-\s*$/)) {
-                        currentBlock = currentBlock.replace(/-\s*$/, '') + lineStr.trimStart();
+                    if (lineStr.match(/-\s*$/) && item.str.trim().length > 0) {
+                        lineStr = lineStr.replace(/-\s*$/, '') + item.str.trimStart();
                     } else {
-                        if (!currentBlock.endsWith(' ')) currentBlock += ' ';
-                        currentBlock += lineStr;
+                        lineStr += item.str;
                     }
-                    if (lineMaxFont > currentBlockMaxFont) currentBlockMaxFont = lineMaxFont;
-                } else {
+                }
+
+                lineStr = lineStr.replace(/\s+/g, ' ').trim();
+                if (lineStr.length === 0) continue;
+
+                const lineNorm = lineStr.toLowerCase().replace(/\s+/g, ' ');
+                if (ghostSet.has(lineNorm)) continue;
+                if (/^\d{1,4}$/.test(lineStr)) continue;
+                if (lineStr.length < 4 && (yRatio > 0.90 || yRatio < 0.10)) continue;
+
+                const lineXCenter = lineXCount > 0 ? lineXSum / lineXCount : pageXCenter;
+
+                let shouldFlush = false;
+                if (lastLineY !== -1) {
+                    const gapY = Math.abs(lastLineY - lineY);
+                    const isBigGap = gapY > (baseFontSize * 1.8);
+                    const isFontJump = (lineMaxFont > h2FontThreshold && currentBlockMaxFont <= baseFontSize * 1.05)
+                        || (currentBlockMaxFont > h2FontThreshold && lineMaxFont <= baseFontSize * 1.05);
+
+                    if (isBigGap || isFontJump) {
+                        shouldFlush = true;
+                    }
+                }
+
+                if (shouldFlush) {
+                    flushBlock();
                     currentBlock = lineStr;
                     currentBlockMaxFont = lineMaxFont;
                     currentBlockYRatio = yRatio;
                     currentBlockXCenter = lineXCenter;
+                } else {
+                    if (currentBlock.length > 0) {
+                        if (currentBlock.match(/-\s*$/)) {
+                            currentBlock = currentBlock.replace(/-\s*$/, '') + lineStr.trimStart();
+                        } else {
+                            if (!currentBlock.endsWith(' ')) currentBlock += ' ';
+                            currentBlock += lineStr;
+                        }
+                        if (lineMaxFont > currentBlockMaxFont) currentBlockMaxFont = lineMaxFont;
+                    } else {
+                        currentBlock = lineStr;
+                        currentBlockMaxFont = lineMaxFont;
+                        currentBlockYRatio = yRatio;
+                        currentBlockXCenter = lineXCenter;
+                    }
+                }
+
+                lastLineY = lineY;
+            }
+
+            if (currentBlock.trim().length > 0) {
+                const trimmed = currentBlock.trim();
+                const fontSize = currentBlockMaxFont;
+                const wordCount = trimmed.split(/\s+/).length;
+
+                const isLikelyCutOff = fontSize <= baseFontSize * 1.08
+                    && wordCount < 6
+                    && !trimmed.match(/[.!?:;»"')\]。！？]+$/)
+                    && trimmed.length < 120;
+
+                if (isLikelyCutOff) {
+                    pendingCarryOver = trimmed + ' ';
+                } else {
+                    flushBlock();
+                }
+            }
+        }
+
+        if (pendingCarryOver.trim().length > 0) {
+            rawBlocks.push({
+                text: pendingCarryOver.trim(),
+                maxFontSize: baseFontSize,
+                pageIndex: total,
+                yRatio: 0.5,
+                xCenter: 0,
+                pageWidth: 500
+            });
+            pendingCarryOver = "";
+        }
+
+        const seenHeadings = new Set();
+
+        for (const block of rawBlocks) {
+            let text = block.text.replace(/\s+/g, ' ').trim();
+
+            const words = text.split(' ');
+            if (words.length >= 4) {
+                const shortWords = words.filter(w => w.length <= 2 && /[a-zA-Z\u00C0-\u024F]/.test(w));
+                const shortRatio = shortWords.length / words.length;
+                if (shortRatio > 0.6) {
+                    text = text.replace(/ (?=[a-zA-Z\u00C0-\u024F])/g, (match, offset) => {
+                        const prev = text[offset - 1];
+                        if (prev && /[.!?,;:0-9]/.test(prev)) return match;
+                        return '';
+                    });
                 }
             }
 
-            lastLineY = lineY;
+            text = text.replace(/([A-Z]) (?=[A-Z])/g, '$1');
+            text = text.replace(/B\s*A\s*B/gi, 'BAB');
+
+            if (text.length < 2) continue;
+            if (!/[a-zA-Z0-9\u00C0-\u024F\u100-\u17E\u4E00-\u9FFF\u0600-\u06FF]/.test(text)) continue;
+
+            const fontSize = block.maxFontSize;
+            const len = text.length;
+
+            let score = 0;
+
+            if (/^(bab|chapter|bagian|part|section|pendahuluan|penutup|kesimpulan|daftar\s+pustaka|lampiran|kata\s+pengantar|prakata|prolog|epilog)\b/i.test(text)) {
+                score += 5;
+            }
+            if (/^bab\s+([IVXLCDM]+|\d+)/i.test(text)) {
+                score += 3;
+            }
+
+            if (fontSize >= h1FontThreshold) {
+                score += 4;
+            } else if (fontSize >= h2FontThreshold) {
+                score += 2;
+            }
+
+            if (len < 80) score += 2;
+            if (len < 40) score += 1;
+
+            if (block.pageWidth > 0 && block.xCenter > 0) {
+                const pageCenter = block.pageWidth / 2;
+                const deviation = Math.abs(block.xCenter - pageCenter) / block.pageWidth;
+                if (deviation < 0.15) score += 1;
+            }
+
+            const textWithoutEnd = text.slice(0, -1);
+            if (/[.!?]/.test(textWithoutEnd)) score -= 3;
+
+            if (len > 150) score -= 5;
+            if (len > 80) score -= 1;
+
+            let tag = 'p';
+            if (score >= 6) tag = 'h1';
+            else if (score >= 3) tag = 'h2';
+
+            if (tag !== 'p') {
+                const textKey = text.toLowerCase().trim();
+                if (seenHeadings.has(textKey)) {
+                    tag = 'p';
+                } else {
+                    seenHeadings.add(textKey);
+                }
+            }
+
+            parsedNodes.push({ tag, text });
         }
 
-        // Di akhir halaman, cek apakah blok terakhir kalimatnya belum selesai
-        // Carry-over HANYA untuk paragraf pendek yang jelas terpotong di tengah kata/kalimat
-        if (currentBlock.trim().length > 0) {
-            const trimmed = currentBlock.trim();
-            const fontSize = currentBlockMaxFont;
-            const wordCount = trimmed.split(/\s+/).length;
-
-            // Carry-over jika: bukan heading, kalimat SANGAT pendek (< 5 kata),
-            // tidak diakhiri tanda kalimat selesai, dan tidak diakhiri titik dua/tanda kutip
-            // Batasi carry-over maksimal — jangan gabung paragraf panjang yang kebetulan tidak ada titiknya
-            const isLikelyCutOff = fontSize <= baseFontSize * 1.08
-                && wordCount < 6
-                && !trimmed.match(/[.!?:;»"')\]。！？]+$/)
-                && trimmed.length < 120;
-
-            if (isLikelyCutOff) {
-                pendingCarryOver = trimmed + ' ';
+        const mergedNodes = [];
+        for (let i = 0; i < parsedNodes.length; i++) {
+            const node = parsedNodes[i];
+            const wordCount = node.text.split(/\s+/).length;
+            if (
+                node.tag === 'p' &&
+                wordCount < 4 &&
+                node.text.length < 40 &&
+                !node.text.match(/[.!?:;»"')\]。！？]+$/) &&
+                i + 1 < parsedNodes.length &&
+                parsedNodes[i + 1].tag === 'p'
+            ) {
+                parsedNodes[i + 1] = {
+                    tag: 'p',
+                    text: node.text.trim() + ' ' + parsedNodes[i + 1].text.trim()
+                };
             } else {
-                flushBlock();
-            }
-        }
-    }
-
-    // Flush carry-over terakhir jika ada
-    if (pendingCarryOver.trim().length > 0) {
-        rawBlocks.push({
-            text: pendingCarryOver.trim(),
-            maxFontSize: baseFontSize,
-            pageIndex: total,
-            yRatio: 0.5,
-            xCenter: 0,
-            pageWidth: 500
-        });
-        pendingCarryOver = "";
-    }
-
-    // ===================================================================
-    // PASS 4: HEADING SCORING — TENTUKAN TAG TIAP BLOK
-    // Skor dihitung dari beberapa sinyal:
-    //   +5  : cocok pattern BAB/CHAPTER/BAGIAN/PART
-    //   +4  : font >= h1Threshold
-    //   +2  : font >= h2Threshold
-    //   +2  : teks pendek (< 80 char) — heading biasanya singkat
-    //   +1  : teks sangat pendek (< 40 char)
-    //   +1  : teks di tengah halaman (x center dekat center page, toleransi 15%)
-    //   -3  : teks punya tanda baca kalimat di tengah (bukan heading)
-    //   -5  : teks terlalu panjang (> 150 char) — pasti bukan heading
-    // Keputusan: score >= 6 → h1, score >= 3 → h2, else → p
-    // ===================================================================
-
-    // Kumpulkan teks heading yang sudah masuk, untuk deduplication
-    const seenHeadings = new Set();
-
-    for (const block of rawBlocks) {
-        let text = block.text.replace(/\s+/g, ' ').trim();
-
-        // ---------------------------------------------------------------
-        // NORMALISASI SPASI ANTAR KARAKTER (kasus PDF encoding aneh)
-        // Deteksi: teks yang mayoritas kata-katanya <= 2 huruf = kemungkinan
-        // setiap karakter/suku kata dipisah spasi, e.g. "m e n i n g g a l k a n"
-        // Strategi: hitung rasio kata pendek. Jika > 60%, gabungkan semua.
-        // ---------------------------------------------------------------
-        const words = text.split(' ');
-        if (words.length >= 4) {
-            const shortWords = words.filter(w => w.length <= 2 && /[a-zA-Z\u00C0-\u024F]/.test(w));
-            const shortRatio = shortWords.length / words.length;
-            if (shortRatio > 0.6) {
-                // Teks ini kemungkinan besar scattered — gabungkan semua karakter
-                // tapi pertahankan spasi setelah tanda baca
-                text = text.replace(/ (?=[a-zA-Z\u00C0-\u024F])/g, (match, offset) => {
-                    // Jika karakter sebelumnya adalah tanda baca atau angka, pertahankan spasi
-                    const prev = text[offset - 1];
-                    if (prev && /[.!?,;:0-9]/.test(prev)) return match;
-                    return '';
-                });
+                mergedNodes.push(node);
             }
         }
 
-        // Normalisasi spasi antar huruf kapital scatter (e.g. "B A B" → "BAB")
-        text = text.replace(/([A-Z]) (?=[A-Z])/g, '$1');
-        text = text.replace(/B\s*A\s*B/gi, 'BAB');
+        await localforage.setItem('content_' + newBookId, mergedNodes);
+        if(coverBase64) await localforage.setItem('cover_' + newBookId, coverBase64);
 
-        if (text.length < 2) continue;
-        // Buang teks yang cuma simbol/karakter aneh (tidak ada huruf atau angka)
-        if (!/[a-zA-Z0-9\u00C0-\u024F\u0100-\u017E\u4E00-\u9FFF\u0600-\u06FF]/.test(text)) continue;
-
-        const fontSize = block.maxFontSize;
-        const len = text.length;
-
-        let score = 0;
-
-        // Sinyal kata kunci bab/chapter
-        if (/^(bab|chapter|bagian|part|section|pendahuluan|penutup|kesimpulan|daftar\s+pustaka|lampiran|kata\s+pengantar|prakata|prolog|epilog)\b/i.test(text)) {
-            score += 5;
-        }
-        // Sinyal "BAB diikuti angka/romawi" — sangat kuat
-        if (/^bab\s+([IVXLCDM]+|\d+)/i.test(text)) {
-            score += 3;
-        }
-
-        // Sinyal ukuran font
-        if (fontSize >= h1FontThreshold) {
-            score += 4;
-        } else if (fontSize >= h2FontThreshold) {
-            score += 2;
-        }
-
-        // Sinyal panjang teks
-        if (len < 80) score += 2;
-        if (len < 40) score += 1;
-
-        // Sinyal posisi tengah halaman
-        if (block.pageWidth > 0 && block.xCenter > 0) {
-            const pageCenter = block.pageWidth / 2;
-            const deviation = Math.abs(block.xCenter - pageCenter) / block.pageWidth;
-            if (deviation < 0.15) score += 1;
-        }
-
-        // Penalti: ada tanda baca kalimat di TENGAH teks (bukan di ujung)
-        const textWithoutEnd = text.slice(0, -1);
-        if (/[.!?]/.test(textWithoutEnd)) score -= 3;
-
-        // Penalti: terlalu panjang
-        if (len > 150) score -= 5;
-        if (len > 80) score -= 1;
-
-        // Tentukan tag
-        let tag = 'p';
-        if (score >= 6) tag = 'h1';
-        else if (score >= 3) tag = 'h2';
-
-        // Deduplication heading: jika heading dengan teks PERSIS SAMA sudah ada, ubah jadi p
-        if (tag !== 'p') {
-            const textKey = text.toLowerCase().trim();
-            if (seenHeadings.has(textKey)) {
-                tag = 'p';
-            } else {
-                seenHeadings.add(textKey);
-            }
-        }
-
-        parsedNodes.push({ tag, text });
-    }
-
-    // ===================================================================
-    // PASS 5: POST-PROCESSING — GABUNG FRAGMEN KATA YANG TERPOTONG
-    // Hanya gabungkan jika teks sangat pendek (< 4 kata) dan tidak ada tanda kalimat selesai
-    // Ini untuk menangkap kata yang terpotong antar halaman, bukan untuk menggabungkan paragraf pendek normal
-    // ===================================================================
-    const mergedNodes = [];
-    for (let i = 0; i < parsedNodes.length; i++) {
-        const node = parsedNodes[i];
-        const wordCount = node.text.split(/\s+/).length;
-        if (
-            node.tag === 'p' &&
-            wordCount < 4 &&
-            node.text.length < 40 &&
-            !node.text.match(/[.!?:;»"')\]。！？]+$/) &&
-            i + 1 < parsedNodes.length &&
-            parsedNodes[i + 1].tag === 'p'
-        ) {
-            // Gabung dengan node berikutnya
-            parsedNodes[i + 1] = {
-                tag: 'p',
-                text: node.text.trim() + ' ' + parsedNodes[i + 1].text.trim()
-            };
-            // Skip node ini
+        const existingIndex = library.findIndex(b => b.id === newBookId);
+        if (existingIndex === -1) {
+            library.push({
+                id: newBookId,
+                type: 'pdf',
+                pdfMode: 'scroll', 
+                title: bookTitle,
+                pages: total,
+                progressPct: 0,
+                lastReadId: null,
+                shape: 'square'
+            });
         } else {
-            mergedNodes.push(node);
+            library[existingIndex].pages = total;
+            library[existingIndex].title = bookTitle;
+            library[existingIndex].pdfMode = 'scroll';
         }
-    }
 
-    // [ID PERMANEN]: ID dari nama file, bukan timestamp
-    const newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
-    const existingIndex = library.findIndex(b => b.id === newBookId);
+        await localforage.setItem('pdf_epub_master', library);
+        renderLibrary();
+    };
 
-    // [OPTIMASI DEWA]: Langsung mutilasi data di sumber — teks & cover ke laci sendiri, library cuma KTP
-    await localforage.setItem('content_' + newBookId, mergedNodes);
-    await localforage.setItem('cover_' + newBookId, coverBase64);
-
-    if (existingIndex === -1) {
-        library.push({
-            id: newBookId,
-            type: 'pdf',
-            title: bookTitle,
-            pages: total,
-            progressPct: 0,
-            lastReadId: null,
-            shape: 'square'
-        });
+    if (finalMode === 'canvas') {
+        await saveAsCanvasMode();
     } else {
-        library[existingIndex].pages = total;
-        library[existingIndex].title = bookTitle;
+        await saveAsScrollMode();
     }
-
-    await localforage.setItem('pdf_epub_master', library);
-    renderLibrary();
 }
 
 // 3. FUNGSI EKSTRAK EPUB
@@ -905,13 +1072,12 @@ async function handleEpub(file, bookTitle) {
     let order = 0;
     
     const validBlockTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'div', 'section', 'article', 'header'];
-    // Deduplication heading di luar loop — deteksi duplikat antar chapter juga
     const seenEpubHeadings = new Set();
 
     for (const idref of spine) {
         order++;
         DOM.loadBar.style.width = `${Math.round((order / spine.length) * 100)}%`;
-        DOM.loadPct.textContent = `${Math.round((order / spine.length) * 100)}%`;
+        if(DOM.loadPct) DOM.loadPct.textContent = `${Math.round((order / spine.length) * 100)}%`;
 
         if (!manifest[idref]) continue;
         const htmlPath = opfDir + manifest[idref].href; 
@@ -965,23 +1131,17 @@ async function handleEpub(file, bookTitle) {
                 let text = el.textContent.trim().replace(/\s+/g, ' ');
                 if (text.length === 0) continue;
 
-                // Normalisasi: spasi antar huruf scatter (e.g. "B A B" → "BAB")
-                // Pakai pendekatan aman tanpa lookbehind (kompatibel semua WebView)
                 text = text.replace(/([A-Z]) (?=[A-Z])/g, '$1');
                 text = text.replace(/B\s*A\s*B/gi, 'BAB');
 
-                // Buang teks yang tidak mengandung karakter konten sama sekali
                 if (text.length < 2) continue;
                 if (!/\w/.test(text) && !/[\u00C0-\u024F\u0600-\u06FF\u4E00-\u9FFF]/.test(text)) continue;
 
                 let finalTag = 'p';
 
                 if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
-                    // Heading semantik dari HTML EPUB: percaya sepenuhnya, tapi validasi
-                    // h1/h2/h3 → h1 (bab), h4/h5/h6 → h2 (sub-bab)
                     const level = parseInt(tag[1]);
 
-                    // Heading yang terlalu panjang kemungkinan salah tag oleh penerbit → turunkan ke p
                     if (text.length > 200) {
                         finalTag = 'p';
                     } else if (level <= 3) {
@@ -990,7 +1150,6 @@ async function handleEpub(file, bookTitle) {
                         finalTag = 'h2';
                     }
 
-                    // Deduplication: heading persis sama yang sudah muncul → ubah ke p
                     if (finalTag !== 'p') {
                         const textKey = text.toLowerCase().trim();
                         if (seenEpubHeadings.has(textKey)) {
@@ -1000,13 +1159,10 @@ async function handleEpub(file, bookTitle) {
                         }
                     }
                 } else {
-                    // Bukan tag heading → p, tapi cek apakah konten class-nya adalah heading
-                    // Beberapa EPUB pake <p class="chapter-title"> dll
                     const cls = (el.getAttribute('class') || '').toLowerCase();
                     const isHeadingClass = /\b(chapter|heading|title|bab|judul|h[1-6]|header)\b/.test(cls);
 
                     if (isHeadingClass && text.length < 120) {
-                        // Cek lebih lanjut: harus punya "nilai heading"
                         const hasChapterKeyword = /^(bab|chapter|bagian|part|section|pendahuluan|penutup|kesimpulan|kata\s+pengantar|prakata|prolog|epilog)\b/i.test(text);
                         finalTag = hasChapterKeyword ? 'h1' : 'h2';
 
@@ -1024,11 +1180,14 @@ async function handleEpub(file, bookTitle) {
         }
     }
     
-    // [ID PERMANEN]: ID dari nama file, bukan timestamp
-    const newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    // ID PERMANEN + CEK DUPLIKAT
+    let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    if (file._isDuplicate) {
+        newBookId = newBookId.substring(0, 20) + Date.now().toString(36);
+        bookTitle = bookTitle + " (Copy)";
+    }
     const existingIndex = library.findIndex(b => b.id === newBookId);
 
-    // [OPTIMASI DEWA]: Langsung mutilasi data di sumber — teks & cover ke laci sendiri, library cuma KTP
     await localforage.setItem('content_' + newBookId, parsedNodes);
     if (coverBase64) await localforage.setItem('cover_' + newBookId, coverBase64);
 
@@ -1140,7 +1299,7 @@ window.lookupDictionary = function() {
 
     // Fetch Gemini (kalau ada API key)
     if (apiKey) {
-        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash-preview-05-20';
+        const modelVersion = localStorage.getItem('gemini_model') || 'gemini-2.5-flash-preview-09-2025';
         let langInstruction = 'Use English. Explain the meaning, context, and provide a short example sentence. Write in plain paragraphs, no bullet points. No introductory phrases, go straight to the explanation.';
         if (wikiLang === 'id') {
             langInstruction = 'Gunakan bahasa Indonesia. Jelaskan arti, konteks, dan berikan contoh kalimat singkat. Tulis dalam paragraf biasa, tanpa poin atau bullet. Langsung ke penjelasan tanpa kata pembuka.';
@@ -1187,5 +1346,3 @@ window.closeAiModal = function(isFromHistory = false) {
     m.classList.add('opacity-0');
     setTimeout(() => m.classList.add('hidden'), 300);
 }
-
-
