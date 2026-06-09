@@ -92,11 +92,17 @@
                 <div class="bg-m3-secondaryContainer text-m3-onSecondaryContainer rounded-[28px] p-4 shadow-sm relative flex flex-col justify-center min-h-[100px]">
                     <!-- Ornamen background M3 Expressive -->
                     <i data-lucide="asterisk" class="absolute -right-4 -bottom-6 w-32 h-32 text-m3-onSecondaryContainer opacity-[0.04] transform rotate-45 pointer-events-none"></i>
-                    <div class="absolute -left-8 -top-8 w-24 h-24 bg-m3-onSecondaryContainer/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -left-8 -top-8 w-24 h-24 bg-m3-onSecondaryContainer/5 rounded-full pointer-events-none"></div>
 
-                    <div class="flex items-center gap-2 mb-3 relative z-10">
-                        <div class="w-1.5 h-4 bg-m3-primary rounded-full"></div>
-                        <h2 class="text-xs font-black uppercase tracking-[0.15em] text-m3-onSecondaryContainer" id="str-stat-title">Statistik</h2>
+                    <div class="flex items-center justify-between mb-3 relative z-10">
+                        <div class="flex items-center gap-2">
+                            <div class="w-1.5 h-4 bg-m3-primary rounded-full"></div>
+                            <h2 class="text-xs font-black uppercase tracking-[0.15em] text-m3-onSecondaryContainer" id="str-stat-title">Statistik</h2>
+                        </div>
+                        <button id="stat-expand-btn" onclick="toggleStatChart()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-m3-onSecondaryContainer/10 hover:bg-m3-onSecondaryContainer/20 transition-colors btn-morph">
+                            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-m3-onSecondaryContainer" id="stat-expand-icon"></i>
+                            <span class="text-[10px] font-bold text-m3-onSecondaryContainer" id="str-stat-expand">Lihat Grafik</span>
+                        </button>
                     </div>
 
                     <div class="grid grid-cols-4 gap-2 relative z-10">
@@ -115,6 +121,18 @@
                         <div class="flex flex-col items-center justify-center">
                             <span class="text-2xl font-black text-m3-onSecondaryContainer tracking-tighter" id="stat-val-notes">0</span>
                             <span class="text-[9px] font-bold uppercase tracking-widest opacity-70 mt-0.5" id="str-stat-notes">Catatan</span>
+                        </div>
+                    </div>
+
+                    <!-- Chart Area — collapsed by default -->
+                    <div id="stat-chart-area" class="overflow-hidden transition-all duration-500 ease-in-out" style="max-height:0; opacity:0;">
+                        <div class="mt-5 pt-4 border-t border-m3-onSecondaryContainer/15 relative z-10">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-[10px] font-black uppercase tracking-widest opacity-60" id="str-stat-chart-title">Aktivitas Membaca</span>
+                                <span class="text-[9px] opacity-50 font-bold" id="str-stat-chart-days">7 hari terakhir</span>
+                            </div>
+                            <canvas id="stat-chart-canvas" height="120" class="w-full rounded-2xl"></canvas>
+                            <p id="stat-chart-empty" class="hidden text-center text-[10px] opacity-50 font-bold py-6">Belum ada data aktivitas membaca.</p>
                         </div>
                     </div>
                 </div>
@@ -390,6 +408,11 @@
                         <i data-lucide="database-backup" class="text-m3-primary mb-3 w-6 h-6"></i>
                         <h3 id="str-wel-backup" class="font-bold mb-1 text-sm">Pencadangan Data</h3>
                         <p id="str-wel-backup-desc" class="text-xs opacity-80 leading-relaxed font-medium">Gunakan fitur Backup di Pengaturan. Tersedia opsi <b>JSON</b> (hanya progres) dan <b>ZIP</b> (full backup isi buku). File disimpan di folder <b>Documents</b> HP lu.</p>
+                    </div>
+                    <div class="bg-m3-surfaceVariant p-5 rounded-3xl pb-6">
+                        <i data-lucide="layers" class="text-m3-primary mb-3 w-6 h-6"></i>
+                        <h3 id="str-wel-canvas" class="font-bold mb-1 text-sm">Mode Canvas PDF</h3>
+                        <p id="str-wel-canvas-desc" class="text-xs opacity-80 leading-relaxed font-medium">Mode Canvas menampilkan halaman PDF persis seperti aslinya.</p>
                     </div>
                     <div class="bg-m3-surfaceVariant p-5 rounded-3xl pb-6">
                         <i data-lucide="file-warning" class="text-m3-primary mb-3 w-6 h-6"></i>
