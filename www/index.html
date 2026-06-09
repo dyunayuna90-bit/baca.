@@ -277,20 +277,43 @@
             </div>
         </div>
 
+        <!-- JUMP TO PAGE BAR (canvas mode, above bottom bar) -->
+        <div id="canvas-jump-bar" class="hidden bg-m3-surface border-t border-m3-surfaceVariant px-4 py-2.5 shrink-0 z-40 flex items-center gap-2 transition-all duration-200">
+            <i data-lucide="corner-down-right" class="w-4 h-4 text-m3-primary shrink-0"></i>
+            <input type="number" id="canvas-jump-input" min="1" placeholder="Halaman..." 
+                class="flex-1 bg-m3-surfaceVariant text-m3-onSurface text-sm font-bold px-3 py-1.5 rounded-full border-none outline-none focus:ring-2 focus:ring-m3-primary/30 placeholder:opacity-50 placeholder:font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                onkeydown="if(event.key==='Enter') window.executeJumpToPage()">
+            <button onclick="window.executeJumpToPage()" class="px-4 py-1.5 bg-m3-primary text-m3-onPrimary rounded-full font-bold text-xs btn-morph shrink-0">Go</button>
+            <button onclick="window.hideJumpBar()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-onSurfaceVariant btn-morph shrink-0">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
         <!-- PROGRESS BAR -->
         <div id="progress-container" class="h-1 w-full bg-m3-surfaceVariant shrink-0 z-40 relative">
             <div id="reading-progress-bar" class="h-full bg-m3-primary progress-smooth w-0"></div>
         </div>
 
         <!-- CANVAS PAGE INDICATOR (di atas bottom bar, hanya canvas mode) -->
-        <div id="canvas-page-indicator-bar" class="hidden bg-m3-surfaceVariant/80 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2">
-            <div class="flex items-center gap-1 text-xs font-black tracking-wide text-m3-onSurfaceVariant">
+        <div id="canvas-page-indicator-bar" class="hidden bg-m3-surfaceVariant/80 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2" style="display:none !important">
+            <!-- This element is kept for backward compat, logic moved to canvas-page-controller -->
+        </div>
+        <!-- Canvas Page Controller: prev/next + nomor halaman + tombol jump -->
+        <div id="canvas-page-controller" class="hidden bg-m3-surfaceVariant/90 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2">
+            <button onclick="window.prevCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Sebelumnya">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <div class="flex items-center gap-1 text-xs font-black tracking-wide text-m3-onSurfaceVariant flex-1 justify-center">
                 <span id="canvas-page-num" class="text-m3-primary">1</span>
                 <span class="opacity-40">/</span>
                 <span id="canvas-page-total">1</span>
             </div>
-            <button onclick="window.showJumpToPageDialog()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors ml-1" title="Lompat Halaman">
-                <i data-lucide="hash" class="w-3.5 h-3.5"></i>
+            <button onclick="window.nextCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Berikutnya">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+            <div class="w-px h-4 bg-m3-onSurfaceVariant/20 mx-1"></div>
+            <button onclick="window.toggleJumpBar()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Lompat ke Halaman">
+                <i data-lucide="corner-down-right" class="w-3.5 h-3.5"></i>
             </button>
         </div>
 
