@@ -1634,11 +1634,22 @@ window.openBook = async function(book) {
         // Terapkan AMOLED ke canvas wrapper jika aktif
         applyThemeToDOM();
 
-        // Redupkan grup setting tipografi & AI secara halus
-        ['size', 'align', 'font', 'search'].forEach(grp => {
+        // Redupkan grup setting tipografi & AI secara halus, tapi aktifkan search group untuk jump
+        ['size', 'align', 'font'].forEach(grp => {
             const el = document.getElementById('setting-group-' + grp);
             if (el) el.classList.add('ui-disabled-group');
         });
+        // Tampilkan area jump halaman, sembunyikan area cari teks
+        const searchScrollArea = document.getElementById('search-scroll-area');
+        const searchCanvasArea = document.getElementById('search-canvas-area');
+        if (searchScrollArea) searchScrollArea.classList.add('hidden');
+        if (searchCanvasArea) searchCanvasArea.classList.remove('hidden');
+        // Update label search group ke "Lompat ke Halaman"
+        const searchLabel = document.getElementById('str-set-search');
+        if (searchLabel) {
+            const dNow = i18n[wikiLang] || i18n['id'];
+            searchLabel.textContent = dNow.navJumpPage || 'Lompat ke Halaman';
+        }
 
         // Load PDF murni & render
         try {
@@ -1671,10 +1682,21 @@ window.openBook = async function(book) {
         if (canvasCtrl) canvasCtrl.classList.add('hidden');
 
         // Kembalikan visibilitas grup setting secara utuh
-        ['size', 'align', 'font', 'search'].forEach(grp => {
+        ['size', 'align', 'font'].forEach(grp => {
             const el = document.getElementById('setting-group-' + grp);
             if (el) el.classList.remove('ui-disabled-group');
         });
+        // Tampilkan area cari teks, sembunyikan area jump halaman
+        const searchScrollArea = document.getElementById('search-scroll-area');
+        const searchCanvasArea = document.getElementById('search-canvas-area');
+        if (searchScrollArea) searchScrollArea.classList.remove('hidden');
+        if (searchCanvasArea) searchCanvasArea.classList.add('hidden');
+        // Kembalikan label search group ke "Pencarian"
+        const searchLabel = document.getElementById('str-set-search');
+        if (searchLabel) {
+            const dNow = i18n[wikiLang] || i18n['id'];
+            searchLabel.textContent = dNow.navSearch || 'Pencarian';
+        }
 
         // Fetch nodes dari storage independen
         if (!book.nodes) {
