@@ -197,7 +197,8 @@ const i18n = {
         pdfBothModesTitle: "Buku Sudah Ada di Rak",
         pdfBothModesDesc: "Buku berikut sudah ada di kedua rak (Scroll & Canvas). Tidak dapat ditambahkan lagi.",
         pdfScrollWillDelete: "Canvas (versi Scroll akan dihapus)",
-        pdfCanvasWillDelete: "Scroll (versi Canvas akan dihapus)"
+        pdfCanvasWillDelete: "Scroll (versi Canvas akan dihapus)",
+        batchDismiss: "Buang dari daftar"
     },
     en: {
         libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
@@ -320,7 +321,8 @@ const i18n = {
         pdfBothModesTitle: "Book Already in Shelf",
         pdfBothModesDesc: "The following book is already in both shelves (Scroll & Canvas). It cannot be added again.",
         pdfScrollWillDelete: "Canvas (Scroll version will be deleted)",
-        pdfCanvasWillDelete: "Scroll (Canvas version will be deleted)"
+        pdfCanvasWillDelete: "Scroll (Canvas version will be deleted)",
+        batchDismiss: "Remove from list"
     },
     es: {
         libEmpty: "La biblioteca está vacía.", searchBooks: "Buscar libros...", loadingDocs: "Leyendo documento...", 
@@ -443,6 +445,7 @@ const i18n = {
         pdfBothModesTitle: "El Libro Ya Está en el Estante",
         pdfBothModesDesc: "El siguiente libro ya está en ambos estantes (Scroll & Canvas). No se puede añadir de nuevo.",
         pdfScrollWillDelete: "Canvas (versión Scroll se eliminará)",
-        pdfCanvasWillDelete: "Scroll (versión Canvas se eliminará)"
+        pdfCanvasWillDelete: "Scroll (versión Canvas se eliminará)",
+        batchDismiss: "Quitar de la lista"
     }
 };
