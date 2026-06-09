@@ -130,9 +130,9 @@ async function processMultipleFiles(files) {
 
     // Tahap 1: Pisahkan file PDF dari non-PDF, dan cek duplikat
     let pdfFiles       = [];
-    let nonPdfFiles    = [];
-    let dupNonPdf      = [];   // non-PDF yang sudah ada persis di library
-    let dupBothPdf     = [];   // PDF yang sudah ada di KEDUA mode (scroll & canvas) → harus ditolak total
+    let nonPdfFiles    = [];   // non-PDF yang BELUM ada di library → langsung proses
+    let dupBothPdf     = [];   // PDF yang sudah ada di KEDUA mode (scroll & canvas) → tolak total
+    // non-PDF yang sudah ada di library → langsung di-skip diam-diam, tanpa dialog
 
     for (let f of files) {
         const ext = f.name.split('.').pop().toLowerCase();
@@ -140,7 +140,6 @@ async function processMultipleFiles(files) {
             const bookId = _getBookId(f);
             const em = _getExistingModes(bookId);
             if (em.both) {
-                // Sudah ada di scroll DAN canvas — tolak, tidak boleh ditambahkan lagi
                 dupBothPdf.push({ file: f, id: bookId, title: f.name.replace(/\.[^/.]+$/, "") });
             } else {
                 pdfFiles.push(f);
@@ -148,11 +147,11 @@ async function processMultipleFiles(files) {
         } else {
             const bookId = _getBookId(f);
             const em = _getExistingModes(bookId);
-            if (em.found) {
-                dupNonPdf.push({ file: f, id: bookId, title: f.name.replace(/\.[^/.]+$/, "") });
-            } else {
+            if (!em.found) {
+                // Belum ada → proses
                 nonPdfFiles.push(f);
             }
+            // Sudah ada → diam-diam skip, tidak ada duplikasi
         }
     }
 
@@ -184,48 +183,11 @@ async function processMultipleFiles(files) {
             );
         });
 
-        // Jika tidak ada file lain yang perlu diproses, keluar
-        if (!hasSomethingElse && dupNonPdf.length === 0) return;
+        if (!hasSomethingElse) return;
     }
 
-    // Tahap 2: Dialog konfirmasi duplikat untuk non-PDF saja
+    // Tahap 2: Gabungkan non-PDF baru + PDF ke antrian
     let filesToProcess = [...nonPdfFiles];
-
-    if (dupNonPdf.length > 0) {
-        let dupListHtml = `<div class="max-h-40 overflow-y-auto mt-2 mb-2 bg-m3-surfaceVariant/30 rounded-xl p-2 text-left">`;
-        dupNonPdf.forEach(dup => {
-            dupListHtml += `<div class="text-xs text-m3-onSurface opacity-80 mb-1 truncate">- ${dup.title}</div>`;
-        });
-        dupListHtml += `</div>`;
-
-        const action = await new Promise((resolve) => {
-            let isResolved = false;
-            const checkHidden = setInterval(() => {
-                if (document.getElementById('custom-dialog').classList.contains('hidden')) {
-                    clearInterval(checkHidden);
-                    if (!isResolved) resolve('CANCEL');
-                }
-            }, 300);
-            window.showDialog(
-                d.uploadDuplicateTitle || "Buku Sudah Ada",
-                (d.uploadDuplicateDesc || "Buku berikut sudah ada di rakmu. Tambahkan lagi (sebagai file baru) atau lewati saja?") + dupListHtml,
-                "copy",
-                [
-                    { text: d.btnSkip || "Lewati", primary: false, action: () => { isResolved = true; window.closeDialog(); resolve('SKIP'); } },
-                    { text: d.btnAddAnyway || "Tambahkan Saja", primary: true, action: () => { isResolved = true; window.closeDialog(); resolve('ADD'); } }
-                ]
-            );
-        });
-
-        if (action === 'CANCEL' && pdfFiles.length === 0) return;
-        if (action === 'ADD') {
-            dupNonPdf.forEach(dup => { dup.file._isDuplicate = true; filesToProcess.push(dup.file); });
-        }
-
-        if (typeof window.showGlobalLoading === 'function') window.showGlobalLoading(d.loadingDocs || 'Menganalisa dokumen...');
-        await new Promise(r => setTimeout(r, 350));
-        if (typeof window.hideGlobalLoading === 'function') window.hideGlobalLoading();
-    }
 
     // Gabungkan PDF ke dalam filesToProcess (PDF akan lewat mode-selection sendiri)
     for (let f of pdfFiles) filesToProcess.push(f);
