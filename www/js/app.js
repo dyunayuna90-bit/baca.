@@ -172,12 +172,17 @@ function getReadingActivity(days = 7) {
     try {
         const raw = localStorage.getItem('reading_activity_v1');
         const act = raw ? JSON.parse(raw) : {};
+        // Map bahasa app ke locale BCP-47
+        const localeMap = { id: 'id-ID', en: 'en-US', es: 'es-ES' };
+        const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+        const locale = localeMap[lang] || 'id-ID';
         const result = [];
         for (let i = days - 1; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
             const key = d.toISOString().slice(0, 10);
-            const label = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+            // Label: nama hari pendek + tanggal, sesuai bahasa aktif
+            const label = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' });
             result.push({ label, value: act[key] || 0 });
         }
         return result;
@@ -194,14 +199,45 @@ window.toggleStatChart = function() {
     const d = typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {};
 
     if (_statChartOpen) {
-        area.style.maxHeight = '280px';
-        area.style.opacity = '1';
+        // Render chart dulu sebelum animasi biar scrollHeight bisa diukur dengan akurat
+        renderStatChart();
+
+        // Ukur tinggi asli konten, lalu animasi dari 0 ke nilai exact
+        area.style.transition = 'none';
+        area.style.maxHeight = 'none';
+        area.style.opacity  = '1';
+        const fullH = area.scrollHeight;
+        area.style.maxHeight = '0px';
+        area.style.opacity  = '0';
+
+        // Force reflow agar browser commit titik awal sebelum transisi dimulai
+        void area.offsetHeight;
+
+        area.style.transition = 'max-height 420ms cubic-bezier(0.4,0,0.2,1), opacity 320ms ease';
+        area.style.maxHeight  = fullH + 'px';
+        area.style.opacity    = '1';
+
+        // Setelah animasi selesai, lepas max-height fixed supaya konten bisa bebas resize
+        const onEnd = (ev) => {
+            if (ev.propertyName !== 'max-height') return;
+            area.style.maxHeight = 'none';
+            area.removeEventListener('transitionend', onEnd);
+        };
+        area.addEventListener('transitionend', onEnd);
+
         if (icon) { icon.setAttribute('data-lucide', 'chevron-up'); if(window.lucide) window.lucide.createIcons({nodes: [icon]}); }
         if (label) label.textContent = d.statCollapse || 'Tutup Grafik';
-        setTimeout(() => renderStatChart(), 100);
     } else {
-        area.style.maxHeight = '0';
-        area.style.opacity = '0';
+        // Collapse: ukur tinggi saat ini, animasi ke 0
+        const curH = area.scrollHeight;
+        area.style.transition = 'none';
+        area.style.maxHeight  = curH + 'px';
+        void area.offsetHeight;
+
+        area.style.transition = 'max-height 380ms cubic-bezier(0.4,0,0.2,1), opacity 260ms ease';
+        area.style.maxHeight  = '0px';
+        area.style.opacity    = '0';
+
         if (icon) { icon.setAttribute('data-lucide', 'bar-chart-2'); if(window.lucide) window.lucide.createIcons({nodes: [icon]}); }
         if (label) label.textContent = d.statExpand || 'Lihat Grafik';
     }
