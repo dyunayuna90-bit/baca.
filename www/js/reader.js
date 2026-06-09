@@ -109,6 +109,11 @@ let _importRunning = false;
 let _importTotalQueued = 0;
 let _importDoneCount = 0;
 
+// Expose ke window agar bisa dipanggil dari app.js (archive download)
+window._processFilesFromArchive = async function(files) {
+    return processMultipleFiles(files);
+};
+
 async function processMultipleFiles(files) {
     const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
     const d = typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {};
@@ -150,8 +155,15 @@ async function processMultipleFiles(files) {
             if (!em.found) {
                 // Belum ada → proses
                 nonPdfFiles.push(f);
+            } else {
+                // Sudah ada → tampilkan toast duplikat (tidak diam-diam!)
+                const bookTitle = f.name.replace(/\.[^/.]+$/, "");
+                const toastMsg = (d.toastBookDuplicate || 'Buku "{title}" udah ada di rak sebelumnya.')
+                    .replace('{title}', bookTitle.length > 30 ? bookTitle.substring(0, 30) + '…' : bookTitle);
+                if (typeof window.showPersistentToast === 'function') {
+                    window.showPersistentToast(toastMsg, 'duplicate', 3500);
+                }
             }
-            // Sudah ada → diam-diam skip, tidak ada duplikasi
         }
     }
 
@@ -411,7 +423,20 @@ async function processMultipleFiles(files) {
     else window.scrollTo({ top: 0, behavior: 'smooth' });
     
     // Filter out files yang di-skip karena sudah ada di kedua mode
+    const skippedModes = fileModes.filter(m => m._skipEntry && m.title);
     const validModes = fileModes.filter(m => !m._skipEntry);
+
+    // Toast untuk setiap PDF yang di-skip karena sudah ada di rak
+    if (skippedModes.length > 0 && typeof window.showPersistentToast === 'function') {
+        skippedModes.forEach(m => {
+            const bookTitle = m.title || '';
+            const shortTitle = bookTitle.length > 30 ? bookTitle.substring(0, 30) + '…' : bookTitle;
+            const toastMsg = (d.toastBookDuplicate || 'Buku "{title}" udah ada di rak sebelumnya.')
+                .replace('{title}', shortTitle);
+            window.showPersistentToast(toastMsg, 'duplicate', 3500);
+        });
+    }
+
     for (const m of validModes) { _importQueue.push(m); }
     _importTotalQueued += validModes.length;
     
@@ -480,7 +505,28 @@ async function processMultipleFiles(files) {
     setTimeout(() => { DOM.load.classList.add('hidden'); }, 900);
     if (DOM.loadTxt) DOM.loadTxt.textContent = d.loadingDocs || 'Reading Document...';
 
-    if (grandTotal > 1 || failed.length > 0) {
+    // Tampilkan hasil akhir
+    // → grandTotal == 1 (single book, tipikal dari Archive): pakai toast supaya tidak ganggu UX
+    // → grandTotal > 1 atau ada failure pada batch: pakai dialog seperti semula
+    if (grandTotal === 1) {
+        // Single book: toast ringkas
+        if (typeof window.showPersistentToast === 'function') {
+            if (imported === 1) {
+                const successMsg = d.toastBookAdded || 'Buku berhasil ditambah! 📚';
+                window.showPersistentToast(successMsg, 'success', 3500);
+            } else {
+                // imported == 0, artinya gagal semua
+                const failMsg = d.toastBookFailed || 'Gagal diproses, file mungkin rusak.';
+                window.showPersistentToast(failMsg, 'error', 4000);
+            }
+        } else {
+            // Fallback ke dialog kalau showPersistentToast belum ada
+            if (failed.length > 0) {
+                showDialog(d.importDoneTitle || "Selesai Import", d.toastBookFailed || 'Gagal diproses.', "alert-circle", [{ text: d.btnClose || "Oke", primary: true }]);
+            }
+        }
+    } else if (grandTotal > 1 || failed.length > 0) {
+        // Batch / ada yang gagal: dialog seperti biasa
         const importedStr = d.importSuccessCount ? d.importSuccessCount.replace('{n}', imported) : `${imported} buku berhasil diimpor.`;
         let summary = importedStr;
         if (failed.length > 0) {
@@ -713,7 +759,7 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
 
     // --- EKSTRAK COVER ---
-    let coverBase64 = null;
+    let coverBlob = null;
     try {
         const coverCanvas = document.createElement('canvas');
         const coverCtx = coverCanvas.getContext('2d');
@@ -722,7 +768,7 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
         coverCanvas.width = viewport.width;
         coverCanvas.height = viewport.height;
         await firstPage.render({ canvasContext: coverCtx, viewport: viewport }).promise;
-        coverBase64 = coverCanvas.toDataURL('image/jpeg', 0.8);
+        coverBlob = await new Promise(resolve => coverCanvas.toBlob(resolve, 'image/jpeg', 0.8));
     } catch(e) { console.error("Gagal cover PDF", e); }
 
     let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
@@ -738,7 +784,7 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
         
         const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
         await localforage.setItem('rawpdf_' + newBookId, pdfBlob);
-        if(coverBase64) await localforage.setItem('cover_' + newBookId, coverBase64);
+        if(coverBlob) await localforage.setItem('cover_' + newBookId, coverBlob);
 
         const existingIndex = library.findIndex(b => b.id === newBookId);
         if (existingIndex === -1) {
@@ -1087,7 +1133,7 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
         }
 
         await localforage.setItem('content_' + newBookId, mergedNodes);
-        if(coverBase64) await localforage.setItem('cover_' + newBookId, coverBase64);
+        if(coverBlob) await localforage.setItem('cover_' + newBookId, coverBlob);
 
         const existingIndex = library.findIndex(b => b.id === newBookId);
         if (existingIndex === -1) {
@@ -1121,8 +1167,7 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
 // 3. FUNGSI EKSTRAK EPUB
 async function handleEpub(file, bookTitle) {
     const zip = await JSZip.loadAsync(file); 
-    let parsedNodes = []; 
-    let coverBase64 = null;
+    let parsedNodes = [];
 
     const containerXml = await zip.file("META-INF/container.xml").async("text");
     const opfPath = (new DOMParser()).parseFromString(containerXml, "text/xml").getElementsByTagName("rootfile")[0].getAttribute("full-path");
@@ -1138,6 +1183,8 @@ async function handleEpub(file, bookTitle) {
         manifest[item.getAttribute("id")] = { href: item.getAttribute("href"), mediaType: item.getAttribute("media-type") }; 
     });
 
+    let coverBlob = null;
+
     const metaCover = opfDoc.querySelector("meta[name='cover']");
     if (metaCover) {
         const coverId = metaCover.getAttribute("content");
@@ -1146,19 +1193,27 @@ async function handleEpub(file, bookTitle) {
             const coverFile = zip.file(coverPath);
             if (coverFile) {
                 const b64 = await coverFile.async("base64");
-                coverBase64 = "data:" + manifest[coverId].mediaType + ";base64," + b64;
+                const mime = manifest[coverId].mediaType || 'image/jpeg';
+                const raw = atob(b64);
+                const arr = new Uint8Array(raw.length);
+                for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+                coverBlob = new Blob([arr], { type: mime });
             }
         }
     }
 
-    if (!coverBase64) {
+    if (!coverBlob) {
         const potentialCover = Object.values(manifest).find(m => m.href.toLowerCase().includes('cover') && m.mediaType.startsWith('image/'));
         if (potentialCover) {
             let coverPath = opfDir + potentialCover.href;
             const coverFile = zip.file(coverPath);
             if (coverFile) {
                 const b64 = await coverFile.async("base64");
-                coverBase64 = "data:" + potentialCover.mediaType + ";base64," + b64;
+                const mime = potentialCover.mediaType || 'image/jpeg';
+                const raw = atob(b64);
+                const arr = new Uint8Array(raw.length);
+                for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+                coverBlob = new Blob([arr], { type: mime });
             }
         }
     }
@@ -1284,7 +1339,7 @@ async function handleEpub(file, bookTitle) {
     const existingIndex = library.findIndex(b => b.id === newBookId);
 
     await localforage.setItem('content_' + newBookId, parsedNodes);
-    if (coverBase64) await localforage.setItem('cover_' + newBookId, coverBase64);
+    if (coverBlob) await localforage.setItem('cover_' + newBookId, coverBlob);
 
     if (existingIndex === -1) {
         library.push({
