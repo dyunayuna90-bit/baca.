@@ -1,6 +1,6 @@
 {
   "name": "baca-app",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Baca App Android Build",
   "scripts": {
     "build": "echo 'No build step required'"
