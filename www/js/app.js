@@ -1590,15 +1590,15 @@ window.openBook = async function(book) {
         tocWarnStr.textContent = dNow.tocCanvasWarning || 'Untuk mode canvas, daftar isi tidak tersedia.';
     }
 
-    // Tampilkan capsule page controller hanya di canvas mode
-    const canvasCtrl = document.getElementById('canvas-page-controller');
+    // Tampilkan indikator halaman canvas di atas bottom bar
+    const canvasIndicatorBar = document.getElementById('canvas-page-indicator-bar');
 
     // Kelola visibilitas viewport pembaca secara dinamis (Scroll vs Canvas)
     if (isCanvas) {
         DOM.readContent.classList.add('hidden');
         if (DOM.canvasContainer) DOM.canvasContainer.classList.remove('hidden');
         if (DOM.canvasWarning) DOM.canvasWarning.classList.remove('hidden');
-        if (canvasCtrl) canvasCtrl.classList.remove('hidden');
+        if (canvasIndicatorBar) canvasIndicatorBar.classList.remove('hidden');
 
         // Terapkan AMOLED ke canvas wrapper jika aktif
         applyThemeToDOM();
@@ -1617,9 +1617,10 @@ window.openBook = async function(book) {
             const pdfDataUrl = URL.createObjectURL(rawPdfBlob);
             currentPdfDoc = await pdfjsLib.getDocument({ url: pdfDataUrl }).promise;
             
+            _invalidatePageCache(book.id); // Bersihkan cache halaman dari buku lama
             currentCanvasPage = parseInt(book.lastReadId) || 1;
             currentCanvasScale = 1.0;
-            if (DOM.canvasPageTotal) DOM.canvasPageTotal.textContent = currentPdfDoc.numPages;
+            if (document.getElementById('canvas-page-total')) document.getElementById('canvas-page-total').textContent = currentPdfDoc.numPages;
 
             // Inisialisasi gesture DULU
             initCanvasGestures();
@@ -1637,7 +1638,7 @@ window.openBook = async function(book) {
         DOM.readContent.classList.remove('hidden');
         if (DOM.canvasContainer) DOM.canvasContainer.classList.add('hidden');
         if (DOM.canvasWarning) DOM.canvasWarning.classList.add('hidden');
-        if (canvasCtrl) canvasCtrl.classList.add('hidden');
+        if (canvasIndicatorBar) canvasIndicatorBar.classList.add('hidden');
 
         // Kembalikan visibilitas grup setting secara utuh
         ['size', 'align', 'font', 'search'].forEach(grp => {
@@ -1716,46 +1717,83 @@ window.openBook = async function(book) {
     }
 }
 
-// --- ENGINE RENDER CANVAS PDF ---
+// --- ENGINE RENDER CANVAS PDF (dengan cache bitmap untuk ganti halaman instan) ---
+const _canvasPageCache = new Map(); // key: pageNum, value: ImageBitmap
+let _cacheCurrentDocId = null;
+
+function _invalidatePageCache(docId) {
+    if (_cacheCurrentDocId !== docId) {
+        _canvasPageCache.forEach(bm => { try { bm.close(); } catch(e){} });
+        _canvasPageCache.clear();
+        _cacheCurrentDocId = docId;
+    }
+}
+
+async function _renderPageToBitmap(pageNum) {
+    if (_canvasPageCache.has(pageNum)) return _canvasPageCache.get(pageNum);
+
+    const vpEl = document.getElementById('canvas-zoom-viewport');
+    if (!vpEl || !currentPdfDoc) return null;
+
+    const page       = await currentPdfDoc.getPage(pageNum);
+    const pixelRatio = window.devicePixelRatio || 1;
+    const cW         = vpEl.clientWidth;
+
+    const nat = page.getViewport({ scale: 1 });
+    const fit = page.getViewport({ scale: cW / nat.width });
+    const dW  = Math.floor(fit.width);
+    const dH  = Math.floor(fit.height);
+
+    const offscreen = new OffscreenCanvas(dW * pixelRatio, dH * pixelRatio);
+    const ctx = offscreen.getContext('2d');
+
+    await page.render({
+        canvasContext: ctx,
+        viewport: fit,
+        transform: [pixelRatio, 0, 0, pixelRatio, 0, 0]
+    }).promise;
+
+    const bitmap = await createImageBitmap(offscreen);
+    _canvasPageCache.set(pageNum, bitmap);
+    return bitmap;
+}
+
 async function renderCanvasPage(pageNum) {
     if (!currentPdfDoc || isRenderingCanvas) return;
     isRenderingCanvas = true;
     try {
-        const page       = await currentPdfDoc.getPage(pageNum);
-        const vpEl       = document.getElementById('canvas-zoom-viewport');
-        const canvas     = document.getElementById('pdf-canvas');
-        const wrapper    = document.getElementById('canvas-wrapper');
+        const vpEl   = document.getElementById('canvas-zoom-viewport');
+        const canvas = document.getElementById('pdf-canvas');
+        const wrapper = document.getElementById('canvas-wrapper');
         if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
 
         const pixelRatio = window.devicePixelRatio || 1;
-        const cW         = vpEl.clientWidth;
-        const cH         = vpEl.clientHeight;
+        const cW = vpEl.clientWidth;
+        const cH = vpEl.clientHeight;
 
-        // Fit lebar canvas = lebar container
-        const nat     = page.getViewport({ scale: 1 });
-        const fit     = page.getViewport({ scale: cW / nat.width });
-        const dW      = Math.floor(fit.width);
-        const dH      = Math.floor(fit.height);
+        // Ambil/buat bitmap (dari cache atau render baru)
+        const bitmap = await _renderPageToBitmap(pageNum);
+        if (!bitmap) { isRenderingCanvas = false; return; }
 
-        canvas.width        = dW * pixelRatio;
-        canvas.height       = dH * pixelRatio;
+        const dW = Math.round(bitmap.width  / pixelRatio);
+        const dH = Math.round(bitmap.height / pixelRatio);
+
+        canvas.width        = bitmap.width;
+        canvas.height       = bitmap.height;
         canvas.style.width  = dW + 'px';
         canvas.style.height = dH + 'px';
         wrapper.style.width  = dW + 'px';
         wrapper.style.height = dH + 'px';
 
-        // Simpan ukuran untuk clamp — tidak perlu offX/offY karena flex yang centering
         wrapper._W  = dW;
         wrapper._H  = dH;
         wrapper._cW = cW;
         wrapper._cH = cH;
 
-        await page.render({
-            canvasContext: canvas.getContext('2d'),
-            viewport: fit,
-            transform: [pixelRatio, 0, 0, pixelRatio, 0, 0]
-        }).promise;
+        // Gambar bitmap ke canvas — instan, tidak perlu re-render PDF
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
 
+        // Update indikator halaman (bar baru di atas bottom nav)
         const lbl = document.getElementById('canvas-page-num');
         if (lbl) lbl.textContent = pageNum;
         const pct = Math.round((pageNum / currentPdfDoc.numPages) * 100);
@@ -1763,6 +1801,16 @@ async function renderCanvasPage(pageNum) {
         if (DOM.progTxt) DOM.progTxt.textContent = `${pct}%`;
         updateBookProgress(activeBookId, pageNum, pct);
         renderBookmarkPanel();
+
+        // Pre-cache halaman berikutnya di background (tidak await)
+        const next = pageNum + 1;
+        const prev = pageNum - 1;
+        if (next <= currentPdfDoc.numPages && !_canvasPageCache.has(next)) {
+            _renderPageToBitmap(next).catch(() => {});
+        }
+        if (prev >= 1 && !_canvasPageCache.has(prev)) {
+            _renderPageToBitmap(prev).catch(() => {});
+        }
 
     } catch (e) { console.error('renderCanvasPage:', e); }
     finally     { isRenderingCanvas = false; }
@@ -1942,6 +1990,9 @@ function initCanvasGestures() {
         }
     }, { passive: false });
 
+    // Timer untuk menunda navigasi halaman — dibatalkan jika tap kedua datang
+    let _navTimer = null;
+
     // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
         // Jari ke-2 terangkat → akhiri pinch, perbarui anchor pan agar tidak loncat
@@ -1971,48 +2022,63 @@ function initCanvasGestures() {
                 _applyCanvasTransform(wrapper);
             }
 
-            const dt   = Date.now() - tapStartTime;
-            const ex   = e.changedTouches[0].clientX;
-            const ey   = e.changedTouches[0].clientY;
+            const dt    = Date.now() - tapStartTime;
+            const ex    = e.changedTouches[0].clientX;
+            const ey    = e.changedTouches[0].clientY;
             const moved = Math.hypot(ex - tapStartX, ey - tapStartY);
 
-            if (dt < 300 && moved < 18) {
-                const now = Date.now();
-                const dtDoubleTap = now - _canvasLastTapTime;
-                const doubleTapMoved = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
+            // Bukan tap yang valid (geser terlalu jauh atau terlalu lama tekan)
+            if (dt >= 300 || moved >= 18) return;
 
-                if (dtDoubleTap < 320 && doubleTapMoved < 40) {
-                    // ── DOUBLE TAP ──
-                    _canvasLastTapTime = 0; // reset agar tidak triple-tap
-                    if (currentCanvasScale > 1.01) {
-                        // Zoom OUT ke 1x dengan animasi
-                        wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
-                        currentCanvasScale = 1.0;
-                        canvasTranslateX   = 0;
-                        canvasTranslateY   = 0;
-                        _applyCanvasTransform(wrapper);
-                        setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
-                    } else {
-                        // Zoom IN 2.5x ke titik yang di-tap
-                        const TARGET_SCALE = 2.5;
-                        const fc = screenToContent(ex, ey);
-                        wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
-                        zoomToContentPoint(TARGET_SCALE, fc.cx, fc.cy,
-                            canvasTranslateX, canvasTranslateY, currentCanvasScale);
-                        _applyCanvasTransform(wrapper);
-                        setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
-                    }
+            const now          = Date.now();
+            const dtDoubleTap  = now - _canvasLastTapTime;
+            const doubleMoved  = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
+
+            if (dtDoubleTap < 320 && doubleMoved < 40) {
+                // ── DOUBLE TAP — batalkan timer navigasi yang mungkin sedang pending ──
+                clearTimeout(_navTimer);
+                _navTimer = null;
+                _canvasLastTapTime = 0; // reset agar tidak triple-tap
+
+                if (currentCanvasScale > 1.01) {
+                    // Zoom OUT ke 1× dengan animasi
+                    wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
+                    currentCanvasScale = 1.0;
+                    canvasTranslateX   = 0;
+                    canvasTranslateY   = 0;
+                    _applyCanvasTransform(wrapper);
+                    setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 } else {
-                    // ── SINGLE TAP — catat waktu & posisi untuk deteksi double-tap berikutnya ──
-                    _canvasLastTapTime = now;
-                    _canvasLastTapX    = ex;
-                    _canvasLastTapY    = ey;
+                    // Zoom IN 2.5× ke titik yang di-tap
+                    const fc = screenToContent(ex, ey);
+                    wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
+                    zoomToContentPoint(2.5, fc.cx, fc.cy,
+                        canvasTranslateX, canvasTranslateY, currentCanvasScale);
+                    _applyCanvasTransform(wrapper);
+                    setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
+                }
+            } else {
+                // ── SINGLE TAP — catat dulu, tunda navigasi sampai window double-tap berakhir ──
+                _canvasLastTapTime = now;
+                _canvasLastTapX    = ex;
+                _canvasLastTapY    = ey;
 
-                    // Navigasi halaman hanya saat scale = 1 (tidak sedang zoom)
-                    if (currentCanvasScale <= 1.01) {
-                        const sw = window.innerWidth;
-                        if      (ex < sw * 0.30) window.prevCanvasPage();
-                        else if (ex > sw * 0.70) window.nextCanvasPage();
+                // Navigasi halaman hanya saat scale = 1
+                // Ditunda 320ms agar double-tap bisa membatalkannya
+                if (currentCanvasScale <= 1.01) {
+                    const sw      = window.innerWidth;
+                    const isLeft  = ex < sw * 0.30;
+                    const isRight = ex > sw * 0.70;
+                    if (isLeft || isRight) {
+                        clearTimeout(_navTimer);
+                        _navTimer = setTimeout(() => {
+                            _navTimer = null;
+                            // Cek ulang: pastikan belum di-zoom oleh double-tap yang datang
+                            if (currentCanvasScale <= 1.01) {
+                                if (isLeft)  window.prevCanvasPage();
+                                if (isRight) window.nextCanvasPage();
+                            }
+                        }, 320);
                     }
                 }
             }
@@ -2041,13 +2107,16 @@ window._closeReaderAction = function(isFromHistory = false) {
     DOM.readView.classList.add('translate-y-full'); DOM.libView.style.transform = 'scale(1)';
     if(observer) observer.disconnect(); 
     
-    // Reset Canvas State (v25: termasuk translate)
+    // Reset Canvas State (v25: termasuk translate + bitmap cache)
     currentPdfDoc = null;
     currentCanvasPage = 1;
     currentCanvasScale = 1.0;
     canvasTranslateX = 0;
     canvasTranslateY = 0;
     canvasIsPinching = false;
+    _canvasPageCache.forEach(bm => { try { bm.close(); } catch(e){} });
+    _canvasPageCache.clear();
+    _cacheCurrentDocId = null;
     if (DOM.canvasWrapper) DOM.canvasWrapper.style.transform = '';
 
     if (activeBookId) {
@@ -2116,7 +2185,7 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
     const bottomBar  = document.getElementById('reader-bottom-bar');
     const progContainer = document.getElementById('progress-container');
     const floatHeader   = document.getElementById('reader-floating-header');
-    const canvasCtrl    = document.getElementById('canvas-page-controller');
+    const canvasIndicatorBar = document.getElementById('canvas-page-indicator-bar');
     
     if (bottomBar.classList.contains('hidden')) {
         // Keluar immersive
@@ -2125,9 +2194,9 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
         progContainer.classList.remove('hidden');
         floatHeader.classList.remove('-translate-y-[150%]', 'opacity-0');
         floatHeader.classList.add('translate-y-0', 'opacity-100');
-        // Tampilkan kembali capsule canvas jika sedang di canvas mode
-        if (canvasCtrl && !document.getElementById('canvas-container').classList.contains('hidden')) {
-            canvasCtrl.classList.remove('hidden');
+        // Tampilkan kembali indikator halaman canvas jika sedang di canvas mode
+        if (canvasIndicatorBar && !document.getElementById('canvas-container').classList.contains('hidden')) {
+            canvasIndicatorBar.classList.remove('hidden');
         }
     } else {
         if (!isFromHistory) { pushAppHistory('immersive'); }
@@ -2135,8 +2204,8 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
         floatHeader.classList.add('-translate-y-[150%]', 'opacity-0');
         floatHeader.classList.remove('translate-y-0', 'opacity-100');
         progContainer.classList.add('hidden');
-        // Sembunyikan capsule canvas saat immersive
-        if (canvasCtrl) canvasCtrl.classList.add('hidden');
+        // Sembunyikan indikator halaman canvas saat immersive
+        if (canvasIndicatorBar) canvasIndicatorBar.classList.add('hidden');
         updateBottomNavUI(null);
         if (activePanel) { _closeSidePanelsAction(); }
     }
