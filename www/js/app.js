@@ -895,73 +895,187 @@ async function executeRestoreLogic(jsonString) {
         const isValid = parsedData.every(b => b.id && b.title);
         if (!isValid) throw new Error("Data backup rusak atau tidak kompatibel.");
 
-        const existingIds = new Set(library.map(b => b.id));
-        const matchCount = parsedData.filter(b => existingIds.has(b.id)).length;
-        const newCount = parsedData.length - matchCount;
+        // --- Deteksi konflik mode PDF ---
+        // buku PDF yang id-nya sama di library tapi pdfMode berbeda (canvas vs scroll)
+        const pdfModeConflicts = parsedData.filter(b => {
+            if (b.type !== 'pdf') return false;
+            const existing = library.find(lib => lib.id === b.id);
+            if (!existing) return false;
+            const existingMode = existing.pdfMode || 'scroll';
+            const backupMode = b.pdfMode || 'scroll';
+            return existingMode !== backupMode;
+        });
 
-        const confirmMsg = wikiLang === 'id'
-            ? `Ditemukan ${matchCount} buku yang cocok (progress & catatan akan dipulihkan) dan ${newCount} buku baru (perlu import ulang file aslinya). Lanjut?`
-            : `Found ${matchCount} matching books (progress & notes restored) and ${newCount} new books (re-import original files). Continue?`;
+        // Set berisi id buku yang user minta skip (abaikan)
+        const skippedIds = new Set();
 
-        showDialog(
-            wikiLang === 'id' ? "Konfirmasi Restore JSON" : "Confirm JSON Restore",
-            confirmMsg,
-            "alert-triangle",
-            [
-                { text: wikiLang === 'id' ? "Batal" : "Cancel", primary: false },
-                { text: wikiLang === 'id' ? "Lanjut" : "Continue", primary: true, action: async () => {
-                    window.closeDialog();
+        const _doRestore = async () => {
+            window.closeDialog();
 
-                    let mergedLibrary = [...library];
+            const existingIds = new Set(library.map(b => b.id));
+            const toRestore   = parsedData.filter(b => !skippedIds.has(b.id));
+            const matchCount  = toRestore.filter(b => existingIds.has(b.id)).length;
+            const newCount    = toRestore.length - matchCount;
 
-                    for (let b of parsedData) {
-                        if (b.nodes && b.nodes.length > 0) {
-                            await localforage.setItem('content_' + b.id, b.nodes);
-                        }
+            let mergedLibrary = [...library];
 
-                        let meta = {...b};
-                        delete meta.nodes;
-                        delete meta.coverBase64;
+            for (let b of toRestore) {
+                if (b.nodes && b.nodes.length > 0) {
+                    await localforage.setItem('content_' + b.id, b.nodes);
+                }
 
-                        const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
-                        if (existingIndex > -1) {
-                            mergedLibrary[existingIndex] = {
-                                ...mergedLibrary[existingIndex],
-                                progressPct: meta.progressPct,
-                                lastReadId: meta.lastReadId,
-                                annotations: meta.annotations || [],
-                                isPinned: meta.isPinned,
-                                title: meta.title,
-                                pdfMode: meta.pdfMode || 'scroll'
-                            };
-                        } else {
-                            mergedLibrary.push(meta);
-                        }
-                    }
+                let meta = {...b};
+                delete meta.nodes;
+                delete meta.coverBase64;
 
-                    await localforage.setItem('pdf_epub_master', mergedLibrary);
-                    library = mergedLibrary;
-                    renderLibrary(DOM.globalSearch.value);
+                const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
+                if (existingIndex > -1) {
+                    mergedLibrary[existingIndex] = {
+                        ...mergedLibrary[existingIndex],
+                        progressPct: meta.progressPct,
+                        lastReadId: meta.lastReadId,
+                        annotations: meta.annotations || [],
+                        isPinned: meta.isPinned,
+                        title: meta.title,
+                        pdfMode: meta.pdfMode || 'scroll'
+                    };
+                } else {
+                    mergedLibrary.push(meta);
+                }
+            }
 
-                    if (!document.getElementById('raw-restore-modal').classList.contains('hidden')) history.back();
-                    setTimeout(() => {
-                        if (!document.getElementById('global-settings-modal').classList.contains('hidden')) history.back();
-                    }, 300);
+            await localforage.setItem('pdf_epub_master', mergedLibrary);
+            library = mergedLibrary;
+            renderLibrary(DOM.globalSearch.value);
 
-                    setTimeout(() => {
-                        const successMsg = wikiLang === 'id'
-                            ? `Restore selesai! ${matchCount} buku langsung bisa dibaca, ${newCount} buku perlu import ulang file aslinya.`
-                            : `Restore done! ${matchCount} books ready to read, ${newCount} books need original files re-imported.`;
-                        showDialog(
-                            wikiLang === 'id' ? "Restore Berhasil!" : "Restore Success!",
-                            successMsg,
-                            "check-circle",
-                            [{ text: "Oke", primary: true }]
-                        );
-                    }, 700);
-                }}
-            ]
-        );
+            if (!document.getElementById('raw-restore-modal').classList.contains('hidden')) history.back();
+            setTimeout(() => {
+                if (!document.getElementById('global-settings-modal').classList.contains('hidden')) history.back();
+            }, 300);
+
+            setTimeout(() => {
+                const successMsg = wikiLang === 'id'
+                    ? `Restore selesai! ${matchCount} buku langsung bisa dibaca, ${newCount} buku perlu import ulang file aslinya.`
+                    : `Restore done! ${matchCount} books ready to read, ${newCount} books need original files re-imported.`;
+                showDialog(
+                    wikiLang === 'id' ? "Restore Berhasil!" : "Restore Success!",
+                    successMsg,
+                    "check-circle",
+                    [{ text: "Oke", primary: true }]
+                );
+            }, 700);
+        };
+
+        const _showMainConfirm = () => {
+            const existingIds = new Set(library.map(b => b.id));
+            const toRestore   = parsedData.filter(b => !skippedIds.has(b.id));
+            const matchCount  = toRestore.filter(b => existingIds.has(b.id)).length;
+            const newCount    = toRestore.length - matchCount;
+
+            const confirmMsg = wikiLang === 'id'
+                ? `Ditemukan ${matchCount} buku yang cocok (progress & catatan akan dipulihkan) dan ${newCount} buku baru (perlu import ulang file aslinya). Lanjut?`
+                : `Found ${matchCount} matching books (progress & notes restored) and ${newCount} new books (re-import original files). Continue?`;
+
+            showDialog(
+                wikiLang === 'id' ? "Konfirmasi Restore JSON" : "Confirm JSON Restore",
+                confirmMsg,
+                "alert-triangle",
+                [
+                    { text: wikiLang === 'id' ? "Batal" : "Cancel", primary: false },
+                    { text: wikiLang === 'id' ? "Lanjut" : "Continue", primary: true, action: _doRestore }
+                ]
+            );
+        };
+
+        // Jika ada konflik mode PDF → tampilkan dialog peringatan dulu
+        if (pdfModeConflicts.length > 0) {
+            // Bangun daftar buku konflik dengan label mode dan tombol Lewati/Abaikan per baris
+            // Gunakan data-id agar state skippedIds bisa diupdate saat tombol diklik
+            const _labelMode = (mode) => {
+                const m = mode || 'scroll';
+                if (wikiLang === 'id') return m === 'canvas' ? 'Canvas' : 'Scroll';
+                if (wikiLang === 'es') return m === 'canvas' ? 'Canvas' : 'Desplazamiento';
+                return m === 'canvas' ? 'Canvas' : 'Scroll';
+            };
+            const _switchLabel = (backupMode) => {
+                const target = backupMode === 'canvas' ? 'canvas' : 'scroll';
+                if (wikiLang === 'id') return `Ganti ke ${_labelMode(target)}`;
+                if (wikiLang === 'es') return `Cambiar a ${_labelMode(target)}`;
+                return `Switch to ${_labelMode(target)}`;
+            };
+            const _skipLabel = () => {
+                if (wikiLang === 'id') return 'Lewati';
+                if (wikiLang === 'es') return 'Saltar';
+                return 'Skip';
+            };
+            const _undoSkipLabel = () => {
+                if (wikiLang === 'id') return 'Batal Lewati';
+                if (wikiLang === 'es') return 'Cancelar Saltar';
+                return 'Undo Skip';
+            };
+
+            const listId = 'pdf-conflict-list-' + Date.now();
+            let listHtml = `<div id="${listId}" class="mt-3 mb-1 flex flex-col gap-2 max-h-52 overflow-y-auto">`;
+            pdfModeConflicts.forEach(b => {
+                const shortTitle = b.title.length > 28 ? b.title.substring(0, 28) + '…' : b.title;
+                const backupMode = b.pdfMode || 'scroll';
+                listHtml += `
+                    <div id="conflict-row-${b.id}" class="flex items-center justify-between gap-2 bg-m3-surfaceVariant/60 rounded-2xl px-3 py-2">
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-bold text-m3-onSurface truncate">${shortTitle}</span>
+                            <span class="text-[10px] font-bold text-m3-primary mt-0.5">${_switchLabel(backupMode)}</span>
+                        </div>
+                        <button
+                            id="conflict-skip-btn-${b.id}"
+                            onclick="window._togglePdfConflictSkip('${b.id}')"
+                            class="shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-full bg-m3-surface text-m3-onSurfaceVariant btn-morph transition-all">
+                            ${_skipLabel()}
+                        </button>
+                    </div>`;
+            });
+            listHtml += `</div>`;
+
+            const warnTitle  = wikiLang === 'id' ? "Konflik Mode PDF" : (wikiLang === 'es' ? "Conflicto de Modo PDF" : "PDF Mode Conflict");
+            const warnDesc   = wikiLang === 'id'
+                ? `${pdfModeConflicts.length} buku PDF di bawah ini memiliki mode yang berbeda antara library dan backup. Setiap buku akan <b>diganti modenya</b> sesuai backup — kamu perlu upload ulang file aslinya. Tekan <b>Lewati</b> di baris buku yang ingin kamu abaikan.`
+                : (wikiLang === 'es'
+                    ? `${pdfModeConflicts.length} libros PDF tienen un modo diferente entre la biblioteca y la copia. Se <b>cambiará el modo</b> según la copia — deberás volver a subir el archivo original. Pulsa <b>Saltar</b> en los libros que quieras ignorar.`
+                    : `${pdfModeConflicts.length} PDF book(s) below have a different mode between your library and the backup. Their <b>mode will be switched</b> to match the backup — you'll need to re-upload the original file. Tap <b>Skip</b> on any book you want to leave unchanged.`);
+
+            // Expose fungsi toggle skip agar bisa dipanggil dari onclick inline
+            window._togglePdfConflictSkip = (bookId) => {
+                const btn = document.getElementById(`conflict-skip-btn-${bookId}`);
+                const row = document.getElementById(`conflict-row-${bookId}`);
+                if (skippedIds.has(bookId)) {
+                    skippedIds.delete(bookId);
+                    if (btn) btn.textContent = _skipLabel();
+                    if (row) row.classList.remove('opacity-40');
+                } else {
+                    skippedIds.add(bookId);
+                    if (btn) btn.textContent = _undoSkipLabel();
+                    if (row) row.classList.add('opacity-40');
+                }
+                if (window.lucide) window.lucide.createIcons();
+            };
+
+            showDialog(
+                warnTitle,
+                warnDesc + listHtml,
+                "alert-triangle",
+                [
+                    { text: wikiLang === 'id' ? "Batal" : (wikiLang === 'es' ? "Cancelar" : "Cancel"), primary: false },
+                    { text: wikiLang === 'id' ? "Lanjut" : (wikiLang === 'es' ? "Continuar" : "Continue"), primary: true, action: () => {
+                        window.closeDialog();
+                        // Kecil jeda supaya dialog tutup dulu, baru buka dialog konfirmasi utama
+                        setTimeout(_showMainConfirm, 350);
+                    }}
+                ]
+            );
+        } else {
+            // Tidak ada konflik → langsung ke dialog konfirmasi utama
+            _showMainConfirm();
+        }
+
     } catch (err) {
         console.error("Restore failed:", err);
         showDialog("Error", (wikiLang === 'id' ? "Gagal memulihkan: " : "Failed to restore: ") + err.message, "alert-circle", [{ text: "Tutup", primary: true }]);
@@ -1590,15 +1704,15 @@ window.openBook = async function(book) {
         tocWarnStr.textContent = dNow.tocCanvasWarning || 'Untuk mode canvas, daftar isi tidak tersedia.';
     }
 
-    // Tampilkan indikator halaman canvas di atas bottom bar
-    const canvasIndicatorBar = document.getElementById('canvas-page-indicator-bar');
+    // Tampilkan capsule page controller hanya di canvas mode
+    const canvasCtrl = document.getElementById('canvas-page-controller');
 
     // Kelola visibilitas viewport pembaca secara dinamis (Scroll vs Canvas)
     if (isCanvas) {
         DOM.readContent.classList.add('hidden');
         if (DOM.canvasContainer) DOM.canvasContainer.classList.remove('hidden');
         if (DOM.canvasWarning) DOM.canvasWarning.classList.remove('hidden');
-        if (canvasIndicatorBar) canvasIndicatorBar.classList.remove('hidden');
+        if (canvasCtrl) canvasCtrl.classList.remove('hidden');
 
         // Terapkan AMOLED ke canvas wrapper jika aktif
         applyThemeToDOM();
@@ -1617,10 +1731,9 @@ window.openBook = async function(book) {
             const pdfDataUrl = URL.createObjectURL(rawPdfBlob);
             currentPdfDoc = await pdfjsLib.getDocument({ url: pdfDataUrl }).promise;
             
-            _invalidatePageCache(book.id); // Bersihkan cache halaman dari buku lama
             currentCanvasPage = parseInt(book.lastReadId) || 1;
             currentCanvasScale = 1.0;
-            if (document.getElementById('canvas-page-total')) document.getElementById('canvas-page-total').textContent = currentPdfDoc.numPages;
+            if (DOM.canvasPageTotal) DOM.canvasPageTotal.textContent = currentPdfDoc.numPages;
 
             // Inisialisasi gesture DULU
             initCanvasGestures();
@@ -1638,7 +1751,7 @@ window.openBook = async function(book) {
         DOM.readContent.classList.remove('hidden');
         if (DOM.canvasContainer) DOM.canvasContainer.classList.add('hidden');
         if (DOM.canvasWarning) DOM.canvasWarning.classList.add('hidden');
-        if (canvasIndicatorBar) canvasIndicatorBar.classList.add('hidden');
+        if (canvasCtrl) canvasCtrl.classList.add('hidden');
 
         // Kembalikan visibilitas grup setting secara utuh
         ['size', 'align', 'font', 'search'].forEach(grp => {
@@ -1717,83 +1830,46 @@ window.openBook = async function(book) {
     }
 }
 
-// --- ENGINE RENDER CANVAS PDF (dengan cache bitmap untuk ganti halaman instan) ---
-const _canvasPageCache = new Map(); // key: pageNum, value: ImageBitmap
-let _cacheCurrentDocId = null;
-
-function _invalidatePageCache(docId) {
-    if (_cacheCurrentDocId !== docId) {
-        _canvasPageCache.forEach(bm => { try { bm.close(); } catch(e){} });
-        _canvasPageCache.clear();
-        _cacheCurrentDocId = docId;
-    }
-}
-
-async function _renderPageToBitmap(pageNum) {
-    if (_canvasPageCache.has(pageNum)) return _canvasPageCache.get(pageNum);
-
-    const vpEl = document.getElementById('canvas-zoom-viewport');
-    if (!vpEl || !currentPdfDoc) return null;
-
-    const page       = await currentPdfDoc.getPage(pageNum);
-    const pixelRatio = window.devicePixelRatio || 1;
-    const cW         = vpEl.clientWidth;
-
-    const nat = page.getViewport({ scale: 1 });
-    const fit = page.getViewport({ scale: cW / nat.width });
-    const dW  = Math.floor(fit.width);
-    const dH  = Math.floor(fit.height);
-
-    const offscreen = new OffscreenCanvas(dW * pixelRatio, dH * pixelRatio);
-    const ctx = offscreen.getContext('2d');
-
-    await page.render({
-        canvasContext: ctx,
-        viewport: fit,
-        transform: [pixelRatio, 0, 0, pixelRatio, 0, 0]
-    }).promise;
-
-    const bitmap = await createImageBitmap(offscreen);
-    _canvasPageCache.set(pageNum, bitmap);
-    return bitmap;
-}
-
+// --- ENGINE RENDER CANVAS PDF ---
 async function renderCanvasPage(pageNum) {
     if (!currentPdfDoc || isRenderingCanvas) return;
     isRenderingCanvas = true;
     try {
-        const vpEl   = document.getElementById('canvas-zoom-viewport');
-        const canvas = document.getElementById('pdf-canvas');
-        const wrapper = document.getElementById('canvas-wrapper');
+        const page       = await currentPdfDoc.getPage(pageNum);
+        const vpEl       = document.getElementById('canvas-zoom-viewport');
+        const canvas     = document.getElementById('pdf-canvas');
+        const wrapper    = document.getElementById('canvas-wrapper');
         if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
 
         const pixelRatio = window.devicePixelRatio || 1;
-        const cW = vpEl.clientWidth;
-        const cH = vpEl.clientHeight;
+        const cW         = vpEl.clientWidth;
+        const cH         = vpEl.clientHeight;
 
-        // Ambil/buat bitmap (dari cache atau render baru)
-        const bitmap = await _renderPageToBitmap(pageNum);
-        if (!bitmap) { isRenderingCanvas = false; return; }
+        // Fit lebar canvas = lebar container
+        const nat     = page.getViewport({ scale: 1 });
+        const fit     = page.getViewport({ scale: cW / nat.width });
+        const dW      = Math.floor(fit.width);
+        const dH      = Math.floor(fit.height);
 
-        const dW = Math.round(bitmap.width  / pixelRatio);
-        const dH = Math.round(bitmap.height / pixelRatio);
-
-        canvas.width        = bitmap.width;
-        canvas.height       = bitmap.height;
+        canvas.width        = dW * pixelRatio;
+        canvas.height       = dH * pixelRatio;
         canvas.style.width  = dW + 'px';
         canvas.style.height = dH + 'px';
         wrapper.style.width  = dW + 'px';
         wrapper.style.height = dH + 'px';
 
+        // Simpan ukuran untuk clamp — tidak perlu offX/offY karena flex yang centering
         wrapper._W  = dW;
         wrapper._H  = dH;
         wrapper._cW = cW;
         wrapper._cH = cH;
 
-        // Gambar bitmap ke canvas — instan, tidak perlu re-render PDF
-        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+        await page.render({
+            canvasContext: canvas.getContext('2d'),
+            viewport: fit,
+            transform: [pixelRatio, 0, 0, pixelRatio, 0, 0]
+        }).promise;
 
-        // Update indikator halaman (bar baru di atas bottom nav)
         const lbl = document.getElementById('canvas-page-num');
         if (lbl) lbl.textContent = pageNum;
         const pct = Math.round((pageNum / currentPdfDoc.numPages) * 100);
@@ -1801,16 +1877,6 @@ async function renderCanvasPage(pageNum) {
         if (DOM.progTxt) DOM.progTxt.textContent = `${pct}%`;
         updateBookProgress(activeBookId, pageNum, pct);
         renderBookmarkPanel();
-
-        // Pre-cache halaman berikutnya di background (tidak await)
-        const next = pageNum + 1;
-        const prev = pageNum - 1;
-        if (next <= currentPdfDoc.numPages && !_canvasPageCache.has(next)) {
-            _renderPageToBitmap(next).catch(() => {});
-        }
-        if (prev >= 1 && !_canvasPageCache.has(prev)) {
-            _renderPageToBitmap(prev).catch(() => {});
-        }
 
     } catch (e) { console.error('renderCanvasPage:', e); }
     finally     { isRenderingCanvas = false; }
@@ -2107,16 +2173,13 @@ window._closeReaderAction = function(isFromHistory = false) {
     DOM.readView.classList.add('translate-y-full'); DOM.libView.style.transform = 'scale(1)';
     if(observer) observer.disconnect(); 
     
-    // Reset Canvas State (v25: termasuk translate + bitmap cache)
+    // Reset Canvas State (v25: termasuk translate)
     currentPdfDoc = null;
     currentCanvasPage = 1;
     currentCanvasScale = 1.0;
     canvasTranslateX = 0;
     canvasTranslateY = 0;
     canvasIsPinching = false;
-    _canvasPageCache.forEach(bm => { try { bm.close(); } catch(e){} });
-    _canvasPageCache.clear();
-    _cacheCurrentDocId = null;
     if (DOM.canvasWrapper) DOM.canvasWrapper.style.transform = '';
 
     if (activeBookId) {
@@ -2185,7 +2248,7 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
     const bottomBar  = document.getElementById('reader-bottom-bar');
     const progContainer = document.getElementById('progress-container');
     const floatHeader   = document.getElementById('reader-floating-header');
-    const canvasIndicatorBar = document.getElementById('canvas-page-indicator-bar');
+    const canvasCtrl    = document.getElementById('canvas-page-controller');
     
     if (bottomBar.classList.contains('hidden')) {
         // Keluar immersive
@@ -2194,9 +2257,9 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
         progContainer.classList.remove('hidden');
         floatHeader.classList.remove('-translate-y-[150%]', 'opacity-0');
         floatHeader.classList.add('translate-y-0', 'opacity-100');
-        // Tampilkan kembali indikator halaman canvas jika sedang di canvas mode
-        if (canvasIndicatorBar && !document.getElementById('canvas-container').classList.contains('hidden')) {
-            canvasIndicatorBar.classList.remove('hidden');
+        // Tampilkan kembali capsule canvas jika sedang di canvas mode
+        if (canvasCtrl && !document.getElementById('canvas-container').classList.contains('hidden')) {
+            canvasCtrl.classList.remove('hidden');
         }
     } else {
         if (!isFromHistory) { pushAppHistory('immersive'); }
@@ -2204,8 +2267,8 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
         floatHeader.classList.add('-translate-y-[150%]', 'opacity-0');
         floatHeader.classList.remove('translate-y-0', 'opacity-100');
         progContainer.classList.add('hidden');
-        // Sembunyikan indikator halaman canvas saat immersive
-        if (canvasIndicatorBar) canvasIndicatorBar.classList.add('hidden');
+        // Sembunyikan capsule canvas saat immersive
+        if (canvasCtrl) canvasCtrl.classList.add('hidden');
         updateBottomNavUI(null);
         if (activePanel) { _closeSidePanelsAction(); }
     }
