@@ -306,11 +306,11 @@ async function processMultipleFiles(files) {
                     `;
                     dismissBtn = `<button type="button" data-dismiss-idx="${idx}" class="batch-dismiss-btn ml-2 w-6 h-6 rounded-full flex items-center justify-center bg-m3-surfaceVariant text-m3-onSurfaceVariant hover:bg-red-500/20 hover:text-red-500 transition-colors shrink-0" title="${d.batchDismiss || 'Buang dari daftar'}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 } else {
-                    // Bebas pilih — default canvas
+                    // Bebas pilih
                     controlHtml = `
                         <select id="mode-select-${idx}" class="text-xs bg-m3-primaryContainer text-m3-onPrimaryContainer px-2 py-1 rounded-md font-bold border-none outline-none">
-                            <option value="canvas">${strCanvas}</option>
                             <option value="scroll">${strScroll}</option>
+                            <option value="canvas">${strCanvas}</option>
                         </select>
                     `;
                 }

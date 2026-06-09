@@ -1997,6 +1997,9 @@ function initCanvasGestures() {
         }
     }, { passive: false });
 
+    // Timer untuk menunda navigasi halaman — dibatalkan jika tap kedua datang
+    let _navTimer = null;
+
     // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
         // Jari ke-2 terangkat → akhiri pinch, perbarui anchor pan agar tidak loncat
@@ -2029,19 +2032,7 @@ function initCanvasGestures() {
             const dt    = Date.now() - tapStartTime;
             const ex    = e.changedTouches[0].clientX;
             const ey    = e.changedTouches[0].clientY;
-            const deltaX = ex - tapStartX;
-            const deltaY = ey - tapStartY;
-            const moved = Math.hypot(deltaX, deltaY);
-
-            // ── SWIPE HORIZONTAL saat scale = 1 → pindah halaman ──
-            // Syarat: geser cukup jauh (>= 40px), horizontal dominan, scale default
-            if (currentCanvasScale <= 1.01 && moved >= 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-                clearTimeout(_navTimer);
-                _navTimer = null;
-                if (deltaX < 0) window.nextCanvasPage();  // geser kiri → halaman berikutnya
-                else            window.prevCanvasPage();  // geser kanan → halaman sebelumnya
-                return;
-            }
+            const moved = Math.hypot(ex - tapStartX, ey - tapStartY);
 
             // Bukan tap yang valid (geser terlalu jauh atau terlalu lama tekan)
             if (dt >= 300 || moved >= 18) return;
