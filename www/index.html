@@ -38,7 +38,6 @@
         <header id="main-header" class="flex-none sticky top-0 z-40 bg-m3-bg pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] pb-5 px-5 transition-shadow duration-300">
             <div id="title-area" class="mb-4">
                 <h1 class="text-4xl font-black tracking-tighter text-m3-onBg" style="font-family: 'Outfit', sans-serif;">Baca.</h1>
-                <!-- JUMLAH BUKU DI BAWAH HEADER SUDAH DIHAPUS -->
             </div>
             
             <div id="search-area" class="search-row transition-shadow duration-300">
@@ -113,12 +112,26 @@
                 <div id="pinned-book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
             </div>
 
-            <!-- REGULAR COLLECTION SECTION -->
-            <div id="collection-heading" class="hidden mb-4 mt-2">
-                <h2 class="text-base font-bold text-m3-onBg tracking-tight" id="str-book-collection">Koleksi Buku</h2>
+            <!-- RAK MEMBACA SCROLL MODE (TEKS DINAMIS) -->
+            <div id="scroll-collection-section" class="hidden mb-8 mt-4">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="align-left" class="w-5 h-5 text-m3-primary"></i>
+                    <h2 id="str-scroll-rak-title" class="text-base font-bold text-m3-onBg tracking-tight">Rak Mode Scroll</h2>
+                </div>
+                <div id="scroll-book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
             </div>
 
-            <div id="book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
+            <!-- RAK MEMBACA CANVAS MODE (LAYOUT ASLI) -->
+            <div id="canvas-collection-section" class="hidden mb-8 mt-4">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="layout" class="w-5 h-5 text-m3-primary"></i>
+                    <h2 id="str-canvas-rak-title" class="text-base font-bold text-m3-onBg tracking-tight">Rak Mode Canvas (Layout Asli)</h2>
+                </div>
+                <div id="canvas-book-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
+            </div>
+
+            <!-- FALLBACK GRID UNTUK COMPATIBILITY SEARCH -->
+            <div id="book-grid" class="hidden grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full"></div>
 
             <div id="empty-state" class="flex flex-col items-center justify-center mt-20 opacity-40">
                 <i data-lucide="library" class="w-16 h-16 mb-4"></i>
@@ -155,21 +168,59 @@
             <p id="str-reader-loading" class="text-m3-primary font-bold tracking-widest uppercase text-xs animate-pulse">Memuat Buku...</p>
         </div>
 
+        <!-- HEADER FLOATING -->
         <div id="reader-floating-header" class="absolute top-[calc(env(safe-area-inset-top,0px)+1.5rem)] left-1/2 -translate-x-1/2 bg-m3-surfaceVariant text-m3-onSurfaceVariant px-5 py-2 rounded-full z-30 pointer-events-none flex flex-col items-center shadow-lg max-w-[80%] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] border-none translate-y-0 opacity-100">
             <span id="reader-title" class="font-bold truncate w-full text-center text-xs">Title</span>
             <span id="reader-progress-text" class="text-[0.6rem] font-bold opacity-80 uppercase tracking-widest mt-0.5">0%</span>
         </div>
 
+        <!-- AREA BACA UTAMA -->
         <div class="flex-1 relative overflow-hidden flex w-full">
+            
+            <!-- MODE SCROLL (HTML Nodes) -->
             <div id="reader-content" oncontextmenu="event.preventDefault()" class="absolute inset-0 overflow-y-auto overflow-x-hidden px-5 pt-24 pb-40 scroll-smooth reader-dynamic-text w-full">
                 <div id="reader-inner" class="max-w-4xl mx-auto reader-text-container space-y-5"></div>
             </div>
 
-            <div id="side-panel-overlay" class="hidden absolute inset-0 bg-black/20 z-30 transition-opacity" onclick="history.back()"></div>
+            <!-- MODE CANVAS (Layout Asli) -->
+            <div id="canvas-container" class="hidden absolute inset-0 overflow-hidden w-full h-full bg-m3-bg select-none" style="padding-top: 56px; padding-bottom: 96px;">
+                <div id="canvas-zoom-viewport" class="w-full h-full overflow-hidden flex items-center justify-center">
+                    <!-- Wrapper: di-center oleh flex parent, transform-origin center agar zoom tidak loncat -->
+                    <div id="canvas-wrapper" class="shadow-lg bg-white flex-shrink-0" style="transform-origin: center center;">
+                        <canvas id="pdf-canvas" class="block"></canvas>
+                    </div>
+                </div>
+                
+                <!-- CANVAS PAGE CONTROLLER -->
+                <div id="canvas-page-controller" class="hidden absolute left-1/2 -translate-x-1/2 bg-m3-surfaceVariant text-m3-onSurfaceVariant px-4 py-2.5 rounded-full shadow-lg z-30 flex items-center gap-3 border border-m3-surfaceVariant/20" style="bottom: 12px;">
+                    <button onclick="window.prevCanvasPage()" class="w-9 h-9 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors btn-morph">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-1 text-xs font-black tracking-wide">
+                        <span id="canvas-page-num" class="text-m3-primary">1</span>
+                        <span class="opacity-50">/</span>
+                        <span id="canvas-page-total">1</span>
+                    </div>
+                    <button onclick="window.nextCanvasPage()" class="w-9 h-9 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors btn-morph">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                    <div class="w-[1px] h-5 bg-m3-onSurfaceVariant/20 mx-1"></div>
+                    <button onclick="window.showJumpToPageDialog()" class="w-9 h-9 rounded-full hover:bg-m3-surface flex items-center justify-center transition-colors text-m3-primary btn-morph" title="Lompat Halaman">
+                        <i data-lucide="hash" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="side-panel-overlay" class="hidden absolute inset-0 bg-black/20 z-30 transition-opacity"></div>
 
             <!-- Panel Daftar Isi -->
             <div id="toc-panel" class="side-panel absolute right-0 top-0 bottom-0 w-72 bg-m3-surfaceVariant p-6 transform translate-x-full opacity-0 z-40 overflow-y-auto rounded-l-[32px]">
                 <h3 id="str-toc-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="list-tree"></i> Daftar Isi</h3>
+                <!-- Peringatan Canvas Mode -->
+                <div id="toc-canvas-warning" class="hidden mb-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex gap-2.5 items-start">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-amber-500"></i>
+                    <p id="str-toc-canvas-warning" class="text-[10px] font-bold leading-relaxed text-amber-700 dark:text-amber-400">Untuk mode canvas, daftar isi tidak tersedia.</p>
+                </div>
                 <div id="toc-list" class="space-y-2 flex flex-col pb-20"></div>
             </div>
 
@@ -181,7 +232,7 @@
                     <input type="text" id="bookmark-search-input" oninput="filterBookmarkPanel(this.value)" class="w-full bg-m3-surface text-m3-onSurface text-sm font-bold pl-9 pr-3 py-2.5 rounded-2xl border-none outline-none placeholder:opacity-50" placeholder="Cari judul bookmark...">
                 </div>
                 <div id="bookmark-list" class="space-y-2 flex flex-col pb-20"></div>
-                <div id="bookmark-empty" class="text-sm opacity-50 p-3 text-center hidden font-bold" id="str-bookmark-empty">Belum ada pembatas buku.</div>
+                <div id="bookmark-empty" class="text-sm opacity-50 p-3 text-center hidden font-bold"><span id="str-bookmark-empty">Belum ada pembatas buku.</span></div>
             </div>
             
             <!-- Panel Tampilan & Pencarian -->
@@ -189,7 +240,13 @@
                 <h3 id="str-set-title" class="text-lg font-bold mb-6 text-m3-onSurfaceVariant flex items-center gap-2"><i data-lucide="sliders-horizontal"></i> Tampilan</h3>
                 
                 <div class="space-y-6 pb-20">
-                    <div>
+                    <!-- Panel Warns Canvas Mode (Dinamis Di-enable/Disable via JS) -->
+                    <div id="canvas-warning-info" class="hidden p-4 rounded-3xl bg-red-500/10 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-500/20 flex gap-2.5 items-start">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                        <p id="str-pdf-canvas-warning" class="text-[10px] font-bold leading-relaxed">Fitur tipografi (ukuran font, perataan, dll), AI penjelasan, dan text selection dinonaktifkan pada Mode Canvas.</p>
+                    </div>
+
+                    <div id="setting-group-search">
                         <label id="str-set-search" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Pencarian</label>
                         <div class="search-capsule bg-m3-surface p-1 rounded-full relative flex items-center h-14 border-none transition-all duration-300">
                             <i data-lucide="search" class="w-5 h-5 ml-4 opacity-70 text-m3-onSurface shrink-0 pointer-events-none"></i>
@@ -198,7 +255,7 @@
                         <div id="search-results-panel" class="hidden mt-3 max-h-48 overflow-y-auto rounded-2xl bg-m3-surface text-xs shadow-md border-none pointer-events-auto flex-col gap-1 p-2"></div>
                     </div>
 
-                    <div>
+                    <div id="setting-group-theme">
                         <label id="str-set-theme" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Mode Tema</label>
                         <div class="capsule-group bg-m3-surface p-1 rounded-full">
                             <button id="theme-btn-light" onclick="setReaderTheme('light')" class="capsule-btn py-2 font-bold text-xs">Light</button>
@@ -206,7 +263,7 @@
                             <button id="theme-btn-amoled" onclick="setReaderTheme('amoled')" class="capsule-btn py-2 font-bold text-xs">AMOLED</button>
                         </div>
                     </div>
-                    <div>
+                    <div id="setting-group-size">
                         <label id="str-set-size" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Ukuran Teks</label>
                         <div class="capsule-group bg-m3-surface p-1 rounded-full">
                             <button id="typo-sz-sm" onclick="changeTypo('size', '1rem')" class="capsule-btn py-2 font-bold text-xs">Small</button>
@@ -214,7 +271,7 @@
                             <button id="typo-sz-lg" onclick="changeTypo('size', '1.5rem')" class="capsule-btn py-2 font-bold text-xs">Large</button>
                         </div>
                     </div>
-                    <div>
+                    <div id="setting-group-align">
                         <label id="str-set-align" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Perataan Teks</label>
                         <div class="capsule-group bg-m3-surface p-1 rounded-full">
                             <button id="typo-al-left" onclick="changeTypo('align', 'left')" class="capsule-btn py-2"><i data-lucide="align-left" class="w-4 h-4"></i></button>
@@ -222,7 +279,7 @@
                             <button id="typo-al-justify" onclick="changeTypo('align', 'justify')" class="capsule-btn py-2"><i data-lucide="align-justify" class="w-4 h-4"></i></button>
                         </div>
                     </div>
-                    <div>
+                    <div id="setting-group-font">
                         <label id="str-set-font" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Jenis Font</label>
                         <div class="flex flex-col gap-2">
                             <button id="typo-fn-lora" onclick="changeTypo('font', 'Lora')" class="btn-morph py-3 px-4 bg-m3-surface rounded-2xl text-left font-serif font-bold text-sm">Lora</button>
@@ -322,6 +379,14 @@
                 </div>
             </div>
 
+            <!-- Toggle Sembunyikan Judul Buku -->
+            <div id="hide-titles-toggle-container" class="flex items-center justify-between mb-6 bg-m3-surfaceVariant p-2 pl-5 rounded-full cursor-pointer btn-morph" onclick="toggleHideTitles()">
+                <span class="font-bold text-sm tracking-wide opacity-80" id="str-hide-titles-label">Sembunyikan Judul Buku</span>
+                <div class="relative w-16 h-8 rounded-full transition-colors bg-m3-onSurfaceVariant/20" id="hide-titles-switch-bg">
+                    <div id="hide-titles-switch-knob" class="absolute top-[2px] left-[2px] w-6 h-6 rounded-full bg-m3-onSurface transition-transform duration-300 ease-out"></div>
+                </div>
+            </div>
+
             <h4 id="str-set-palette" class="text-xs font-bold opacity-70 mb-3 px-1 uppercase tracking-wider">Palet Tema</h4>
             <div class="grid grid-cols-5 gap-3 mb-4">
                 <button onclick="setTheme('orchid')" class="btn-morph w-full aspect-square rounded-2xl border-none transition-transform active:scale-90 shadow-sm" style="background-color: #8B5CF6;" title="Sunset Orchid"></button>
@@ -376,9 +441,13 @@
                 <input type="file" id="import-upload" accept=".json,.zip" class="hidden" onchange="importDataFile(event)">
             </div>
             
-            <button onclick="clearAllCoversConfirm()" id="btn-clear-covers" class="flex items-center justify-center gap-2 w-full p-3 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded-2xl font-bold btn-morph mb-4 mt-2">
+            <button onclick="clearAllCoversConfirm()" id="btn-clear-covers" class="flex items-center justify-center gap-2 w-full p-3 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded-2xl font-bold btn-morph mb-2 mt-2">
                 <i data-lucide="image-off" class="w-5 h-5"></i>
                 <span id="str-btn-clear-covers">Hapus Semua Sampul (Biar Ringan)</span>
+            </button>
+            <button onclick="clearAllBooksConfirm()" id="btn-clear-books" class="flex items-center justify-center gap-2 w-full p-3 bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400 rounded-2xl font-bold btn-morph mb-4 border border-red-500/20">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                <span id="str-btn-clear-books">Hapus Semua Buku (Reset Total)</span>
             </button>
 
             <h4 id="str-set-info" class="text-xs font-bold opacity-70 mb-3 px-1 mt-6 uppercase tracking-wider">Info & Dukungan</h4>
@@ -620,10 +689,52 @@
         </div>
     </div>
 
+    <!-- PDF MODE SELECTOR DIALOG (Untuk PDF Tipe Teks - Dynamic Mode) -->
+    <div id="pdf-mode-modal" class="hidden modal-overlay fixed inset-0 bg-black/60 z-[250] flex items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="modal-content bg-m3-surface w-full max-w-md rounded-[32px] p-6 transform scale-75 border-none shadow-2xl transition-transform flex flex-col" id="pdf-mode-sheet">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-m3-primaryContainer text-m3-onPrimaryContainer flex items-center justify-center shrink-0">
+                    <i data-lucide="file-text" class="w-5 h-5 text-m3-primary"></i>
+                </div>
+                <h3 class="text-lg font-bold text-m3-onSurface" id="str-pdf-mode-prompt-title">Pilih Mode Membaca</h3>
+            </div>
+            <p class="text-xs text-m3-onSurfaceVariant mb-5 leading-relaxed" id="str-pdf-mode-prompt-desc">PDF ini memiliki teks yang dapat diekstrak secara dinamis. Silakan pilih mode membaca yang sesuai dengan kebutuhan Anda:</p>
+            
+            <div class="flex flex-col gap-3">
+                <!-- Pilihan Mode Scroll -->
+                <button id="btn-select-mode-scroll" class="text-left bg-m3-surfaceVariant p-4 rounded-3xl btn-morph border-2 border-transparent focus:border-m3-primary hover:border-m3-primary/30 transition-colors flex flex-col">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i data-lucide="align-left" class="w-4 h-4 text-m3-primary"></i>
+                        <span class="font-bold text-xs text-m3-onSurface" id="str-pdf-mode-btn-scroll">Mode Scroll (Rekomendasi)</span>
+                    </div>
+                    <p class="text-[10px] text-m3-onSurfaceVariant leading-relaxed opacity-85" id="str-pdf-mode-btn-scroll-desc">Gaya membaca mengalir, ukuran & jenis font bisa diubah bebas, mendukung text selection, highlight, dan Gemini AI.</p>
+                </button>
+
+                <!-- Pilihan Mode Canvas -->
+                <button id="btn-select-mode-canvas" class="text-left bg-m3-surfaceVariant p-4 rounded-3xl btn-morph border-2 border-transparent focus:border-m3-primary hover:border-m3-primary/30 transition-colors flex flex-col">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <i data-lucide="layout" class="w-4 h-4 text-m3-primary"></i>
+                        <span class="font-bold text-xs text-m3-onSurface" id="str-pdf-mode-btn-canvas">Mode Canvas (Layout Asli)</span>
+                    </div>
+                    <p class="text-[10px] text-m3-onSurfaceVariant leading-relaxed opacity-85" id="str-pdf-mode-btn-canvas-desc">Menampilkan halaman asli dokumen seperti cetakan fisik. Mendukung zoom cubit dengan jari, tapi tidak mendukung ubah font, AI, dan text selection.</p>
+                </button>
+            </div>
+
+            <button id="str-pdf-mode-btn-cancel" onclick="_closeModalAction('pdf-mode-modal', 'pdf-mode-sheet', true)" class="w-full py-3.5 mt-5 bg-transparent text-m3-onSurface font-bold rounded-full btn-morph text-sm">Batal</button>
+        </div>
+    </div>
+
+    <!-- Global Loading Spinner (antar modal, analisa PDF, dll) -->
+    <div id="global-loading-overlay" class="hidden fixed inset-0 z-[500] bg-black/65 flex flex-col items-center justify-center transition-opacity duration-200 opacity-0">
+        <div class="bg-m3-surface rounded-[32px] p-8 flex flex-col items-center gap-4 shadow-2xl min-w-[200px]">
+            <div class="w-12 h-12 rounded-full border-4 border-m3-surfaceVariant border-t-m3-primary animate-spin"></div>
+            <p id="global-loading-text" class="text-sm font-bold text-m3-onSurface text-center opacity-80">Memproses...</p>
+        </div>
+    </div>
+
     <!-- Engine & App Logic Scripts -->
     <script src="js/reader.js"></script>
     <script src="js/app.js"></script>
 
 </body>
 </html>
-
