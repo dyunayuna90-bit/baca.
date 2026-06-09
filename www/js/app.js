@@ -1634,22 +1634,11 @@ window.openBook = async function(book) {
         // Terapkan AMOLED ke canvas wrapper jika aktif
         applyThemeToDOM();
 
-        // Redupkan grup setting tipografi & AI secara halus, tapi aktifkan search group untuk jump
-        ['size', 'align', 'font'].forEach(grp => {
+        // Redupkan grup setting tipografi & AI secara halus
+        ['size', 'align', 'font', 'search'].forEach(grp => {
             const el = document.getElementById('setting-group-' + grp);
             if (el) el.classList.add('ui-disabled-group');
         });
-        // Tampilkan area jump halaman, sembunyikan area cari teks
-        const searchScrollArea = document.getElementById('search-scroll-area');
-        const searchCanvasArea = document.getElementById('search-canvas-area');
-        if (searchScrollArea) searchScrollArea.classList.add('hidden');
-        if (searchCanvasArea) searchCanvasArea.classList.remove('hidden');
-        // Update label search group ke "Lompat ke Halaman"
-        const searchLabel = document.getElementById('str-set-search');
-        if (searchLabel) {
-            const dNow = i18n[wikiLang] || i18n['id'];
-            searchLabel.textContent = dNow.navJumpPage || 'Lompat ke Halaman';
-        }
 
         // Load PDF murni & render
         try {
@@ -1682,21 +1671,10 @@ window.openBook = async function(book) {
         if (canvasCtrl) canvasCtrl.classList.add('hidden');
 
         // Kembalikan visibilitas grup setting secara utuh
-        ['size', 'align', 'font'].forEach(grp => {
+        ['size', 'align', 'font', 'search'].forEach(grp => {
             const el = document.getElementById('setting-group-' + grp);
             if (el) el.classList.remove('ui-disabled-group');
         });
-        // Tampilkan area cari teks, sembunyikan area jump halaman
-        const searchScrollArea = document.getElementById('search-scroll-area');
-        const searchCanvasArea = document.getElementById('search-canvas-area');
-        if (searchScrollArea) searchScrollArea.classList.remove('hidden');
-        if (searchCanvasArea) searchCanvasArea.classList.add('hidden');
-        // Kembalikan label search group ke "Pencarian"
-        const searchLabel = document.getElementById('str-set-search');
-        if (searchLabel) {
-            const dNow = i18n[wikiLang] || i18n['id'];
-            searchLabel.textContent = dNow.navSearch || 'Pencarian';
-        }
 
         // Fetch nodes dari storage independen
         if (!book.nodes) {
@@ -2019,9 +1997,6 @@ function initCanvasGestures() {
         }
     }, { passive: false });
 
-    // Timer untuk menunda navigasi halaman — dibatalkan jika tap kedua datang
-    let _navTimer = null;
-
     // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
         // Jari ke-2 terangkat → akhiri pinch, perbarui anchor pan agar tidak loncat
@@ -2054,7 +2029,19 @@ function initCanvasGestures() {
             const dt    = Date.now() - tapStartTime;
             const ex    = e.changedTouches[0].clientX;
             const ey    = e.changedTouches[0].clientY;
-            const moved = Math.hypot(ex - tapStartX, ey - tapStartY);
+            const deltaX = ex - tapStartX;
+            const deltaY = ey - tapStartY;
+            const moved = Math.hypot(deltaX, deltaY);
+
+            // ── SWIPE HORIZONTAL saat scale = 1 → pindah halaman ──
+            // Syarat: geser cukup jauh (>= 40px), horizontal dominan, scale default
+            if (currentCanvasScale <= 1.01 && moved >= 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+                clearTimeout(_navTimer);
+                _navTimer = null;
+                if (deltaX < 0) window.nextCanvasPage();  // geser kiri → halaman berikutnya
+                else            window.prevCanvasPage();  // geser kanan → halaman sebelumnya
+                return;
+            }
 
             // Bukan tap yang valid (geser terlalu jauh atau terlalu lama tekan)
             if (dt >= 300 || moved >= 18) return;
