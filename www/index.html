@@ -29,6 +29,30 @@
     <!-- CSS Terpisah & Tema Dinamis -->
     <link rel="stylesheet" href="css/style.css">
     <style id="dynamic-theme"></style>
+    <style>
+        @keyframes splash-bar {
+            0%   { left: -50%; width: 40%; }
+            50%  { left: 30%; width: 50%; }
+            100% { left: 100%; width: 40%; }
+        }
+        .splash-bar-anim {
+            animation: splash-bar 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+    </style>
+    <!-- Deteksi tema awal agar splash screen tidak kedip putih di dark mode -->
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('theme') !== 'light') {
+                    document.documentElement.classList.add('dark');
+                    document.getElementById && document.addEventListener('DOMContentLoaded', function() {
+                        var s = document.getElementById('splash-screen');
+                        if (s) s.style.backgroundColor = '#0B0314';
+                    });
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body class="font-sans flex flex-col relative">
 
@@ -747,6 +771,17 @@
         <div class="bg-m3-surface rounded-[32px] p-8 flex flex-col items-center gap-4 shadow-2xl min-w-[200px]">
             <div class="w-12 h-12 rounded-full border-4 border-m3-surfaceVariant border-t-m3-primary animate-spin"></div>
             <p id="global-loading-text" class="text-sm font-bold text-m3-onSurface text-center opacity-80">Memproses...</p>
+        </div>
+    </div>
+
+    <!-- SPLASH SCREEN — ditampilkan saat app pertama kali muat, hilang setelah library siap -->
+    <div id="splash-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-6 transition-opacity duration-500" style="background-color: var(--md-sys-color-background, #FAF5FF);">
+        <div class="flex flex-col items-center gap-3">
+            <h1 class="text-5xl font-black tracking-tighter" style="color: var(--md-sys-color-on-background, #1C1B1E); font-family: 'Outfit', sans-serif;">Baca.</h1>
+            <p id="splash-status" class="text-xs font-bold uppercase tracking-widest animate-pulse" style="color: var(--md-sys-color-on-surface-variant, #49454F); opacity: 0.7;">Memuat...</p>
+        </div>
+        <div class="w-40 h-1 rounded-full overflow-hidden relative" style="background-color: var(--md-sys-color-surface-variant, #E7E0EB);">
+            <div class="absolute inset-y-0 left-0 rounded-full splash-bar-anim" style="background-color: var(--md-sys-color-primary, #6750A4); width: 40%;"></div>
         </div>
     </div>
 
