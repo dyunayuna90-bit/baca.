@@ -304,7 +304,7 @@ async function processMultipleFiles(files) {
             const shortTitle = m.title.length > 30 ? m.title.substring(0, 30) + '...' : m.title;
             let controlHtml = '';
             let rowOpacity = '';
-            let skipThisFile = false;
+            let dismissBtn = '';
             
             const em = m._existingModes;
 
@@ -321,7 +321,7 @@ async function processMultipleFiles(files) {
                 }
             } else if (m.type === 'pdf-choice') {
                 if (em && em.both) {
-                    // Sudah ada di kedua mode → abaikan
+                    // Sudah ada di kedua mode → abaikan (tidak seharusnya sampai sini tapi sebagai fallback)
                     m._skipEntry = true;
                     rowOpacity = 'opacity-40';
                     controlHtml = `<span class="text-[10px] bg-m3-surfaceVariant text-m3-onSurfaceVariant px-2 py-1 rounded-md font-bold">${strAlreadyInLib}</span>`;
@@ -333,6 +333,7 @@ async function processMultipleFiles(files) {
                             <i data-lucide="alert-triangle" class="w-3 h-3 shrink-0"></i> ${strCanvasWillDelete}
                         </span>
                     `;
+                    dismissBtn = `<button type="button" data-dismiss-idx="${idx}" class="batch-dismiss-btn ml-2 w-6 h-6 rounded-full flex items-center justify-center bg-m3-surfaceVariant text-m3-onSurfaceVariant hover:bg-red-500/20 hover:text-red-500 transition-colors shrink-0" title="${d.batchDismiss || 'Buang dari daftar'}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 } else if (em && em.hasScroll) {
                     // Sudah ada di scroll → kunci ke canvas saja, peringatkan scroll akan terhapus
                     m._lockedMode = 'canvas';
@@ -341,6 +342,7 @@ async function processMultipleFiles(files) {
                             <i data-lucide="alert-triangle" class="w-3 h-3 shrink-0"></i> ${strScrollWillDelete}
                         </span>
                     `;
+                    dismissBtn = `<button type="button" data-dismiss-idx="${idx}" class="batch-dismiss-btn ml-2 w-6 h-6 rounded-full flex items-center justify-center bg-m3-surfaceVariant text-m3-onSurfaceVariant hover:bg-red-500/20 hover:text-red-500 transition-colors shrink-0" title="${d.batchDismiss || 'Buang dari daftar'}"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
                 } else {
                     // Bebas pilih
                     controlHtml = `
@@ -353,11 +355,14 @@ async function processMultipleFiles(files) {
             }
             
             batchHtml += `
-                <div class="flex flex-col border-b border-m3-surfaceVariant/50 pb-2 ${rowOpacity}">
+                <div id="batch-row-${idx}" class="flex flex-col border-b border-m3-surfaceVariant/50 pb-2 ${rowOpacity}">
                     <span class="text-xs font-bold text-m3-onSurface mb-1 truncate">${shortTitle}</span>
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] opacity-60 uppercase">${m.ext}</span>
-                        ${controlHtml}
+                        <div class="flex items-center">
+                            ${controlHtml}
+                            ${dismissBtn}
+                        </div>
                     </div>
                 </div>
             `;
@@ -397,6 +402,27 @@ async function processMultipleFiles(files) {
                     } }
                 ]
             );
+            // Pasang event dismiss setelah DOM dialog render
+            setTimeout(() => {
+                document.querySelectorAll('.batch-dismiss-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const idx = parseInt(btn.dataset.dismissIdx);
+                        if (!isNaN(idx) && fileModes[idx]) {
+                            fileModes[idx]._skipEntry = true;
+                            delete fileModes[idx]._lockedMode;
+                            const row = document.getElementById(`batch-row-${idx}`);
+                            if (row) {
+                                row.style.transition = 'opacity 0.2s, max-height 0.25s';
+                                row.style.overflow = 'hidden';
+                                row.style.opacity = '0';
+                                row.style.maxHeight = row.offsetHeight + 'px';
+                                setTimeout(() => { row.style.maxHeight = '0'; row.style.paddingBottom = '0'; }, 10);
+                                setTimeout(() => row.remove(), 260);
+                            }
+                        }
+                    });
+                });
+            }, 80);
         });
         
         if (batchAction === 'CANCEL') return;
