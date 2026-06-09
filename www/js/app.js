@@ -1803,6 +1803,11 @@ window.showJumpToPageDialog = function() {
 // --- GESTURE CANVAS ---
 function setupCanvasPinchZoom() { /* stub */ }
 
+// State double-tap
+let _canvasLastTapTime = 0;
+let _canvasLastTapX    = 0;
+let _canvasLastTapY    = 0;
+
 function initCanvasGestures() {
     const vp = document.getElementById('canvas-zoom-viewport');
     if (!vp) return;
@@ -1816,134 +1821,215 @@ function initCanvasGestures() {
     const wrapper = document.getElementById('canvas-wrapper');
     if (!wrapper) return;
 
-    // transform-origin: center center — di-set dari HTML, pastikan tidak berubah
     wrapper.style.transformOrigin = 'center center';
     wrapper.style.willChange      = 'transform';
     wrapper.style.transition      = 'none';
     _resetCanvasTransform();
 
+    // State internal gesture — semua di sini, tidak pakai variabel global yang bisa
+    // terpolusi antar-gesture
+    let isPinching    = false;
+    let pinchStartDist  = 0;
+    let pinchStartScale = 1;
+    // Titik focal cubit di koordinat KONTEN (bukan layar) — pre-transform
+    // Ini yang membuat zoom tidak meloncat: focal point di konten harus diam.
+    let pinchFocalContentX = 0;
+    let pinchFocalContentY = 0;
+    // Translate saat pinch dimulai
+    let pinchStartTX = 0;
+    let pinchStartTY = 0;
+
+    let isPanning   = false;
+    let panStartX   = 0;
+    let panStartY   = 0;
+
+    let tapStartX   = 0;
+    let tapStartY   = 0;
+    let tapStartTime = 0;
+
+    // Helper: konversi koordinat layar → koordinat konten wrapper (tanpa transform)
+    // Dengan transform-origin center: titik layar P dalam konten =
+    //   (P - naturalCenter - translate) / scale
+    // naturalCenter = pusat wrapper di layar TANPA translate (= center viewport karena flex center)
+    function screenToContent(sx, sy) {
+        const rect = newVP.getBoundingClientRect();
+        const natCX = rect.left + rect.width  / 2;
+        const natCY = rect.top  + rect.height / 2;
+        return {
+            cx: (sx - natCX - canvasTranslateX) / currentCanvasScale,
+            cy: (sy - natCY - canvasTranslateY) / currentCanvasScale
+        };
+    }
+
+    // Helper: terapkan zoom ke titik focal konten (fx, fy) dengan scale baru
+    function zoomToContentPoint(newScale, fx, fy, startTX, startTY, startScale) {
+        // Saat scale berubah dari startScale → newScale,
+        // focal point konten (fx, fy) harus tetap di posisi layar yang sama.
+        // Posisi layar focal = natCenter + tx + fx * scale
+        // Agar sama: startTX + fx*startScale = newTX + fx*newScale
+        // → newTX = startTX + fx*(startScale - newScale)
+        canvasTranslateX = startTX + fx * (startScale - newScale);
+        canvasTranslateY = startTY + fy * (startScale - newScale);
+        currentCanvasScale = newScale;
+    }
+
     // ── touchstart ──
     newVP.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
-            canvasIsPinching     = true;
-            canvasTouchStartDist = Math.hypot(
+            // Masuk mode pinch — batalkan semua state pan/tap
+            isPinching = true;
+            isPanning  = false;
+
+            pinchStartDist  = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
-            canvasTouchStartScale = currentCanvasScale;
+            pinchStartScale = currentCanvasScale;
+            pinchStartTX    = canvasTranslateX;
+            pinchStartTY    = canvasTranslateY;
 
-            // Tengah cubit dalam koordinat layar
+            // Titik focal di tengah dua jari, dikonversi ke koordinat konten
             const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            const fc   = screenToContent(midX, midY);
+            pinchFocalContentX = fc.cx;
+            pinchFocalContentY = fc.cy;
 
-            // Posisi wrapper di layar saat ini (setelah transform)
-            const rect = wrapper.getBoundingClientRect();
+        } else if (e.touches.length === 1 && !isPinching) {
+            tapStartX    = e.touches[0].clientX;
+            tapStartY    = e.touches[0].clientY;
+            tapStartTime = Date.now();
 
-            // Titik cubit dalam koordinat wrapper (pre-scale, dari center)
-            // rect.left + rect.width/2 = center wrapper di layar
-            wrapper._pinchMidX = midX - (rect.left + rect.width  / 2);
-            wrapper._pinchMidY = midY - (rect.top  + rect.height / 2);
-            wrapper._pinchTX   = canvasTranslateX;
-            wrapper._pinchTY   = canvasTranslateY;
-
-        } else if (e.touches.length === 1) {
-            canvasTapStartX    = e.touches[0].clientX;
-            canvasTapStartY    = e.touches[0].clientY;
-            canvasTapStartTime = Date.now();
             if (currentCanvasScale > 1.01) {
-                canvasPanStartX = e.touches[0].clientX - canvasTranslateX;
-                canvasPanStartY = e.touches[0].clientY - canvasTranslateY;
+                isPanning = true;
+                panStartX = e.touches[0].clientX - canvasTranslateX;
+                panStartY = e.touches[0].clientY - canvasTranslateY;
             }
         }
     }, { passive: true });
 
     // ── touchmove ──
     newVP.addEventListener('touchmove', (e) => {
-        if (canvasIsPinching && e.touches.length === 2) {
+        if (isPinching && e.touches.length === 2) {
             e.preventDefault();
+
             const dist     = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
-            const newScale = Math.max(1.0, Math.min(4.0,
-                canvasTouchStartScale * (dist / canvasTouchStartDist)
-            ));
+            const rawScale = pinchStartScale * (dist / pinchStartDist);
+            const newScale = Math.max(1.0, Math.min(5.0, rawScale));
 
             if (newScale <= 1.0) {
                 currentCanvasScale = 1.0;
                 canvasTranslateX   = 0;
                 canvasTranslateY   = 0;
             } else {
-                // Tengah cubit sekarang di layar
-                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-                // Posisi center wrapper saat scale = newScale
-                // Center alami wrapper = rect center saat translate=0, scale=1
-                // Dengan translate (TX,TY) dan scale S: center di layar = naturalCenter + TX
-                // (karena transform-origin center, translate langsung geser center)
-                // Titik cubit di konten (pre-scale) = _pinchMidX / startScale  (offset dari center)
-                // Kita mau: midX_screen = centerWrapper_screen + _pinchMidX_content * newScale
-                // centerWrapper_screen = naturalCenterX + TX
-                // TX = midX - naturalCenterX - _pinchMidX_content * newScale
-                
-                // naturalCenter dari rect saat start (simpan di touchstart)
-                const scaleFactor = newScale / canvasTouchStartScale;
-                canvasTranslateX = wrapper._pinchTX + wrapper._pinchMidX * (1 - scaleFactor) + (midX - (e.touches[0].clientX + e.touches[1].clientX) / 2 * 0);
-                canvasTranslateY = wrapper._pinchTY + wrapper._pinchMidY * (1 - scaleFactor);
-
-                // Lebih simpel dan proven: rumus standard pinch-zoom
-                canvasTranslateX = wrapper._pinchTX - wrapper._pinchMidX * (scaleFactor - 1);
-                canvasTranslateY = wrapper._pinchTY - wrapper._pinchMidY * (scaleFactor - 1);
-                currentCanvasScale = newScale;
+                // Zoom ke focal point konten — tidak pakai mid layar sekarang
+                // karena mid bisa bergeser saat jari bergerak lateral.
+                // Focal point KONTEN tetap konstan sejak touchstart.
+                zoomToContentPoint(newScale,
+                    pinchFocalContentX, pinchFocalContentY,
+                    pinchStartTX, pinchStartTY, pinchStartScale);
             }
             _applyCanvasTransform(wrapper);
 
-        } else if (e.touches.length === 1 && currentCanvasScale > 1.01) {
+        } else if (e.touches.length === 1 && isPanning) {
             e.preventDefault();
-            canvasTranslateX = e.touches[0].clientX - canvasPanStartX;
-            canvasTranslateY = e.touches[0].clientY - canvasPanStartY;
+            canvasTranslateX = e.touches[0].clientX - panStartX;
+            canvasTranslateY = e.touches[0].clientY - panStartY;
             _applyCanvasTransform(wrapper);
         }
     }, { passive: false });
 
     // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
-        if (e.touches.length < 2) canvasIsPinching = false;
+        // Jari ke-2 terangkat → akhiri pinch, perbarui anchor pan agar tidak loncat
+        if (e.touches.length === 1 && isPinching) {
+            isPinching = false;
+            if (currentCanvasScale > 1.01) {
+                isPanning = true;
+                panStartX = e.touches[0].clientX - canvasTranslateX;
+                panStartY = e.touches[0].clientY - canvasTranslateY;
+            }
+            return;
+        }
+
         if (e.touches.length === 0) {
+            isPinching = false;
+            isPanning  = false;
+
+            // Snap balik ke scale 1 jika terlalu kecil
             if (currentCanvasScale <= 1.01) {
                 currentCanvasScale = 1.0;
                 canvasTranslateX   = 0;
                 canvasTranslateY   = 0;
-                wrapper.style.transition = 'transform 0.18s ease';
+                wrapper.style.transition = 'transform 0.2s cubic-bezier(0.2,0,0,1)';
                 _applyCanvasTransform(wrapper);
-                setTimeout(() => { wrapper.style.transition = 'none'; }, 200);
-
-                const dt   = Date.now() - canvasTapStartTime;
-                const ex   = e.changedTouches[0].clientX;
-                const ey   = e.changedTouches[0].clientY;
-                const dist = Math.hypot(ex - canvasTapStartX, ey - canvasTapStartY);
-                if (dt < 300 && dist < 15) {
-                    const sw = window.innerWidth;
-                    if      (ex < sw * 0.30) window.prevCanvasPage();
-                    else if (ex > sw * 0.70) window.nextCanvasPage();
-                }
+                setTimeout(() => { wrapper.style.transition = 'none'; }, 220);
             } else {
                 _applyCanvasTransform(wrapper);
+            }
+
+            const dt   = Date.now() - tapStartTime;
+            const ex   = e.changedTouches[0].clientX;
+            const ey   = e.changedTouches[0].clientY;
+            const moved = Math.hypot(ex - tapStartX, ey - tapStartY);
+
+            if (dt < 300 && moved < 18) {
+                const now = Date.now();
+                const dtDoubleTap = now - _canvasLastTapTime;
+                const doubleTapMoved = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
+
+                if (dtDoubleTap < 320 && doubleTapMoved < 40) {
+                    // ── DOUBLE TAP ──
+                    _canvasLastTapTime = 0; // reset agar tidak triple-tap
+                    if (currentCanvasScale > 1.01) {
+                        // Zoom OUT ke 1x dengan animasi
+                        wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
+                        currentCanvasScale = 1.0;
+                        canvasTranslateX   = 0;
+                        canvasTranslateY   = 0;
+                        _applyCanvasTransform(wrapper);
+                        setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
+                    } else {
+                        // Zoom IN 2.5x ke titik yang di-tap
+                        const TARGET_SCALE = 2.5;
+                        const fc = screenToContent(ex, ey);
+                        wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
+                        zoomToContentPoint(TARGET_SCALE, fc.cx, fc.cy,
+                            canvasTranslateX, canvasTranslateY, currentCanvasScale);
+                        _applyCanvasTransform(wrapper);
+                        setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
+                    }
+                } else {
+                    // ── SINGLE TAP — catat waktu & posisi untuk deteksi double-tap berikutnya ──
+                    _canvasLastTapTime = now;
+                    _canvasLastTapX    = ex;
+                    _canvasLastTapY    = ey;
+
+                    // Navigasi halaman hanya saat scale = 1 (tidak sedang zoom)
+                    if (currentCanvasScale <= 1.01) {
+                        const sw = window.innerWidth;
+                        if      (ex < sw * 0.30) window.prevCanvasPage();
+                        else if (ex > sw * 0.70) window.nextCanvasPage();
+                    }
+                }
             }
         }
     }, { passive: true });
 }
 
-// Clamp & apply transform. Dengan transform-origin center, translate 0,0 = wrapper di tengah.
-// Saat scale S: wrapper melebar ke semua arah. Batas pan = separuh overflow di tiap sisi.
+// Clamp & apply transform.
+// transform-origin: center center → translate 0,0 = wrapper pas di tengah viewport.
+// Saat scale S: wrapper melebar. Maksimum pan = separuh overflow tiap sisi.
 function _applyCanvasTransform(wrapper) {
-    if (wrapper._W && currentCanvasScale > 1.01) {
-        const extraW = (wrapper._W * currentCanvasScale - wrapper._cW) / 2;
-        const extraH = (wrapper._H * currentCanvasScale - wrapper._cH) / 2;
-        // extraW/H = seberapa jauh wrapper bisa dipan ke satu arah
-        const maxTX  = Math.max(0, extraW);
-        const maxTY  = Math.max(0, extraH);
+    if (wrapper._W && wrapper._cW) {
+        const scaledW = wrapper._W * currentCanvasScale;
+        const scaledH = wrapper._H * currentCanvasScale;
+        // Berapa piksel wrapper menonjol keluar viewport di tiap sisi (bisa 0 jika belum zoom)
+        const maxTX = Math.max(0, (scaledW - wrapper._cW) / 2);
+        const maxTY = Math.max(0, (scaledH - wrapper._cH) / 2);
         canvasTranslateX = Math.max(-maxTX, Math.min(maxTX, canvasTranslateX));
         canvasTranslateY = Math.max(-maxTY, Math.min(maxTY, canvasTranslateY));
     }
