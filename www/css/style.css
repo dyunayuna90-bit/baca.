@@ -135,10 +135,9 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
     touch-action: none; /* Cegah gesture browser native saat pinch zoom */
     transform-origin: center center;
     transition: transform 0.1s ease-out;
-    width: 100%; /* Lebar penuh supaya gak ada sisa kanan-kiri yang aneh */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    /* overflow:visible agar canvas-prev/next yang absolute tidak terpotong */
+    overflow: visible;
+    flex-shrink: 0;
 }
 
 /* Halaman PDF Canvas murni */
@@ -151,7 +150,12 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
     display: block;
 }
 
-/* canvas-slider: 3 canvas berjajar, translateX dipakai untuk swipe */
+/* canvas-prev & canvas-next: absolute, selalu tepat di kiri/kanan canvas utama.
+   Dimensi fisiknya diset JS secara eksplisit, bukan bergantung % wrapper. */
+#canvas-prev { position: absolute; top: 0; right: 100%; }
+#canvas-next { position: absolute; top: 0; left:  100%; }
+
+/* canvas-slider: kontainer swipe yang diberi translateX oleh JS */
 #canvas-slider {
     transition: none; /* default: no transition — dikontrol JS */
 }
