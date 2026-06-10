@@ -2080,21 +2080,19 @@ window.openBook = async function(book) {
 
 // --- ENGINE RENDER CANVAS PDF ---
 
-// Cache pre-render neighbor pages: { pageNum -> { canvas, textContent } }
-const _prerenderedPages = {};
-let   _prerenderInFlight = new Set();
+// Pre-render cache: pageNum → { canvas, dW, dH }
+const _prerenderedPages  = {};
+const _prerenderInflight = new Set();
 
 async function _prerenderPage(pageNum) {
     if (!currentPdfDoc) return;
     if (pageNum < 1 || pageNum > currentPdfDoc.numPages) return;
-    if (_prerenderedPages[pageNum] || _prerenderInFlight.has(pageNum)) return;
-
-    _prerenderInFlight.add(pageNum);
+    if (_prerenderedPages[pageNum] || _prerenderInflight.has(pageNum)) return;
+    _prerenderInflight.add(pageNum);
     try {
         const page       = await currentPdfDoc.getPage(pageNum);
         const vpEl       = document.getElementById('canvas-zoom-viewport');
         if (!vpEl) return;
-
         const pixelRatio  = window.devicePixelRatio || 1;
         const renderScale = pixelRatio * 2.5;
         const cW          = vpEl.clientWidth;
@@ -2102,36 +2100,19 @@ async function _prerenderPage(pageNum) {
         const fit         = page.getViewport({ scale: cW / nat.width });
         const dW          = Math.floor(fit.width);
         const dH          = Math.floor(fit.height);
-
-        const offscreen   = document.createElement('canvas');
-        offscreen.width   = dW * renderScale;
-        offscreen.height  = dH * renderScale;
-        offscreen._dW     = dW;
-        offscreen._dH     = dH;
-        offscreen._fit    = fit;
-
-        const ctx = offscreen.getContext('2d');
+        const off         = document.createElement('canvas');
+        off.width  = dW * renderScale;
+        off.height = dH * renderScale;
+        const ctx  = off.getContext('2d');
         ctx.imageSmoothingEnabled = false;
         await page.render({
             canvasContext: ctx,
             viewport: fit,
             transform: [renderScale, 0, 0, renderScale, 0, 0]
         }).promise;
-
-        const textContent = await page.getTextContent();
-
-        _prerenderedPages[pageNum] = { canvas: offscreen, textContent, dW, dH, fit };
-    } catch (e) {
-        // silent — pre-render is best-effort
-    } finally {
-        _prerenderInFlight.delete(pageNum);
-    }
-}
-
-function _evictPrerender(keepPages) {
-    for (const k of Object.keys(_prerenderedPages)) {
-        if (!keepPages.includes(Number(k))) delete _prerenderedPages[Number(k)];
-    }
+        _prerenderedPages[pageNum] = { canvas: off, dW, dH };
+    } catch (_) { /* best-effort */ }
+    finally { _prerenderInflight.delete(pageNum); }
 }
 
 async function renderCanvasPage(pageNum) {
@@ -2150,43 +2131,40 @@ async function renderCanvasPage(pageNum) {
         const cW = vpEl.clientWidth;
         const cH = vpEl.clientHeight;
 
-        let dW, dH, fit, textContent;
         const cached = _prerenderedPages[pageNum];
-
         if (cached) {
-            // ── FAST PATH: blit dari pre-rendered offscreen canvas ──
-            dW  = cached.dW;
-            dH  = cached.dH;
-            fit = cached.fit;
-            textContent = cached.textContent;
-
+            // Fast path: blit offscreen canvas langsung
             canvas.width        = cached.canvas.width;
             canvas.height       = cached.canvas.height;
-            canvas.style.width  = dW + 'px';
-            canvas.style.height = dH + 'px';
-            wrapper.style.width  = dW + 'px';
-            wrapper.style.height = dH + 'px';
-
+            canvas.style.width  = cached.dW + 'px';
+            canvas.style.height = cached.dH + 'px';
+            wrapper.style.width  = cached.dW + 'px';
+            wrapper.style.height = cached.dH + 'px';
+            wrapper._W  = cached.dW;
+            wrapper._H  = cached.dH;
+            wrapper._cW = cW;
+            wrapper._cH = cH;
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(cached.canvas, 0, 0);
             delete _prerenderedPages[pageNum];
-
         } else {
-            // ── NORMAL PATH: render langsung ──
+            // Normal path
             const page = await currentPdfDoc.getPage(pageNum);
             const nat  = page.getViewport({ scale: 1 });
-            fit  = page.getViewport({ scale: cW / nat.width });
-            dW   = Math.floor(fit.width);
-            dH   = Math.floor(fit.height);
-
+            const fit  = page.getViewport({ scale: cW / nat.width });
+            const dW   = Math.floor(fit.width);
+            const dH   = Math.floor(fit.height);
             canvas.width        = dW * renderScale;
             canvas.height       = dH * renderScale;
             canvas.style.width  = dW + 'px';
             canvas.style.height = dH + 'px';
             wrapper.style.width  = dW + 'px';
             wrapper.style.height = dH + 'px';
-
+            wrapper._W  = dW;
+            wrapper._H  = dH;
+            wrapper._cW = cW;
+            wrapper._cH = cH;
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
             await page.render({
@@ -2194,29 +2172,7 @@ async function renderCanvasPage(pageNum) {
                 viewport: fit,
                 transform: [renderScale, 0, 0, renderScale, 0, 0]
             }).promise;
-
-            textContent = await page.getTextContent();
         }
-
-        wrapper._W  = dW;
-        wrapper._H  = dH;
-        wrapper._cW = cW;
-        wrapper._cH = cH;
-
-        // ── TEXTLAYER ──
-        const textLayerDiv = document.getElementById('canvas-text-layer');
-        if (textLayerDiv && pdfjsLib.renderTextLayer) {
-            textLayerDiv.innerHTML = '';
-            textLayerDiv.style.width  = dW + 'px';
-            textLayerDiv.style.height = dH + 'px';
-            pdfjsLib.renderTextLayer({
-                textContentSource: textContent,
-                container: textLayerDiv,
-                viewport: fit,
-                textDivs: []
-            });
-        }
-        // ── END TEXTLAYER ──
 
         const lbl = document.getElementById('canvas-page-num');
         if (lbl) lbl.textContent = pageNum;
@@ -2226,15 +2182,15 @@ async function renderCanvasPage(pageNum) {
         updateBookProgress(activeBookId, pageNum, pct);
         renderBookmarkPanel();
 
-        // ── PRE-RENDER NEIGHBOR PAGES (setelah current selesai) ──
-        const next = pageNum + 1;
-        const prev = pageNum - 1;
-        _evictPrerender([prev, next]);
+        // Kick off pre-render untuk halaman sebelah (non-blocking)
         setTimeout(() => {
-            _prerenderPage(next);
-            _prerenderPage(prev);
-        }, 80); // delay kecil agar UI tidak bersaing
-        // ──────────────────────────────────────────────────────────
+            _prerenderPage(pageNum + 1);
+            _prerenderPage(pageNum - 1);
+            // Buang cache halaman yang sudah jauh
+            for (const k of Object.keys(_prerenderedPages)) {
+                if (Math.abs(Number(k) - pageNum) > 2) delete _prerenderedPages[Number(k)];
+            }
+        }, 80);
 
     } catch (e) {
         console.error('renderCanvasPage:', e);
@@ -2324,167 +2280,111 @@ function initCanvasGestures() {
     wrapper.style.transition      = 'none';
     _resetCanvasTransform();
 
-    let isPinching    = false;
-    let pinchStartDist  = 0;
-    let pinchStartScale = 1;
-    let pinchFocalContentX = 0;
-    let pinchFocalContentY = 0;
-    let pinchStartTX = 0;
-    let pinchStartTY = 0;
+    // ── Neighbor canvas divs (kiri & kanan, disuntikkan ke newVP) ──
+    let _nbNext = null;
+    let _nbPrev = null;
 
-    let isPanning   = false;
-    let panStartX   = 0;
-    let panStartY   = 0;
-
-    let tapStartX    = 0;
-    let tapStartY    = 0;
-    let tapStartTime = 0;
-
-    // ── STATE SWIPE HALAMAN ──
-    let isSwipingPage  = false;
-    let swipeStartX    = 0;
-    let swipeBlocked   = false; // true jika gerakan lebih vertikal → batalkan swipe
-    let swipeStartY    = 0;
-
-    // ── NEIGHBOR CANVASES untuk preview saat swipe ──
-    // Dua elemen canvas tersembunyi, di-populate saat swipe mulai
-    let _neighborNext = null;
-    let _neighborPrev = null;
-
-    function _ensureNeighborCanvases() {
-        if (!_neighborNext) {
-            _neighborNext = document.createElement('div');
-            _neighborNext.style.cssText =
-                'position:absolute;top:0;left:0;width:100%;height:100%;' +
-                'display:flex;align-items:center;justify-content:center;' +
-                'pointer-events:none;will-change:transform;';
-            newVP.appendChild(_neighborNext);
+    function _ensureNeighbors() {
+        if (!_nbNext) {
+            _nbNext = document.createElement('div');
+            _nbNext.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;';
+            newVP.appendChild(_nbNext);
         }
-        if (!_neighborPrev) {
-            _neighborPrev = document.createElement('div');
-            _neighborPrev.style.cssText =
-                'position:absolute;top:0;left:0;width:100%;height:100%;' +
-                'display:flex;align-items:center;justify-content:center;' +
-                'pointer-events:none;will-change:transform;';
-            newVP.appendChild(_neighborPrev);
+        if (!_nbPrev) {
+            _nbPrev = document.createElement('div');
+            _nbPrev.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;';
+            newVP.appendChild(_nbPrev);
         }
     }
 
-    function _populateNeighbor(el, pageNum) {
+    function _fillNeighbor(el, pageNum) {
         el.innerHTML = '';
         if (!currentPdfDoc || pageNum < 1 || pageNum > currentPdfDoc.numPages) return;
-        const cached = _prerenderedPages[pageNum];
-        if (!cached) return;
-        const c = document.createElement('canvas');
-        c.width        = cached.canvas.width;
-        c.height       = cached.canvas.height;
-        c.style.width  = cached.dW + 'px';
-        c.style.height = cached.dH + 'px';
-        c.style.display = 'block';
-        const ctx = c.getContext('2d');
-        ctx.drawImage(cached.canvas, 0, 0);
-        el.appendChild(c);
+        const c = _prerenderedPages[pageNum];
+        if (!c) return;
+        const cv = document.createElement('canvas');
+        cv.width = c.canvas.width; cv.height = c.canvas.height;
+        cv.style.cssText = `display:block;width:${c.dW}px;height:${c.dH}px;`;
+        cv.getContext('2d').drawImage(c.canvas, 0, 0);
+        el.appendChild(cv);
     }
 
-    function _showNeighbors(show) {
-        if (_neighborNext) _neighborNext.style.opacity = show ? '1' : '0';
-        if (_neighborPrev) _neighborPrev.style.opacity = show ? '1' : '0';
+    function _placeNeighbors(dx) {
+        const W = newVP.clientWidth;
+        if (_nbNext) { _nbNext.style.transform = `translateX(${W + dx}px)`;  _nbNext.style.opacity = '1'; }
+        if (_nbPrev) { _nbPrev.style.transform = `translateX(${-W + dx}px)`; _nbPrev.style.opacity = '1'; }
     }
 
-    function _positionNeighbors(deltaX) {
-        const vpW = newVP.clientWidth;
-        if (_neighborNext)
-            _neighborNext.style.transform = `translateX(${vpW + deltaX}px)`;
-        if (_neighborPrev)
-            _neighborPrev.style.transform = `translateX(${-vpW + deltaX}px)`;
+    function _hideNeighbors() {
+        if (_nbNext) { _nbNext.style.opacity = '0'; _nbNext.style.transition = 'none'; }
+        if (_nbPrev) { _nbPrev.style.opacity = '0'; _nbPrev.style.transition = 'none'; }
     }
+
+    let isPinching = false, pinchStartDist = 0, pinchStartScale = 1;
+    let pinchFocalContentX = 0, pinchFocalContentY = 0;
+    let pinchStartTX = 0, pinchStartTY = 0;
+
+    let isPanning = false, panStartX = 0, panStartY = 0;
+    let tapStartX = 0, tapStartY = 0, tapStartTime = 0;
+
+    let isSwipingPage = false, swipeBlocked = false;
+    let swipeStartX = 0, swipeStartY = 0;
 
     function screenToContent(sx, sy) {
         const rect = newVP.getBoundingClientRect();
-        const natCX = rect.left + rect.width  / 2;
-        const natCY = rect.top  + rect.height / 2;
         return {
-            cx: (sx - natCX - canvasTranslateX) / currentCanvasScale,
-            cy: (sy - natCY - canvasTranslateY) / currentCanvasScale
+            cx: (sx - rect.left - rect.width  / 2 - canvasTranslateX) / currentCanvasScale,
+            cy: (sy - rect.top  - rect.height / 2 - canvasTranslateY) / currentCanvasScale
         };
     }
 
-    function zoomToContentPoint(newScale, fx, fy, startTX, startTY, startScale) {
-        canvasTranslateX = startTX + fx * (startScale - newScale);
-        canvasTranslateY = startTY + fy * (startScale - newScale);
+    function zoomToContentPoint(newScale, fx, fy, sTX, sTY, sScale) {
+        canvasTranslateX   = sTX + fx * (sScale - newScale);
+        canvasTranslateY   = sTY + fy * (sScale - newScale);
         currentCanvasScale = newScale;
     }
 
-    // ── touchstart ──
     newVP.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
-            isPinching    = true;
-            isPanning     = false;
-            isSwipingPage = false;
-            swipeBlocked  = false;
-            _showNeighbors(false);
-
-            pinchStartDist  = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
+            isPinching = true; isPanning = false;
+            isSwipingPage = false; swipeBlocked = false;
+            _hideNeighbors();
+            pinchStartDist  = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
             pinchStartScale = currentCanvasScale;
             pinchStartTX    = canvasTranslateX;
             pinchStartTY    = canvasTranslateY;
-
-            const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            const fc   = screenToContent(midX, midY);
-            pinchFocalContentX = fc.cx;
-            pinchFocalContentY = fc.cy;
+            const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            const fc = screenToContent(mx, my);
+            pinchFocalContentX = fc.cx; pinchFocalContentY = fc.cy;
 
         } else if (e.touches.length === 1 && !isPinching) {
-            tapStartX    = e.touches[0].clientX;
-            tapStartY    = e.touches[0].clientY;
+            tapStartX = e.touches[0].clientX; tapStartY = e.touches[0].clientY;
             tapStartTime = Date.now();
-
             if (currentCanvasScale > 1.01) {
                 isPanning = true;
                 panStartX = e.touches[0].clientX - canvasTranslateX;
                 panStartY = e.touches[0].clientY - canvasTranslateY;
             } else {
-                // Init swipe — siapkan neighbor canvases
-                isSwipingPage = true;
-                swipeBlocked  = false;
-                swipeStartX   = e.touches[0].clientX;
-                swipeStartY   = e.touches[0].clientY;
+                isSwipingPage = true; swipeBlocked = false;
+                swipeStartX = e.touches[0].clientX;
+                swipeStartY = e.touches[0].clientY;
                 wrapper.style.transition = 'none';
-
-                _ensureNeighborCanvases();
-                _populateNeighbor(_neighborNext, currentCanvasPage + 1);
-                _populateNeighbor(_neighborPrev, currentCanvasPage - 1);
-                _positionNeighbors(0);
-                _showNeighbors(true);
+                _ensureNeighbors();
+                _fillNeighbor(_nbNext, currentCanvasPage + 1);
+                _fillNeighbor(_nbPrev, currentCanvasPage - 1);
+                _placeNeighbors(0);
             }
         }
     }, { passive: true });
 
-    // ── touchmove ──
     newVP.addEventListener('touchmove', (e) => {
         if (isPinching && e.touches.length === 2) {
             e.preventDefault();
-
-            const dist     = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            const rawScale = pinchStartScale * (dist / pinchStartDist);
-            const newScale = Math.max(1.0, Math.min(5.0, rawScale));
-
-            if (newScale <= 1.0) {
-                currentCanvasScale = 1.0;
-                canvasTranslateX   = 0;
-                canvasTranslateY   = 0;
-            } else {
-                zoomToContentPoint(newScale,
-                    pinchFocalContentX, pinchFocalContentY,
-                    pinchStartTX, pinchStartTY, pinchStartScale);
-            }
+            const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            const newScale = Math.max(1.0, Math.min(5.0, pinchStartScale * (dist / pinchStartDist)));
+            if (newScale <= 1.0) { currentCanvasScale = 1.0; canvasTranslateX = 0; canvasTranslateY = 0; }
+            else zoomToContentPoint(newScale, pinchFocalContentX, pinchFocalContentY, pinchStartTX, pinchStartTY, pinchStartScale);
             _applyCanvasTransform(wrapper);
 
         } else if (e.touches.length === 1 && isPanning) {
@@ -2494,30 +2394,22 @@ function initCanvasGestures() {
             _applyCanvasTransform(wrapper);
 
         } else if (isSwipingPage && e.touches.length === 1) {
-            const deltaX = e.touches[0].clientX - swipeStartX;
-            const deltaY = e.touches[0].clientY - swipeStartY;
-
-            // Deteksi awal: kalau lebih vertikal, batalkan swipe agar scroll normal
-            if (!swipeBlocked && Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) {
-                swipeBlocked  = true;
-                isSwipingPage = false;
-                _showNeighbors(false);
-                // Reset wrapper ke posisi semula
+            const dx = e.touches[0].clientX - swipeStartX;
+            const dy = e.touches[0].clientY - swipeStartY;
+            if (!swipeBlocked && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+                swipeBlocked = true; isSwipingPage = false;
+                _hideNeighbors();
                 wrapper.style.transform = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
                 return;
             }
-
             if (swipeBlocked) return;
-
-            // Gerakkan current wrapper + kedua neighbor bersamaan
-            wrapper.style.transform = `translateX(${deltaX}px) scale(1)`;
-            _positionNeighbors(deltaX);
+            wrapper.style.transform = `translateX(${dx}px) scale(1)`;
+            _placeNeighbors(dx);
         }
     }, { passive: false });
 
     let _navTimer = null;
 
-    // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
         if (e.touches.length === 1 && isPinching) {
             isPinching = false;
@@ -2530,71 +2422,42 @@ function initCanvasGestures() {
         }
 
         if (e.touches.length === 0) {
-            isPinching = false;
-            isPanning  = false;
+            isPinching = false; isPanning = false;
 
-            // ── EVALUASI SWIPE HALAMAN ──
             if (isSwipingPage || swipeBlocked) {
                 const wasBlocked = swipeBlocked;
-                isSwipingPage = false;
-                swipeBlocked  = false;
-                _showNeighbors(false);
-
+                isSwipingPage = false; swipeBlocked = false;
+                _hideNeighbors();
                 if (wasBlocked) {
                     wrapper.style.transform = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
                     return;
                 }
+                const dx = e.changedTouches[0].clientX - swipeStartX;
+                const W  = newVP.clientWidth;
+                const TH = Math.min(80, W * 0.2);
 
-                const deltaX  = e.changedTouches[0].clientX - swipeStartX;
-                const vpW     = newVP.clientWidth;
-                const THRESHOLD = Math.min(80, vpW * 0.20);
-
-                if (deltaX < -THRESHOLD && currentCanvasPage < currentPdfDoc.numPages) {
-                    // Swipe kiri → next page
+                if (dx < -TH && currentCanvasPage < currentPdfDoc.numPages) {
                     wrapper.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)';
-                    wrapper.style.transform  = `translateX(-${vpW}px) scale(1)`;
-                    if (_neighborNext) {
-                        _neighborNext.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)';
-                        _neighborNext.style.transform  = 'translateX(0px)';
-                        _neighborNext.style.opacity    = '1';
-                    }
-                    setTimeout(() => {
-                        if (_neighborNext) { _neighborNext.style.transition = 'none'; _neighborNext.style.opacity = '0'; }
-                        wrapper.style.transition = 'none';
-                        wrapper.style.transform  = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
-                        window.nextCanvasPage();
-                    }, 260);
+                    wrapper.style.transform  = `translateX(-${W}px) scale(1)`;
+                    if (_nbNext) { _nbNext.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)'; _nbNext.style.transform = 'translateX(0)'; _nbNext.style.opacity = '1'; }
+                    setTimeout(() => { _hideNeighbors(); wrapper.style.transition = 'none'; wrapper.style.transform = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`; window.nextCanvasPage(); }, 260);
 
-                } else if (deltaX > THRESHOLD && currentCanvasPage > 1) {
-                    // Swipe kanan → prev page
+                } else if (dx > TH && currentCanvasPage > 1) {
                     wrapper.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)';
-                    wrapper.style.transform  = `translateX(${vpW}px) scale(1)`;
-                    if (_neighborPrev) {
-                        _neighborPrev.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)';
-                        _neighborPrev.style.transform  = 'translateX(0px)';
-                        _neighborPrev.style.opacity    = '1';
-                    }
-                    setTimeout(() => {
-                        if (_neighborPrev) { _neighborPrev.style.transition = 'none'; _neighborPrev.style.opacity = '0'; }
-                        wrapper.style.transition = 'none';
-                        wrapper.style.transform  = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
-                        window.prevCanvasPage();
-                    }, 260);
+                    wrapper.style.transform  = `translateX(${W}px) scale(1)`;
+                    if (_nbPrev) { _nbPrev.style.transition = 'transform 0.25s cubic-bezier(0.4,0,0.2,1)'; _nbPrev.style.transform = 'translateX(0)'; _nbPrev.style.opacity = '1'; }
+                    setTimeout(() => { _hideNeighbors(); wrapper.style.transition = 'none'; wrapper.style.transform = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`; window.prevCanvasPage(); }, 260);
 
                 } else {
-                    // Snap balik
                     wrapper.style.transition = 'transform 0.22s cubic-bezier(0.2,0,0,1)';
                     wrapper.style.transform  = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 230);
                 }
                 return;
             }
-            // ───────────────────────────
 
             if (currentCanvasScale <= 1.01) {
-                currentCanvasScale = 1.0;
-                canvasTranslateX   = 0;
-                canvasTranslateY   = 0;
+                currentCanvasScale = 1.0; canvasTranslateX = 0; canvasTranslateY = 0;
                 wrapper.style.transition = 'transform 0.2s cubic-bezier(0.2,0,0,1)';
                 _applyCanvasTransform(wrapper);
                 setTimeout(() => { wrapper.style.transition = 'none'; }, 220);
@@ -2606,40 +2469,30 @@ function initCanvasGestures() {
             const ex    = e.changedTouches[0].clientX;
             const ey    = e.changedTouches[0].clientY;
             const moved = Math.hypot(ex - tapStartX, ey - tapStartY);
-
             if (dt >= 300 || moved >= 18) return;
 
-            const now          = Date.now();
-            const dtDoubleTap  = now - _canvasLastTapTime;
-            const doubleMoved  = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
+            const now = Date.now();
+            const dtDT = now - _canvasLastTapTime;
+            const dmDT = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
 
-            if (dtDoubleTap < 320 && doubleMoved < 40) {
-                clearTimeout(_navTimer);
-                _navTimer = null;
-                _canvasLastTapTime = 0;
-
+            if (dtDT < 320 && dmDT < 40) {
+                clearTimeout(_navTimer); _navTimer = null; _canvasLastTapTime = 0;
                 if (currentCanvasScale > 1.01) {
                     wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
-                    currentCanvasScale = 1.0;
-                    canvasTranslateX   = 0;
-                    canvasTranslateY   = 0;
+                    currentCanvasScale = 1.0; canvasTranslateX = 0; canvasTranslateY = 0;
                     _applyCanvasTransform(wrapper);
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 } else {
                     const fc = screenToContent(ex, ey);
                     wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
-                    zoomToContentPoint(2.5, fc.cx, fc.cy,
-                        canvasTranslateX, canvasTranslateY, currentCanvasScale);
+                    zoomToContentPoint(2.5, fc.cx, fc.cy, canvasTranslateX, canvasTranslateY, currentCanvasScale);
                     _applyCanvasTransform(wrapper);
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 }
             } else {
-                _canvasLastTapTime = now;
-                _canvasLastTapX    = ex;
-                _canvasLastTapY    = ey;
-
+                _canvasLastTapTime = now; _canvasLastTapX = ex; _canvasLastTapY = ey;
                 if (currentCanvasScale <= 1.01) {
-                    const sw      = window.innerWidth;
+                    const sw = window.innerWidth;
                     const isLeft  = ex < sw * 0.30;
                     const isRight = ex > sw * 0.70;
                     if (isLeft || isRight) {
