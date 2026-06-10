@@ -33,6 +33,7 @@ let currentPdfDoc = null;
 let currentCanvasPage = 1;
 let currentCanvasScale = 1.0;
 let isRenderingCanvas = false;
+window.defaultCanvasScale = parseFloat(localStorage.getItem('default_canvas_scale')) || 1.0;
 
 // Variabel untuk gesture Canvas (upgrade v25: pinch + pan + tap)
 let canvasTouchStartScale = 1.0;
@@ -2207,7 +2208,7 @@ async function renderCanvasPage(pageNum) {
 
         // Pastikan wrapper kembali ke posisi tengah (transform dikelola _resetCanvasTransform)
         wrapper.style.transition = 'none';
-        wrapper.style.transform  = `translate(0px,0px) scale(1)`;
+        wrapper.style.transform  = `translate(0px,0px) scale(${window.defaultCanvasScale})`;
 
         // --- RENDER STABILO: set ukuran layer & gambar highlight untuk halaman ini ---
         const hlLayer = document.getElementById('canvas-highlight-layer');
@@ -2310,14 +2311,51 @@ window.prevCanvasPage = function() {
 };
 
 function _resetCanvasTransform() {
-    currentCanvasScale = 1.0;
+    currentCanvasScale = window.defaultCanvasScale;
     canvasTranslateX   = 0;
     canvasTranslateY   = 0;
     canvasIsPinching   = false;
     const w = document.getElementById('canvas-wrapper');
-    if (w) { w.style.transition = 'none'; w.style.transform = 'translate(0px,0px) scale(1)'; }
+    if (w) { w.style.transition = 'none'; w.style.transform = `translate(0px,0px) scale(${currentCanvasScale})`; }
     // canvas-prev/next kini absolute di dalam wrapper — otomatis ikut reset bersama wrapper
 }
+
+window.toggleZoomSlider = function() {
+    const container = document.getElementById('canvas-zoom-slider-container');
+    if (!container) return;
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        const sliderEl = document.getElementById('canvas-default-zoom');
+        const valEl    = document.getElementById('canvas-zoom-val');
+        if (sliderEl) sliderEl.value = window.defaultCanvasScale;
+        if (valEl)    valEl.textContent = window.defaultCanvasScale.toFixed(1) + 'x';
+        requestAnimationFrame(() => { container.classList.remove('opacity-0', 'translate-y-4'); });
+    } else {
+        container.classList.add('opacity-0', 'translate-y-4');
+        setTimeout(() => container.classList.add('hidden'), 300);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const zoomSlider = document.getElementById('canvas-default-zoom');
+    if (zoomSlider) {
+        zoomSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            const valEl = document.getElementById('canvas-zoom-val');
+            if (valEl) valEl.textContent = val.toFixed(1) + 'x';
+            window.defaultCanvasScale = val;
+            localStorage.setItem('default_canvas_scale', val);
+
+            // Terapkan langsung ke halaman aktif
+            currentCanvasScale = val;
+            const wrapper = document.getElementById('canvas-wrapper');
+            if (wrapper) {
+                if (typeof _applyCanvasTransform === 'function') _applyCanvasTransform(wrapper);
+                else wrapper.style.transform = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
+            }
+        });
+    }
+});
 
 window.toggleJumpBar = function() {
     const bar = document.getElementById('canvas-jump-bar');
@@ -2462,7 +2500,7 @@ function initCanvasGestures() {
             tapStartY    = e.touches[0].clientY;
             tapStartTime = Date.now();
 
-            if (currentCanvasScale <= 1.01) {
+            if (currentCanvasScale <= window.defaultCanvasScale + 0.02) {
                 // Mode swipe halaman — wrapper akan digeser langsung (canvas-prev/next absolute ikut)
                 isSwipingPage = true;
                 swipeStartX   = e.touches[0].clientX;
@@ -2494,10 +2532,10 @@ function initCanvasGestures() {
                 e.touches[0].clientY - e.touches[1].clientY
             );
             const rawScale = pinchStartScale * (dist / pinchStartDist);
-            const newScale = Math.max(1.0, Math.min(5.0, rawScale));
+            const newScale = Math.max(window.defaultCanvasScale, Math.min(5.0, rawScale));
 
-            if (newScale <= 1.0) {
-                currentCanvasScale = 1.0;
+            if (newScale <= window.defaultCanvasScale) {
+                currentCanvasScale = window.defaultCanvasScale;
                 canvasTranslateX   = 0;
                 canvasTranslateY   = 0;
             } else {
@@ -2539,7 +2577,7 @@ function initCanvasGestures() {
         if (e.touches.length === 1 && isPinching) {
             isPinching = false;
             isSwipingPage = false;
-            if (currentCanvasScale > 1.01) {
+            if (currentCanvasScale > window.defaultCanvasScale + 0.02) {
                 isPanning = true;
                 panStartX = e.touches[0].clientX - canvasTranslateX;
                 panStartY = e.touches[0].clientY - canvasTranslateY;
@@ -2629,9 +2667,9 @@ function initCanvasGestures() {
                 // Jika absDX < 15 (tap), jatuh ke logika tap di bawah
             }
 
-            // Snap balik ke scale 1 jika terlalu kecil
-            if (currentCanvasScale <= 1.01) {
-                currentCanvasScale = 1.0;
+            // Snap balik ke scale default jika terlalu kecil
+            if (currentCanvasScale <= window.defaultCanvasScale + 0.02) {
+                currentCanvasScale = window.defaultCanvasScale;
                 canvasTranslateX   = 0;
                 canvasTranslateY   = 0;
                 wrapper.style.transition = 'transform 0.2s cubic-bezier(0.2,0,0,1)';
@@ -2659,10 +2697,10 @@ function initCanvasGestures() {
                 _navTimer = null;
                 _canvasLastTapTime = 0; // reset agar tidak triple-tap
 
-                if (currentCanvasScale > 1.01) {
-                    // Zoom OUT ke 1× dengan animasi
+                if (currentCanvasScale > window.defaultCanvasScale + 0.02) {
+                    // Zoom OUT ke default dengan animasi
                     wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
-                    currentCanvasScale = 1.0;
+                    currentCanvasScale = window.defaultCanvasScale;
                     canvasTranslateX   = 0;
                     canvasTranslateY   = 0;
                     _applyCanvasTransform(wrapper);
@@ -2682,9 +2720,9 @@ function initCanvasGestures() {
                 _canvasLastTapX    = ex;
                 _canvasLastTapY    = ey;
 
-                // Navigasi halaman hanya saat scale = 1
+                // Navigasi halaman hanya saat scale = default
                 // Ditunda 320ms agar double-tap bisa membatalkannya
-                if (currentCanvasScale <= 1.01) {
+                if (currentCanvasScale <= window.defaultCanvasScale + 0.02) {
                     const sw      = window.innerWidth;
                     const isLeft  = ex < sw * 0.30;
                     const isRight = ex > sw * 0.70;
@@ -2693,7 +2731,7 @@ function initCanvasGestures() {
                         _navTimer = setTimeout(() => {
                             _navTimer = null;
                             // Cek ulang: pastikan belum di-zoom oleh double-tap yang datang
-                            if (currentCanvasScale <= 1.01) {
+                            if (currentCanvasScale <= window.defaultCanvasScale + 0.02) {
                                 if (isLeft)  window.prevCanvasPage();
                                 if (isRight) window.nextCanvasPage();
                             }
