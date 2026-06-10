@@ -398,6 +398,14 @@
         <div id="canvas-page-indicator-bar" class="hidden bg-m3-surfaceVariant/80 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2" style="display:none !important">
             <!-- This element is kept for backward compat, logic moved to canvas-page-controller -->
         </div>
+        <!-- Canvas Default Zoom Slider (floating, muncul dari tombol di controller) -->
+        <div id="canvas-zoom-slider-container" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 bg-m3-surfaceVariant/95 backdrop-blur-md px-4 py-2.5 rounded-full shadow-lg z-50 flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-4">
+            <i data-lucide="zoom-out" class="w-4 h-4 text-m3-onSurfaceVariant opacity-70"></i>
+            <input type="range" id="canvas-default-zoom" min="0.5" max="3.0" step="0.1" value="1.0" class="w-32 h-1.5 bg-m3-onSurfaceVariant/30 rounded-lg appearance-none cursor-pointer accent-m3-primary outline-none">
+            <i data-lucide="zoom-in" class="w-4 h-4 text-m3-onSurfaceVariant opacity-70"></i>
+            <span id="canvas-zoom-val" class="text-xs font-bold text-m3-primary min-w-[36px] text-right">1.0x</span>
+        </div>
+
         <!-- Canvas Page Controller: prev/next + nomor halaman -->
         <div id="canvas-page-controller" class="hidden bg-m3-surfaceVariant/90 px-3 py-1.5 shrink-0 z-40 flex items-center gap-2">
             <button onclick="window.prevCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Sebelumnya">
@@ -408,6 +416,9 @@
                 <span class="opacity-40">/</span>
                 <span id="canvas-page-total">1</span>
             </div>
+            <button onclick="window.toggleZoomSlider()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-onSurfaceVariant btn-morph hover:bg-m3-surface transition-colors shrink-0" title="Atur Default Zoom">
+                <i data-lucide="search" class="w-4 h-4"></i>
+            </button>
             <button onclick="window.nextCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Berikutnya">
                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
             </button>
