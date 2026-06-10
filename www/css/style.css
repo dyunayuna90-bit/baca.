@@ -23,15 +23,29 @@
 .textLayer br {
     color: transparent !important;
     position: absolute;
-    white-space: pre;
+    white-space: pre !important;
     cursor: text;
     transform-origin: 0% 0%;
-    /* Pastikan tidak ada background yang menghalangi canvas di bawah */
+    /* FIX AKURASI: Reset metrik font agar presisi menempel pada ukuran PDF asli */
+    font-family: sans-serif !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    /* Hilangkan border/background bawaan */
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    line-height: 1;
+}
+
+/* CSS Khusus Kotak Highlight di Canvas */
+.canvas-annot-hl {
+    mix-blend-mode: multiply;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+.dark .canvas-annot-hl {
+    mix-blend-mode: screen;
 }
 
 /* Highlight biru tegas saat user memblok teks pada TextLayer */
