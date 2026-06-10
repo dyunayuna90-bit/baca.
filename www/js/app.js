@@ -2104,7 +2104,6 @@ async function renderCanvasPage(pageNum) {
 
     const canvas  = document.getElementById('pdf-canvas');
     const wrapper = document.getElementById('canvas-wrapper');
-    const slider  = document.getElementById('canvas-slider');
 
     try {
         const vpEl = document.getElementById('canvas-zoom-viewport');
@@ -2152,11 +2151,9 @@ async function renderCanvasPage(pageNum) {
             if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
         }
 
-        // Reset slider ke posisi tengah (tanpa animasi) — aman karena canvas sudah berisi gambar
-        if (slider) {
-            slider.classList.remove('is-snapping');
-            slider.style.transform = 'translateX(-33.3333%)';
-        }
+        // Pastikan wrapper kembali ke posisi tengah (transform dikelola _resetCanvasTransform)
+        wrapper.style.transition = 'none';
+        wrapper.style.transform  = `translate(0px,0px) scale(1)`;
 
         const lbl = document.getElementById('canvas-page-num');
         if (lbl) lbl.textContent = pageNum;
@@ -2172,54 +2169,65 @@ async function renderCanvasPage(pageNum) {
         isRenderingCanvas = false;
     }
 
-    // [FIX RACE CONDITION] Pre-render BERURUTAN (next dulu, baru prev) setelah isRenderingCanvas = false.
-    // Satu-satu agar worker PDF.js tidak kelebihan beban.
-    _preRenderAdjacentPages(pageNum, myToken);
+    // [PRE-RENDER BERURUTAN] Jalankan SETELAH isRenderingCanvas = false.
+    // next dulu (prioritas maju), baru prev — satu-satu agar worker PDF.js tidak crash.
+    await renderCanvasBuffer(pageNum + 1, 'canvas-next', myToken);
+    await renderCanvasBuffer(pageNum - 1, 'canvas-prev', myToken);
 }
 
-// [FIX RACE CONDITION] Pre-render berurutan: next (prioritas) → prev
-// Menerima token: jika token sudah kadaluarsa (ada request baru), berhenti segera.
-async function _preRenderAdjacentPages(pageNum, token) {
-    if (!currentPdfDoc) return;
-    const vpEl = document.getElementById('canvas-zoom-viewport');
-    if (!vpEl) return;
+// [PRE-RENDER BUFFER] Fungsi terisolasi untuk merender satu halaman ke canvas buffer.
+// Menggunakan scale yang identik dengan render utama (fit-to-viewport-width),
+// BUKAN currentCanvasScale — agar dimensi fisik canvas selalu benar dan tidak 0×0.
+async function renderCanvasBuffer(pageNum, canvasId, token) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !currentPdfDoc) return;
 
-    const cW          = vpEl.clientWidth;
-    const pixelRatio  = window.devicePixelRatio || 1;
-    const renderScale = pixelRatio * 2.5;
+    // Out of bounds: kosongkan canvas agar tidak menampilkan sisa halaman lama
+    if (pageNum < 1 || pageNum > currentPdfDoc.numPages) {
+        canvas.width = 0; canvas.height = 0;
+        canvas.style.width = '0px'; canvas.style.height = '0px';
+        return;
+    }
 
-    const _doRender = async (targetId, targetPageNum) => {
-        // [FIX RACE CONDITION] Batalkan jika ada halaman lain yang sudah minta render
-        if (token !== _renderToken) return;
-        const targetCanvas = document.getElementById(targetId);
-        if (!targetCanvas || targetPageNum < 1 || targetPageNum > currentPdfDoc.numPages) {
-            if (targetCanvas) { targetCanvas.width = 1; targetCanvas.height = 1; }
-            return;
-        }
-        try {
-            const pg  = await currentPdfDoc.getPage(targetPageNum);
-            if (token !== _renderToken) return; // cek lagi setelah async getPage
-            const nat = pg.getViewport({ scale: 1 });
-            const fit = pg.getViewport({ scale: cW / nat.width });
-            const dW  = Math.floor(fit.width);
-            const dH  = Math.floor(fit.height);
-            targetCanvas.width        = dW * renderScale;
-            targetCanvas.height       = dH * renderScale;
-            targetCanvas.style.width  = dW + 'px';
-            targetCanvas.style.height = dH + 'px';
-            const tCtx = targetCanvas.getContext('2d');
-            tCtx.imageSmoothingEnabled = false;
-            await pg.render({
-                canvasContext: tCtx,
-                viewport: fit,
-                transform: [renderScale, 0, 0, renderScale, 0, 0]
-            }).promise;
-        } catch(e) { /* abaikan error pre-render — tidak kritis */ }
-    };
+    // Batalkan jika sudah ada request render utama yang lebih baru
+    if (token !== _renderToken) return;
 
-    // [FIX RACE CONDITION] BERURUTAN: next dulu (user umumnya maju), baru prev
-    await _doRender('canvas-next', pageNum + 1);
-    await _doRender('canvas-prev', pageNum - 1);
+    try {
+        const vpEl = document.getElementById('canvas-zoom-viewport');
+        if (!vpEl) return;
+
+        const page = await currentPdfDoc.getPage(pageNum);
+        if (token !== _renderToken) return; // cek ulang setelah async
+
+        // [KUNCI DIMENSI] Scale identik dengan render utama: fit lebar viewport
+        const cW          = vpEl.clientWidth;
+        const pixelRatio  = window.devicePixelRatio || 1;
+        const renderScale = pixelRatio * 2.5;
+
+        const nat = page.getViewport({ scale: 1 });
+        const fit = page.getViewport({ scale: cW / nat.width });
+        const dW  = Math.floor(fit.width);
+        const dH  = Math.floor(fit.height);
+
+        // [KUNCI DIMENSI] Set dimensi fisik SEBELUM render agar canvas tidak 0×0 saat di-swipe
+        canvas.width        = dW * renderScale;
+        canvas.height       = dH * renderScale;
+        canvas.style.width  = dW + 'px';
+        canvas.style.height = dH + 'px';
+
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        await page.render({
+            canvasContext: ctx,
+            viewport: fit,
+            transform: [renderScale, 0, 0, renderScale, 0, 0]
+        }).promise;
+
+    } catch(err) {
+        console.warn(`[buffer] render gagal halaman ${pageNum}:`, err);
+    }
 }
 
 window.nextCanvasPage = function() {
@@ -2242,9 +2250,7 @@ function _resetCanvasTransform() {
     canvasIsPinching   = false;
     const w = document.getElementById('canvas-wrapper');
     if (w) { w.style.transition = 'none'; w.style.transform = 'translate(0px,0px) scale(1)'; }
-    // Reset slider ke posisi tengah
-    const slider = document.getElementById('canvas-slider');
-    if (slider) { slider.classList.remove('is-snapping'); slider.style.transform = 'translateX(-33.3333%)'; }
+    // canvas-prev/next kini absolute di dalam wrapper — otomatis ikut reset bersama wrapper
 }
 
 window.toggleJumpBar = function() {
@@ -2383,11 +2389,11 @@ function initCanvasGestures() {
             tapStartTime = Date.now();
 
             if (currentCanvasScale <= 1.01) {
-                // Mode swipe halaman — aktifkan, matikan transisi slider
+                // Mode swipe halaman — wrapper akan digeser langsung (canvas-prev/next absolute ikut)
                 isSwipingPage = true;
                 swipeStartX   = e.touches[0].clientX;
-                const slider  = document.getElementById('canvas-slider');
-                if (slider) { slider.classList.remove('is-snapping'); }
+                // Pastikan tidak ada transisi saat dragging
+                wrapper.style.transition = 'none';
                 isPanning = false;
             } else {
                 // Mode pan konten (sudah zoom)
@@ -2426,14 +2432,9 @@ function initCanvasGestures() {
             _applyCanvasTransform(wrapper);
 
         } else if (isSwipingPage && e.touches.length === 1) {
-            // Geser slider mengikuti jari (feedback visual langsung)
+            // [LAYOUT ABSOLUT] Geser wrapper langsung — canvas-prev/next (absolute) ikut otomatis
             const deltaX = e.touches[0].clientX - swipeStartX;
-            const slider = document.getElementById('canvas-slider');
-            if (slider) {
-                // Posisi tengah = -33.3333%, geser relatif terhadap itu
-                const pct = -33.3333 + (deltaX / window.innerWidth) * 100;
-                slider.style.transform = `translateX(${pct}%)`;
-            }
+            wrapper.style.transform = `translate(${deltaX}px, 0px) scale(1)`;
 
         } else if (e.touches.length === 1 && isPanning) {
             e.preventDefault();
@@ -2446,13 +2447,11 @@ function initCanvasGestures() {
     // Timer untuk menunda navigasi halaman — dibatalkan jika tap kedua datang
     let _navTimer = null;
 
-    // Helper: snap slider kembali ke tengah dengan animasi
+    // Helper: snap wrapper kembali ke posisi tengah dengan animasi singkat
     function _snapSliderToCenter() {
-        const slider = document.getElementById('canvas-slider');
-        if (!slider) return;
-        slider.classList.add('is-snapping');
-        slider.style.transform = 'translateX(-33.3333%)';
-        setTimeout(() => { slider.classList.remove('is-snapping'); }, 300);
+        wrapper.style.transition = 'transform 0.28s cubic-bezier(0.2, 0, 0, 1)';
+        wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
+        setTimeout(() => { wrapper.style.transition = 'none'; }, 300);
     }
 
     // ── touchend ──
@@ -2478,7 +2477,7 @@ function initCanvasGestures() {
                 isSwipingPage = false;
                 const deltaX = e.changedTouches[0].clientX - swipeStartX;
                 const absDX  = Math.abs(deltaX);
-                const slider = document.getElementById('canvas-slider');
+                // (slider variable dihapus — wrapper digeser langsung)
 
                 if (absDX < 15) {
                     // TAP — snap kembali ke tengah, teruskan ke logika tap di bawah
@@ -2489,7 +2488,7 @@ function initCanvasGestures() {
                     // SWIPE KIRI → halaman berikutnya
                     if (currentPdfDoc && currentCanvasPage < currentPdfDoc.numPages) {
                         // [FIX FLICKER] Salin piksel canvas-next ke pdf-canvas SEBELUM reset posisi.
-                        // Karena canvas utama sudah menampilkan gambar tujuan, reset slider ke tengah
+                        // Karena canvas utama sudah menampilkan gambar tujuan, reset wrapper ke tengah
                         // tidak menimbulkan perubahan visual apapun (zero-flicker).
                         const cnNext = document.getElementById('canvas-next');
                         const cnCurr = document.getElementById('pdf-canvas');
@@ -2504,11 +2503,9 @@ function initCanvasGestures() {
                             // [FIX FLICKER] Set flag agar renderCanvasPage melewati render ulang
                             _canvasAlreadyCopied = true;
                         }
-                        // [FIX FLICKER] Reset slider INSTAN (tanpa transisi) — visual sudah siap
-                        if (slider) {
-                            slider.classList.remove('is-snapping');
-                            slider.style.transform = 'translateX(-33.3333%)';
-                        }
+                        // [FIX FLICKER] Reset wrapper INSTAN (tanpa transisi) — visual sudah siap
+                        wrapper.style.transition = 'none';
+                        wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
                         currentCanvasPage++;
                         _resetCanvasTransform();
                         renderCanvasPage(currentCanvasPage);
@@ -2534,11 +2531,9 @@ function initCanvasGestures() {
                             // [FIX FLICKER] Set flag agar renderCanvasPage melewati render ulang
                             _canvasAlreadyCopied = true;
                         }
-                        // [FIX FLICKER] Reset slider INSTAN (tanpa transisi) — visual sudah siap
-                        if (slider) {
-                            slider.classList.remove('is-snapping');
-                            slider.style.transform = 'translateX(-33.3333%)';
-                        }
+                        // [FIX FLICKER] Reset wrapper INSTAN (tanpa transisi) — visual sudah siap
+                        wrapper.style.transition = 'none';
+                        wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
                         currentCanvasPage--;
                         _resetCanvasTransform();
                         renderCanvasPage(currentCanvasPage);
