@@ -436,6 +436,7 @@ window.addEventListener('popstate', (e) => {
         if (archiveAbortController) archiveAbortController.abort();
         return;
     }
+    else if (document.getElementById('canvas-zoom-slider-container') && !document.getElementById('canvas-zoom-slider-container').classList.contains('hidden')) { _closeZoomSlider(true); }
     else if (!document.getElementById('raw-backup-modal').classList.contains('opacity-0')) { _closeModalAction('raw-backup-modal', 'raw-backup-sheet', true, true); }
     else if (!document.getElementById('raw-restore-modal').classList.contains('opacity-0')) { _closeModalAction('raw-restore-modal', 'raw-restore-sheet', true, true); }
     else if (!document.getElementById('custom-dialog').classList.contains('opacity-0')) { window.closeDialog(true); }
@@ -2140,7 +2141,7 @@ async function renderCanvasPage(pageNum) {
         if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
 
         const pixelRatio  = window.devicePixelRatio || 1;
-        const renderScale = pixelRatio * 2.5;
+        const renderScale = pixelRatio * 3.0;
         const cW = vpEl.clientWidth;
         const cH = vpEl.clientHeight;
 
@@ -2265,7 +2266,7 @@ async function renderCanvasBuffer(pageNum, canvasId, token) {
         // [KUNCI DIMENSI] Scale identik dengan render utama: fit lebar viewport
         const cW          = vpEl.clientWidth;
         const pixelRatio  = window.devicePixelRatio || 1;
-        const renderScale = pixelRatio * 2.5;
+        const renderScale = pixelRatio * 3.0;
 
         const nat = page.getViewport({ scale: 1 });
         const fit = page.getViewport({ scale: cW / nat.width });
@@ -2330,9 +2331,38 @@ window.toggleZoomSlider = function() {
         if (sliderEl) sliderEl.value = window.defaultCanvasScale;
         if (valEl)    valEl.textContent = window.defaultCanvasScale.toFixed(1) + 'x';
         requestAnimationFrame(() => { container.classList.remove('opacity-0', 'translate-y-4'); });
+        pushAppHistory('zoom-slider');
     } else {
-        container.classList.add('opacity-0', 'translate-y-4');
-        setTimeout(() => container.classList.add('hidden'), 300);
+        _closeZoomSlider();
+    }
+};
+
+function _closeZoomSlider(fromHistory = false) {
+    const container = document.getElementById('canvas-zoom-slider-container');
+    if (!container || container.classList.contains('hidden')) return;
+    container.classList.add('opacity-0', 'translate-y-4');
+    setTimeout(() => container.classList.add('hidden'), 300);
+    if (!fromHistory && window.location.hash === '#zoom-slider') history.back();
+}
+
+// Zoom step: +0.1 atau -0.1 per ketuk
+window.stepZoom = function(delta) {
+    const sliderEl = document.getElementById('canvas-default-zoom');
+    const valEl    = document.getElementById('canvas-zoom-val');
+    const min = 0.5, max = 3.0;
+    let val = Math.round((window.defaultCanvasScale + delta) * 10) / 10;
+    val = Math.max(min, Math.min(max, val));
+    window.defaultCanvasScale = val;
+    localStorage.setItem('default_canvas_scale', val);
+    if (sliderEl) sliderEl.value = val;
+    if (valEl)    valEl.textContent = val.toFixed(1) + 'x';
+    currentCanvasScale = val;
+    canvasTranslateX   = 0;
+    canvasTranslateY   = 0;
+    const wrapper = document.getElementById('canvas-wrapper');
+    if (wrapper) {
+        if (typeof _applyCanvasTransform === 'function') _applyCanvasTransform(wrapper);
+        else wrapper.style.transform = `translate(0px,0px) scale(${currentCanvasScale})`;
     }
 };
 
@@ -2348,13 +2378,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Terapkan langsung ke halaman aktif
             currentCanvasScale = val;
+            canvasTranslateX   = 0;
+            canvasTranslateY   = 0;
             const wrapper = document.getElementById('canvas-wrapper');
             if (wrapper) {
                 if (typeof _applyCanvasTransform === 'function') _applyCanvasTransform(wrapper);
-                else wrapper.style.transform = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
+                else wrapper.style.transform = `translate(0px,0px) scale(${currentCanvasScale})`;
             }
         });
     }
+
+    // Tutup zoom capsule saat tap di luar (overlay dismiss)
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('canvas-zoom-slider-container');
+        if (!container || container.classList.contains('hidden')) return;
+        if (!container.contains(e.target)) {
+            _closeZoomSlider();
+        }
+    });
 });
 
 window.toggleJumpBar = function() {
