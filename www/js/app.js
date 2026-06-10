@@ -2188,6 +2188,7 @@ async function renderCanvasPage(pageNum) {
             // Sesuaikan ukuran layer agar identik dengan canvas yang ditampilkan
             textLayerDiv.style.width  = dW + 'px';
             textLayerDiv.style.height = dH + 'px';
+            textLayerDiv.style.setProperty('--scale-factor', '1'); // FIX AKURASI PDF.JS
             try {
                 const textContent = await page.getTextContent();
                 if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
@@ -2427,6 +2428,14 @@ function initCanvasGestures() {
 
     // ── touchstart ──
     newVP.addEventListener('touchstart', (e) => {
+        // FIX BUG DRAG SELECTION: Matikan gesture aplikasi kalau ada teks yang lagi diblok
+        if (window.getSelection().toString().trim().length > 0) {
+            isPinching    = false;
+            isPanning     = false;
+            isSwipingPage = false;
+            return;
+        }
+
         if (e.touches.length === 2) {
             // Masuk mode pinch — batalkan semua state pan/tap & swipe halaman
             isPinching    = true;
@@ -2472,6 +2481,11 @@ function initCanvasGestures() {
 
     // ── touchmove ──
     newVP.addEventListener('touchmove', (e) => {
+        // FIX BUG DRAG SELECTION: Cegah halaman ikutan bergeser saat user menarik gagang seleksi
+        if (window.getSelection().toString().trim().length > 0) {
+            return;
+        }
+
         if (isPinching && e.touches.length === 2) {
             e.preventDefault();
 
