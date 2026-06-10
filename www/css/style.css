@@ -26,12 +26,9 @@
     white-space: pre !important;
     cursor: text;
     transform-origin: 0% 0%;
-    /* FIX AKURASI: Reset metrik font agar presisi menempel pada ukuran PDF asli */
-    font-family: sans-serif !important;
     line-height: 1 !important;
-    letter-spacing: normal !important;
-    word-spacing: normal !important;
-    /* Hilangkan border/background bawaan */
+    /* HAPUS semua override font — biarkan PDF.js pakai embedded font metrics native
+       agar lebar karakter presisi 100% sama dengan gambar canvas di bawahnya */
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
