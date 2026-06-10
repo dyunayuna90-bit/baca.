@@ -142,26 +142,37 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
 }
 
 /* Halaman PDF Canvas murni */
-#pdf-canvas {
+#pdf-canvas, #canvas-prev, #canvas-next {
     background-color: #FFFFFF;
     transition: filter 0.3s ease;
-    width: 100% !important; /* Paksa width penuh, height menyesuaikan aspek rasio PDF */
-    height: auto !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Shadow halus untuk light mode */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: none !important;
     outline: none !important;
+    display: block;
+}
+
+/* canvas-slider: 3 canvas berjajar, translateX dipakai untuk swipe */
+#canvas-slider {
+    transition: none; /* default: no transition — dikontrol JS */
+}
+#canvas-slider.is-snapping {
+    transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Efek Dark Mode murni untuk Mode Canvas */
-.dark #pdf-canvas {
+.dark #pdf-canvas, .dark #canvas-prev, .dark #canvas-next {
     filter: invert(0.92) hue-rotate(180deg);
-    box-shadow: none !important; /* Hapus border/glow putih di dark mode */
+    box-shadow: none !important;
     border: none !important;
 }
 
 /* AMOLED Mode khusus untuk Canvas agar lebih pekat */
 .dark[data-theme="amoled"] #pdf-canvas,
-html[data-amoled="true"] .dark #pdf-canvas {
+.dark[data-theme="amoled"] #canvas-prev,
+.dark[data-theme="amoled"] #canvas-next,
+html[data-amoled="true"] .dark #pdf-canvas,
+html[data-amoled="true"] .dark #canvas-prev,
+html[data-amoled="true"] .dark #canvas-next {
     filter: invert(1) hue-rotate(180deg) contrast(1.1);
 }
 
@@ -236,51 +247,3 @@ body.hide-book-titles .book-badge {
 
 /* Archive download overlay spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── PDF.js TextLayer untuk Canvas Mode ── */
-.textLayer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    overflow: hidden;
-    line-height: 1;
-    z-index: 2;
-    /* pointer-events: auto agar long-press / text selection bisa bekerja */
-    pointer-events: auto;
-    /* user-select: text agar teks bisa diseleksi browser natively */
-    -webkit-user-select: text;
-    user-select: text;
-    /* touch-action: none pada wrapper dioverride di sini agar long-press diteruskan OS */
-    touch-action: auto;
-}
-
-.textLayer span,
-.textLayer br {
-    color: transparent;
-    position: absolute;
-    white-space: pre;
-    cursor: text;
-    transform-origin: 0% 0%;
-    /* Penting: biarkan OS handle long-press untuk dictionary lookup / copy */
-    -webkit-user-select: text;
-    user-select: text;
-    touch-action: auto;
-}
-
-.textLayer ::selection {
-    background: rgba(103, 80, 164, 0.35);
-    color: transparent;
-}
-
-/* canvas-wrapper: position relative agar textLayer tertempel,
-   touch-action manipulation agar pinch-zoom jalan tapi long-press teks tidak dicegat */
-#canvas-wrapper {
-    position: relative;
-    /* 'manipulation' = tap + zoom, tapi TIDAK mencegah long-press selection */
-    touch-action: manipulation;
-}
-
-/* canvas-zoom-viewport jangan block touch events dari textLayer */
-#canvas-zoom-viewport {
-    touch-action: pan-y;
-}
