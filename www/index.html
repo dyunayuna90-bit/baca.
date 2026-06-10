@@ -262,13 +262,14 @@
             <div id="canvas-container" class="hidden absolute inset-0 overflow-hidden w-full h-full bg-m3-bg select-none" style="padding-top: 56px; padding-bottom: 0px;">
                 <div id="canvas-zoom-viewport" class="w-full h-full overflow-hidden flex items-center justify-center">
                     <!-- Wrapper: di-center oleh flex parent, transform-origin center agar zoom tidak loncat -->
-                    <div id="canvas-wrapper" class="shadow-lg bg-white flex-shrink-0" style="transform-origin: center center;">
-                        <!-- canvas-slider: menampung 3 canvas berjajar untuk swipe seamless -->
-                        <div id="canvas-slider" style="display:flex; flex-direction:row; width:300%; will-change:transform;">
-                            <canvas id="canvas-prev"    class="block flex-shrink-0" style="width:33.3333%; height:auto;"></canvas>
-                            <canvas id="pdf-canvas"     class="block flex-shrink-0" style="width:33.3333%; height:auto;"></canvas>
-                            <canvas id="canvas-next"    class="block flex-shrink-0" style="width:33.3333%; height:auto;"></canvas>
-                        </div>
+                    <div id="canvas-wrapper" class="shadow-lg bg-white flex-shrink-0" style="transform-origin: center center; position: relative; overflow: visible;">
+                        <!-- canvas-slider: absolute positioning agar dimensi canvas TIDAK bergantung pada lebar wrapper -->
+                        <!-- canvas-prev: diletakkan persis 1 lebar (100vw) di kiri canvas utama -->
+                        <canvas id="canvas-prev" class="block" style="position:absolute; top:0; right:100%; display:block;"></canvas>
+                        <!-- canvas utama: menentukan ukuran wrapper, selalu di posisi normal -->
+                        <canvas id="pdf-canvas"  class="block" style="display:block;"></canvas>
+                        <!-- canvas-next: diletakkan persis 1 lebar (100%) di kanan canvas utama -->
+                        <canvas id="canvas-next" class="block" style="position:absolute; top:0; left:100%; display:block;"></canvas>
                     </div>
                 </div>
                 
