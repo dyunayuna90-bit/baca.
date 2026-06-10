@@ -267,9 +267,11 @@
                         <!-- canvas-prev: diletakkan persis 1 lebar (100vw) di kiri canvas utama -->
                         <canvas id="canvas-prev" class="block" style="position:absolute; top:0; right:100%; display:block;"></canvas>
                         <!-- canvas utama: menentukan ukuran wrapper, selalu di posisi normal -->
-                        <canvas id="pdf-canvas"  class="block" style="display:block;"></canvas>
+                        <canvas id="pdf-canvas"  class="block" style="display:block; position:relative; z-index:1;"></canvas>
                         <!-- canvas-next: diletakkan persis 1 lebar (100%) di kanan canvas utama -->
                         <canvas id="canvas-next" class="block" style="position:absolute; top:0; left:100%; display:block;"></canvas>
+                        <!-- TextLayer transparan PDF.js untuk text selection di Canvas Mode -->
+                        <div id="canvas-text-layer" class="textLayer" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: auto; z-index: 2;"></div>
                     </div>
                 </div>
                 
@@ -308,7 +310,7 @@
                     <!-- Panel Warns Canvas Mode (Dinamis Di-enable/Disable via JS) -->
                     <div id="canvas-warning-info" class="hidden p-4 rounded-3xl bg-red-500/10 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-500/20 flex gap-2.5 items-start">
                         <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
-                        <p id="str-pdf-canvas-warning" class="text-[10px] font-bold leading-relaxed">Fitur tipografi (ukuran font, perataan, dll), AI penjelasan, dan text selection dinonaktifkan pada Mode Canvas.</p>
+                        <p id="str-pdf-canvas-warning" class="text-[10px] font-bold leading-relaxed">Fitur tipografi (ukuran font, perataan, dll) dinonaktifkan pada Mode Canvas. Text selection, AI lookup, dan bookmark tersedia.</p>
                     </div>
 
                     <div id="setting-group-search">
@@ -831,7 +833,7 @@
                         <i data-lucide="layout" class="w-4 h-4 text-m3-primary"></i>
                         <span class="font-bold text-xs text-m3-onSurface" id="str-pdf-mode-btn-canvas">Mode Canvas (Layout Asli)</span>
                     </div>
-                    <p class="text-[10px] text-m3-onSurfaceVariant leading-relaxed opacity-85" id="str-pdf-mode-btn-canvas-desc">Menampilkan halaman asli dokumen seperti cetakan fisik. Mendukung zoom cubit dengan jari, tapi tidak mendukung ubah font, AI, dan text selection.</p>
+                    <p class="text-[10px] text-m3-onSurfaceVariant leading-relaxed opacity-85" id="str-pdf-mode-btn-canvas-desc">Menampilkan halaman asli dokumen seperti cetakan fisik. Mendukung zoom cubit dengan jari dan text selection (AI lookup, copy, bookmark snippet).</p>
                 </button>
             </div>
 
