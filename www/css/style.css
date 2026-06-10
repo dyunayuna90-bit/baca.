@@ -245,7 +245,13 @@ body.hide-book-titles .book-badge {
     overflow: hidden;
     line-height: 1;
     z-index: 2;
+    /* pointer-events: auto agar long-press / text selection bisa bekerja */
     pointer-events: auto;
+    /* user-select: text agar teks bisa diseleksi browser natively */
+    -webkit-user-select: text;
+    user-select: text;
+    /* touch-action: none pada wrapper dioverride di sini agar long-press diteruskan OS */
+    touch-action: auto;
 }
 
 .textLayer span,
@@ -255,6 +261,10 @@ body.hide-book-titles .book-badge {
     white-space: pre;
     cursor: text;
     transform-origin: 0% 0%;
+    /* Penting: biarkan OS handle long-press untuk dictionary lookup / copy */
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: auto;
 }
 
 .textLayer ::selection {
@@ -262,6 +272,15 @@ body.hide-book-titles .book-badge {
     color: transparent;
 }
 
+/* canvas-wrapper: position relative agar textLayer tertempel,
+   touch-action manipulation agar pinch-zoom jalan tapi long-press teks tidak dicegat */
 #canvas-wrapper {
     position: relative;
+    /* 'manipulation' = tap + zoom, tapi TIDAK mencegah long-press selection */
+    touch-action: manipulation;
+}
+
+/* canvas-zoom-viewport jangan block touch events dari textLayer */
+#canvas-zoom-viewport {
+    touch-action: pan-y;
 }
