@@ -2086,69 +2086,73 @@ window.openBook = async function(book) {
 }
 
 // --- ENGINE RENDER CANVAS PDF ---
+
+// [FIX RACE CONDITION] Token unik per-request render. Jika token berubah saat
+// pre-render berjalan, render tersebut dibatalkan agar worker PDF.js tidak bentrok.
+let _renderToken = 0;
+
+// [FIX FLICKER] Flag: true jika canvas-current sudah diisi pixel-copy dari buffer
+// oleh gesture, sehingga render ulang ke pdf-canvas bisa dilewati.
+let _canvasAlreadyCopied = false;
+
 async function renderCanvasPage(pageNum) {
     if (!currentPdfDoc || isRenderingCanvas) return;
     isRenderingCanvas = true;
+
+    // [FIX RACE CONDITION] Naikkan token — pre-render lama (jika ada) akan berhenti sendiri
+    const myToken = ++_renderToken;
 
     const canvas  = document.getElementById('pdf-canvas');
     const wrapper = document.getElementById('canvas-wrapper');
     const slider  = document.getElementById('canvas-slider');
 
     try {
-        const page = await currentPdfDoc.getPage(pageNum);
         const vpEl = document.getElementById('canvas-zoom-viewport');
         if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
 
-        const pixelRatio = window.devicePixelRatio || 1;
-        // 2.5× dpr tanpa cap — tajam di zoom, tidak ada batas buatan
+        const pixelRatio  = window.devicePixelRatio || 1;
         const renderScale = pixelRatio * 2.5;
-
         const cW = vpEl.clientWidth;
         const cH = vpEl.clientHeight;
+
+        // Hitung dimensi dari halaman aktif (diperlukan untuk ukuran wrapper)
+        const page = await currentPdfDoc.getPage(pageNum);
+        if (myToken !== _renderToken) { isRenderingCanvas = false; return; } // dibatalkan
 
         const nat = page.getViewport({ scale: 1 });
         const fit = page.getViewport({ scale: cW / nat.width });
         const dW  = Math.floor(fit.width);
         const dH  = Math.floor(fit.height);
 
-        // Fungsi helper: render satu halaman PDF ke canvas target
-        const _renderToCanvas = async (targetCanvas, targetPage) => {
-            targetCanvas.width        = dW * renderScale;
-            targetCanvas.height       = dH * renderScale;
-            targetCanvas.style.width  = dW + 'px';
-            targetCanvas.style.height = dH + 'px';
-            const tCtx = targetCanvas.getContext('2d');
-            tCtx.imageSmoothingEnabled = false;
-            await targetPage.render({
-                canvasContext: tCtx,
-                viewport: fit,
-                transform: [renderScale, 0, 0, renderScale, 0, 0]
-            }).promise;
-        };
-
-        // Render halaman UTAMA (tengah) ke pdf-canvas
-        canvas.width        = dW * renderScale;
-        canvas.height       = dH * renderScale;
-        canvas.style.width  = dW + 'px';
-        canvas.style.height = dH + 'px';
+        // Selalu sesuaikan ukuran wrapper & metadata (dibutuhkan zoom/pan)
         wrapper.style.width  = dW + 'px';
         wrapper.style.height = dH + 'px';
-
         wrapper._W  = dW;
         wrapper._H  = dH;
         wrapper._cW = cW;
         wrapper._cH = cH;
 
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = false;
+        // [FIX FLICKER] Jika canvas sudah diisi oleh pixel-copy dari gesture swipe,
+        // lewati render PDF.js ke pdf-canvas — gambarnya sudah ada, tidak perlu menggambar ulang.
+        if (_canvasAlreadyCopied) {
+            _canvasAlreadyCopied = false; // reset flag, hanya berlaku sekali
+        } else {
+            // Render normal: gambar halaman ke canvas utama
+            canvas.width        = dW * renderScale;
+            canvas.height       = dH * renderScale;
+            canvas.style.width  = dW + 'px';
+            canvas.style.height = dH + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            await page.render({
+                canvasContext: ctx,
+                viewport: fit,
+                transform: [renderScale, 0, 0, renderScale, 0, 0]
+            }).promise;
+            if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
+        }
 
-        await page.render({
-            canvasContext: ctx,
-            viewport: fit,
-            transform: [renderScale, 0, 0, renderScale, 0, 0]
-        }).promise;
-
-        // Reset slider ke posisi tengah (tanpa animasi)
+        // Reset slider ke posisi tengah (tanpa animasi) — aman karena canvas sudah berisi gambar
         if (slider) {
             slider.classList.remove('is-snapping');
             slider.style.transform = 'translateX(-33.3333%)';
@@ -2168,30 +2172,33 @@ async function renderCanvasPage(pageNum) {
         isRenderingCanvas = false;
     }
 
-    // Pre-render halaman prev & next secara asynchronous (3-page buffer)
-    // Dilakukan SETELAH isRenderingCanvas = false agar tidak memblokir interaksi
-    _preRenderAdjacentPages(pageNum);
+    // [FIX RACE CONDITION] Pre-render BERURUTAN (next dulu, baru prev) setelah isRenderingCanvas = false.
+    // Satu-satu agar worker PDF.js tidak kelebihan beban.
+    _preRenderAdjacentPages(pageNum, myToken);
 }
 
-// Pre-render halaman sebelum & sesudah ke canvas-prev / canvas-next
-async function _preRenderAdjacentPages(pageNum) {
+// [FIX RACE CONDITION] Pre-render berurutan: next (prioritas) → prev
+// Menerima token: jika token sudah kadaluarsa (ada request baru), berhenti segera.
+async function _preRenderAdjacentPages(pageNum, token) {
     if (!currentPdfDoc) return;
     const vpEl = document.getElementById('canvas-zoom-viewport');
     if (!vpEl) return;
 
-    const cW = vpEl.clientWidth;
-    const pixelRatio = window.devicePixelRatio || 1;
+    const cW          = vpEl.clientWidth;
+    const pixelRatio  = window.devicePixelRatio || 1;
     const renderScale = pixelRatio * 2.5;
 
     const _doRender = async (targetId, targetPageNum) => {
+        // [FIX RACE CONDITION] Batalkan jika ada halaman lain yang sudah minta render
+        if (token !== _renderToken) return;
         const targetCanvas = document.getElementById(targetId);
         if (!targetCanvas || targetPageNum < 1 || targetPageNum > currentPdfDoc.numPages) {
-            // Kosongkan canvas yang tidak valid
             if (targetCanvas) { targetCanvas.width = 1; targetCanvas.height = 1; }
             return;
         }
         try {
             const pg  = await currentPdfDoc.getPage(targetPageNum);
+            if (token !== _renderToken) return; // cek lagi setelah async getPage
             const nat = pg.getViewport({ scale: 1 });
             const fit = pg.getViewport({ scale: cW / nat.width });
             const dW  = Math.floor(fit.width);
@@ -2207,14 +2214,12 @@ async function _preRenderAdjacentPages(pageNum) {
                 viewport: fit,
                 transform: [renderScale, 0, 0, renderScale, 0, 0]
             }).promise;
-        } catch(e) { /* ignore render error di pre-render */ }
+        } catch(e) { /* abaikan error pre-render — tidak kritis */ }
     };
 
-    // Jalankan keduanya paralel agar cepat
-    await Promise.all([
-        _doRender('canvas-prev', pageNum - 1),
-        _doRender('canvas-next', pageNum + 1)
-    ]);
+    // [FIX RACE CONDITION] BERURUTAN: next dulu (user umumnya maju), baru prev
+    await _doRender('canvas-next', pageNum + 1);
+    await _doRender('canvas-prev', pageNum - 1);
 }
 
 window.nextCanvasPage = function() {
@@ -2483,21 +2488,30 @@ function initCanvasGestures() {
                 } else if (deltaX < -80) {
                     // SWIPE KIRI → halaman berikutnya
                     if (currentPdfDoc && currentCanvasPage < currentPdfDoc.numPages) {
-                        if (slider) {
-                            slider.classList.add('is-snapping');
-                            // Snap ke canvas-next (geser 1/3 ke kiri dari tengah = -66.6%)
-                            slider.style.transform = 'translateX(-66.6667%)';
-                            setTimeout(() => {
-                                slider.classList.remove('is-snapping');
-                                currentCanvasPage++;
-                                _resetCanvasTransform();
-                                renderCanvasPage(currentCanvasPage);
-                            }, 280);
-                        } else {
-                            currentCanvasPage++;
-                            _resetCanvasTransform();
-                            renderCanvasPage(currentCanvasPage);
+                        // [FIX FLICKER] Salin piksel canvas-next ke pdf-canvas SEBELUM reset posisi.
+                        // Karena canvas utama sudah menampilkan gambar tujuan, reset slider ke tengah
+                        // tidak menimbulkan perubahan visual apapun (zero-flicker).
+                        const cnNext = document.getElementById('canvas-next');
+                        const cnCurr = document.getElementById('pdf-canvas');
+                        if (cnNext && cnNext.width > 1 && cnCurr) {
+                            cnCurr.width        = cnNext.width;
+                            cnCurr.height       = cnNext.height;
+                            cnCurr.style.width  = cnNext.style.width;
+                            cnCurr.style.height = cnNext.style.height;
+                            const ctxCurr = cnCurr.getContext('2d');
+                            ctxCurr.imageSmoothingEnabled = false;
+                            ctxCurr.drawImage(cnNext, 0, 0);
+                            // [FIX FLICKER] Set flag agar renderCanvasPage melewati render ulang
+                            _canvasAlreadyCopied = true;
                         }
+                        // [FIX FLICKER] Reset slider INSTAN (tanpa transisi) — visual sudah siap
+                        if (slider) {
+                            slider.classList.remove('is-snapping');
+                            slider.style.transform = 'translateX(-33.3333%)';
+                        }
+                        currentCanvasPage++;
+                        _resetCanvasTransform();
+                        renderCanvasPage(currentCanvasPage);
                     } else {
                         _snapSliderToCenter();
                     }
@@ -2506,21 +2520,28 @@ function initCanvasGestures() {
                 } else if (deltaX > 80) {
                     // SWIPE KANAN → halaman sebelumnya
                     if (currentPdfDoc && currentCanvasPage > 1) {
-                        if (slider) {
-                            slider.classList.add('is-snapping');
-                            // Snap ke canvas-prev (geser ke kanan = 0%)
-                            slider.style.transform = 'translateX(0%)';
-                            setTimeout(() => {
-                                slider.classList.remove('is-snapping');
-                                currentCanvasPage--;
-                                _resetCanvasTransform();
-                                renderCanvasPage(currentCanvasPage);
-                            }, 280);
-                        } else {
-                            currentCanvasPage--;
-                            _resetCanvasTransform();
-                            renderCanvasPage(currentCanvasPage);
+                        // [FIX FLICKER] Salin piksel canvas-prev ke pdf-canvas SEBELUM reset posisi.
+                        const cnPrev = document.getElementById('canvas-prev');
+                        const cnCurr = document.getElementById('pdf-canvas');
+                        if (cnPrev && cnPrev.width > 1 && cnCurr) {
+                            cnCurr.width        = cnPrev.width;
+                            cnCurr.height       = cnPrev.height;
+                            cnCurr.style.width  = cnPrev.style.width;
+                            cnCurr.style.height = cnPrev.style.height;
+                            const ctxCurr = cnCurr.getContext('2d');
+                            ctxCurr.imageSmoothingEnabled = false;
+                            ctxCurr.drawImage(cnPrev, 0, 0);
+                            // [FIX FLICKER] Set flag agar renderCanvasPage melewati render ulang
+                            _canvasAlreadyCopied = true;
                         }
+                        // [FIX FLICKER] Reset slider INSTAN (tanpa transisi) — visual sudah siap
+                        if (slider) {
+                            slider.classList.remove('is-snapping');
+                            slider.style.transform = 'translateX(-33.3333%)';
+                        }
+                        currentCanvasPage--;
+                        _resetCanvasTransform();
+                        renderCanvasPage(currentCanvasPage);
                     } else {
                         _snapSliderToCenter();
                     }
