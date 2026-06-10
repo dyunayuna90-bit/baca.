@@ -270,8 +270,10 @@
                         <canvas id="pdf-canvas"  class="block" style="display:block; position:relative; z-index:1;"></canvas>
                         <!-- canvas-next: diletakkan persis 1 lebar (100%) di kanan canvas utama -->
                         <canvas id="canvas-next" class="block" style="position:absolute; top:0; left:100%; display:block;"></canvas>
+                        <!-- Highlight layer: kotak stabilo warna di bawah TextLayer -->
+                        <div id="canvas-highlight-layer" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 1;"></div>
                         <!-- TextLayer transparan PDF.js untuk text selection di Canvas Mode -->
-                        <div id="canvas-text-layer" class="textLayer" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: auto; z-index: 2;"></div>
+                        <div id="canvas-text-layer" oncontextmenu="event.preventDefault()" class="textLayer" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: auto; z-index: 2;"></div>
                     </div>
                 </div>
                 
