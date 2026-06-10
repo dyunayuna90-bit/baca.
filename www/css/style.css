@@ -12,6 +12,40 @@
     user-select: text !important;
 }
 
+/* PENGECUALIAN 3: TextLayer PDF.js di Canvas Mode — teks transparan bisa di-select */
+.textLayer, .textLayer * {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+
+/* PDF.js TextLayer: span-span teks transparan, presisi menumpuk canvas */
+.textLayer span,
+.textLayer br {
+    color: transparent !important;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+    /* Pastikan tidak ada background yang menghalangi canvas di bawah */
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1;
+}
+
+/* Highlight biru tegas saat user memblok teks pada TextLayer */
+.textLayer ::selection,
+.textLayer span::selection {
+    background-color: rgba(var(--md-sys-color-primary-rgb, 103, 80, 164), 0.35) !important;
+    color: transparent !important;
+}
+.textLayer ::-moz-selection,
+.textLayer span::-moz-selection {
+    background-color: rgba(103, 80, 164, 0.35) !important;
+    color: transparent !important;
+}
+
 /* PENGECUALIAN 2: Input & Textarea (Search, Bookmark) tetap berfungsi normal */
 input, textarea {
     -webkit-user-select: auto !important;
