@@ -236,3 +236,32 @@ body.hide-book-titles .book-badge {
 
 /* Archive download overlay spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── PDF.js TextLayer untuk Canvas Mode ── */
+.textLayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    line-height: 1;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.textLayer span,
+.textLayer br {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+}
+
+.textLayer ::selection {
+    background: rgba(103, 80, 164, 0.35);
+    color: transparent;
+}
+
+#canvas-wrapper {
+    position: relative;
+}
