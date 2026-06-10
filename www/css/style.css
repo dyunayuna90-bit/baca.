@@ -18,17 +18,38 @@
     user-select: text !important;
 }
 
-/* PDF.js TextLayer: span-span teks transparan, presisi menumpuk canvas */
-.textLayer span,
-.textLayer br {
+/* Reset Kontainer TextLayer PDF.js */
+.textLayer {
+    --scale-factor: 1;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    transform-origin: 0 0;
+    line-height: 1;
+    text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+    pointer-events: auto;
+}
+
+/* Span teks transparan pembentuk blok seleksi */
+.textLayer span, .textLayer br {
     color: transparent !important;
     position: absolute;
     white-space: pre !important;
     cursor: text;
     transform-origin: 0% 0%;
+
+    /* LOGIKA MURNI: Penangkap CSS Variables dari PDF.js v3+ */
+    /* Dilarang pakai !important di 3 baris ini agar tak merusak PDF.js jadul */
+    font-size: calc(var(--font-size, 16px) * var(--scale-factor));
+    font-family: var(--font-family, sans-serif);
+    transform: var(--transform, none);
+
+    /* Reset total agar tidak diracuni ketebalan & spasi bawaan Tailwind */
     line-height: 1 !important;
-    /* HAPUS semua override font — biarkan PDF.js pakai embedded font metrics native
-       agar lebar karakter presisi 100% sama dengan gambar canvas di bawahnya */
+    font-weight: normal !important;
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
