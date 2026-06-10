@@ -2151,6 +2151,30 @@ async function renderCanvasPage(pageNum) {
             if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
         }
 
+        // --- RENDER TEXTLAYER TRANSPARAN (untuk text selection di Canvas Mode) ---
+        const textLayerDiv = document.getElementById('canvas-text-layer');
+        if (textLayerDiv) {
+            // Kosongkan layer sebelumnya agar tidak menumpuk dari halaman sebelumnya
+            textLayerDiv.innerHTML = '';
+            // Sesuaikan ukuran layer agar identik dengan canvas yang ditampilkan
+            textLayerDiv.style.width  = dW + 'px';
+            textLayerDiv.style.height = dH + 'px';
+            try {
+                const textContent = await page.getTextContent();
+                if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
+                if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
+                    pdfjsLib.renderTextLayer({
+                        textContent: textContent,
+                        container: textLayerDiv,
+                        viewport: fit,
+                        textDivs: []
+                    });
+                }
+            } catch(tlErr) {
+                console.warn('TextLayer render error:', tlErr);
+            }
+        }
+
         // Pastikan wrapper kembali ke posisi tengah (transform dikelola _resetCanvasTransform)
         wrapper.style.transition = 'none';
         wrapper.style.transform  = `translate(0px,0px) scale(1)`;
@@ -2234,12 +2258,16 @@ window.nextCanvasPage = function() {
     if (!currentPdfDoc || currentCanvasPage >= currentPdfDoc.numPages || isRenderingCanvas) return;
     currentCanvasPage++;
     _resetCanvasTransform();
+    window.getSelection().removeAllRanges();
+    window.hideSelectionMenu();
     renderCanvasPage(currentCanvasPage); // fire & forget — tidak pakai await agar tap langsung direspon
 };
 window.prevCanvasPage = function() {
     if (!currentPdfDoc || currentCanvasPage <= 1 || isRenderingCanvas) return;
     currentCanvasPage--;
     _resetCanvasTransform();
+    window.getSelection().removeAllRanges();
+    window.hideSelectionMenu();
     renderCanvasPage(currentCanvasPage);
 };
 
@@ -2672,6 +2700,9 @@ window._closeReaderAction = function(isFromHistory = false) {
     window.getSelection().removeAllRanges();
     const menu = document.getElementById('selection-menu');
     if(menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
+    // Kosongkan TextLayer saat reader ditutup
+    const textLayerDiv = document.getElementById('canvas-text-layer');
+    if (textLayerDiv) textLayerDiv.innerHTML = '';
     updateBottomNavUI(null);
 }
 
@@ -2871,14 +2902,36 @@ document.addEventListener('touchend', () => {
 function _handleSelectionChange() {
     if(!activeBookId) return;
     
-    // Skip deteksi selection jika buku saat ini adalah Canvas Mode
     const book = library.find(b => b.id === activeBookId);
-    if(book && book.pdfMode === 'canvas') return;
-
     const sel = window.getSelection(); const text = sel.toString().trim(); const menu = document.getElementById('selection-menu');
 
-    if (text.length > 0 && sel.rangeCount > 0 && DOM.inner) {
+    if (text.length > 0 && sel.rangeCount > 0) {
         const range = sel.getRangeAt(0);
+        const textLayerDiv = document.getElementById('canvas-text-layer');
+
+        // Deteksi: apakah seleksi berasal dari TextLayer (Canvas Mode)?
+        if (book && book.pdfMode === 'canvas') {
+            if (!textLayerDiv || !textLayerDiv.contains(range.commonAncestorContainer)) {
+                // Seleksi bukan dari TextLayer — abaikan
+                if (!_isTouchDragging) window.hideSelectionMenu();
+                return;
+            }
+            // Seleksi dari TextLayer — izinkan capsule menu muncul
+            currentSelection = { text: text, nodeIdx: currentCanvasPage, startOff: 0, endOff: 0 };
+            menu.classList.remove('hidden');
+            const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
+            let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
+            if (targetLeft < padding) targetLeft = padding;
+            if (targetLeft + menuWidth > window.innerWidth - padding) targetLeft = window.innerWidth - menuWidth - padding;
+            let targetTop = rect.top - 55;
+            if (targetTop < 80) targetTop = rect.bottom + 15;
+            menu.style.top = `${targetTop}px`; menu.style.left = `${targetLeft}px`;
+            requestAnimationFrame(() => { menu.classList.remove('opacity-0', 'scale-75'); });
+            return;
+        }
+
+        // Scroll Mode: deteksi normal via reader-inner
+        if (!DOM.inner) return;
         if (!DOM.inner.contains(range.commonAncestorContainer)) return;
 
         let curr = range.commonAncestorContainer;
@@ -2978,13 +3031,24 @@ async function registerAnnotation(annotObj) {
 }
 
 window.openBookmarkModal = function(color) {
-    // Tombol bookmark floating di index.html (tapi di Mode Canvas, bookmark dibuat via panel kanan)
-    if(currentSelection.nodeIdx === -1) return;
+    // Di Canvas Mode dengan TextLayer: nodeIdx diisi currentCanvasPage oleh _handleSelectionChange
+    // Di Scroll Mode: nodeIdx diisi via getAbsoluteOffsets
+    const book = library.find(b => b.id === activeBookId);
+    const isCanvasWithSelection = book && book.pdfMode === 'canvas' && currentSelection.text && currentSelection.text.trim().length > 0;
+    
+    if (!isCanvasWithSelection && currentSelection.nodeIdx === -1) return;
     
     activeNoteColor = color; 
     editingAnnotId = null; 
     
-    document.getElementById('bookmark-input-title').value = '';
+    // Prefill judul dari snippet jika ada di Canvas Mode
+    const d_bm = i18n[wikiLang] || i18n['id'];
+    if (isCanvasWithSelection) {
+        const snippet = currentSelection.text;
+        document.getElementById('bookmark-input-title').value = snippet.length > 40 ? snippet.substring(0, 40) + '...' : snippet;
+    } else {
+        document.getElementById('bookmark-input-title').value = '';
+    }
     document.getElementById('bookmark-input-text').value = '';
     document.getElementById('btn-delete-bookmark').classList.add('hidden');
     
@@ -3041,16 +3105,23 @@ window.saveBookmarkAnnotation = function() {
         const d = i18n[wikiLang] || i18n['id'];
         
         if (book.pdfMode === 'canvas') {
+            const d_bm = i18n[wikiLang] || i18n['id'];
+            // Cek apakah ada teks yang diseleksi dari TextLayer — jika ada, gunakan snippet teks tersebut
+            const hasTextSnippet = currentSelection.text && 
+                                   currentSelection.text.trim().length > 0 && 
+                                   currentSelection.text !== `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage}`;
+            const snippetText = hasTextSnippet ? currentSelection.text : `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage}`;
             const newAnnot = { 
                 id: 'BM_' + Date.now().toString(), 
-                nodeIdx: currentCanvasPage, // menyimpan index halaman canvas murni
+                nodeIdx: currentCanvasPage, // menyimpan index halaman canvas
                 startOff: 0, 
                 endOff: 0,
-                text: `${d.pdfPageLabel || 'Hal'} ${currentCanvasPage}`, 
+                text: snippetText, 
+                isCanvasMode: true, // flag untuk render di panel bookmark
                 color: activeNoteColor, 
-                title: titleVal || `${d.pdfPageLabel || 'Hal'} ${currentCanvasPage}`, 
+                title: titleVal || (hasTextSnippet ? (snippetText.length > 30 ? snippetText.substring(0, 30) + '...' : snippetText) : `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage}`), 
                 note: noteVal,
-                meta: `${d.pdfPageLabel || 'Hal'} ${currentCanvasPage} / ${book.pages}`
+                meta: `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage} / ${book.pages}`
             };
             setTimeout(() => { registerAnnotation(newAnnot); }, 300);
         } else {
@@ -3211,11 +3282,19 @@ function _renderBookmarkList(annotations) {
                     ${bm.note}
                 </div>` : '';
             
-            let quoteHtml = !isCanvas ? `
-                <div class="mt-2 p-3 rounded-2xl ${quoteBgCls}">
-                    <span class="text-[11px] font-medium opacity-90 italic line-clamp-2 leading-relaxed">"${bm.text}"</span>
-                </div>
-            ` : '';
+            let quoteHtml = '';
+            // Tampilkan snippet teks jika:
+            // - Scroll Mode (selalu tampil)
+            // - Canvas Mode dengan snippet teks yang diseleksi (bukan sekadar "Hal X")
+            const d_bm2 = i18n[wikiLang] || i18n['id'];
+            const isCanvasPageOnly = isCanvas && (!bm.isCanvasMode || bm.text === `${d_bm2.pdfPageLabel || 'Hal'} ${bm.nodeIdx}`);
+            if (!isCanvasPageOnly && bm.text && bm.text.trim().length > 0) {
+                quoteHtml = `
+                    <div class="mt-2 p-3 rounded-2xl ${quoteBgCls}">
+                        <span class="text-[11px] font-medium opacity-90 italic line-clamp-2 leading-relaxed">"${bm.text}"</span>
+                    </div>
+                `;
+            }
             
             const d_bm = i18n[wikiLang] || i18n['id'];
             let metaText = bm.meta || (wikiLang === 'id' ? 'Bab' : (wikiLang === 'es' ? 'Capítulo' : 'Chapter'));
