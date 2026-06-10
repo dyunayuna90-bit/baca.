@@ -2092,7 +2092,6 @@ async function renderCanvasPage(pageNum) {
         if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
 
         const pixelRatio = window.devicePixelRatio || 1;
-        // 2.5× dpr tanpa cap — tajam di zoom, tidak ada batas buatan
         const renderScale = pixelRatio * 2.5;
 
         const cW = vpEl.clientWidth;
@@ -2116,7 +2115,6 @@ async function renderCanvasPage(pageNum) {
         wrapper._cH = cH;
 
         const ctx = canvas.getContext('2d');
-        // Smoothing OFF — teks PDF jadi solid, tidak blur/anti-alias berlebihan
         ctx.imageSmoothingEnabled = false;
 
         await page.render({
@@ -2124,6 +2122,24 @@ async function renderCanvasPage(pageNum) {
             viewport: fit,
             transform: [renderScale, 0, 0, renderScale, 0, 0]
         }).promise;
+
+        // ── TEXTLAYER: tumpuk layer teks transparan di atas canvas ──
+        const textLayerDiv = document.getElementById('canvas-text-layer');
+        if (textLayerDiv && pdfjsLib.renderTextLayer) {
+            // Bersihkan render sebelumnya
+            textLayerDiv.innerHTML = '';
+            textLayerDiv.style.width  = dW + 'px';
+            textLayerDiv.style.height = dH + 'px';
+
+            const textContent = await page.getTextContent();
+            pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: fit,
+                textDivs: []
+            });
+        }
+        // ── END TEXTLAYER ──
 
         const lbl = document.getElementById('canvas-page-num');
         if (lbl) lbl.textContent = pageNum;
@@ -2208,7 +2224,6 @@ function initCanvasGestures() {
     const vp = document.getElementById('canvas-zoom-viewport');
     if (!vp) return;
 
-    // Clone viewport agar listener lama terbuang
     const newVP = vp.cloneNode(false);
     const oldW  = document.getElementById('canvas-wrapper');
     if (oldW) newVP.appendChild(oldW);
@@ -2222,16 +2237,11 @@ function initCanvasGestures() {
     wrapper.style.transition      = 'none';
     _resetCanvasTransform();
 
-    // State internal gesture — semua di sini, tidak pakai variabel global yang bisa
-    // terpolusi antar-gesture
     let isPinching    = false;
     let pinchStartDist  = 0;
     let pinchStartScale = 1;
-    // Titik focal cubit di koordinat KONTEN (bukan layar) — pre-transform
-    // Ini yang membuat zoom tidak meloncat: focal point di konten harus diam.
     let pinchFocalContentX = 0;
     let pinchFocalContentY = 0;
-    // Translate saat pinch dimulai
     let pinchStartTX = 0;
     let pinchStartTY = 0;
 
@@ -2243,10 +2253,11 @@ function initCanvasGestures() {
     let tapStartY   = 0;
     let tapStartTime = 0;
 
-    // Helper: konversi koordinat layar → koordinat konten wrapper (tanpa transform)
-    // Dengan transform-origin center: titik layar P dalam konten =
-    //   (P - naturalCenter - translate) / scale
-    // naturalCenter = pusat wrapper di layar TANPA translate (= center viewport karena flex center)
+    // ── STATE SWIPE HALAMAN (Fitur 2) ──
+    let isSwipingPage = false;
+    let swipeStartX   = 0;
+    // ────────────────────────────────────
+
     function screenToContent(sx, sy) {
         const rect = newVP.getBoundingClientRect();
         const natCX = rect.left + rect.width  / 2;
@@ -2257,13 +2268,7 @@ function initCanvasGestures() {
         };
     }
 
-    // Helper: terapkan zoom ke titik focal konten (fx, fy) dengan scale baru
     function zoomToContentPoint(newScale, fx, fy, startTX, startTY, startScale) {
-        // Saat scale berubah dari startScale → newScale,
-        // focal point konten (fx, fy) harus tetap di posisi layar yang sama.
-        // Posisi layar focal = natCenter + tx + fx * scale
-        // Agar sama: startTX + fx*startScale = newTX + fx*newScale
-        // → newTX = startTX + fx*(startScale - newScale)
         canvasTranslateX = startTX + fx * (startScale - newScale);
         canvasTranslateY = startTY + fy * (startScale - newScale);
         currentCanvasScale = newScale;
@@ -2272,9 +2277,9 @@ function initCanvasGestures() {
     // ── touchstart ──
     newVP.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
-            // Masuk mode pinch — batalkan semua state pan/tap
-            isPinching = true;
-            isPanning  = false;
+            isPinching    = true;
+            isPanning     = false;
+            isSwipingPage = false; // batalkan swipe jika jari ke-2 turun
 
             pinchStartDist  = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
@@ -2284,7 +2289,6 @@ function initCanvasGestures() {
             pinchStartTX    = canvasTranslateX;
             pinchStartTY    = canvasTranslateY;
 
-            // Titik focal di tengah dua jari, dikonversi ke koordinat konten
             const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
             const fc   = screenToContent(midX, midY);
@@ -2300,6 +2304,12 @@ function initCanvasGestures() {
                 isPanning = true;
                 panStartX = e.touches[0].clientX - canvasTranslateX;
                 panStartY = e.touches[0].clientY - canvasTranslateY;
+            } else {
+                // ── INIT SWIPE HALAMAN: hanya saat tidak di-zoom ──
+                isSwipingPage = true;
+                swipeStartX   = e.touches[0].clientX;
+                wrapper.style.transition = 'none'; // ikuti jari real-time
+                // ──────────────────────────────────────────────────
             }
         }
     }, { passive: true });
@@ -2321,9 +2331,6 @@ function initCanvasGestures() {
                 canvasTranslateX   = 0;
                 canvasTranslateY   = 0;
             } else {
-                // Zoom ke focal point konten — tidak pakai mid layar sekarang
-                // karena mid bisa bergeser saat jari bergerak lateral.
-                // Focal point KONTEN tetap konstan sejak touchstart.
                 zoomToContentPoint(newScale,
                     pinchFocalContentX, pinchFocalContentY,
                     pinchStartTX, pinchStartTY, pinchStartScale);
@@ -2335,15 +2342,20 @@ function initCanvasGestures() {
             canvasTranslateX = e.touches[0].clientX - panStartX;
             canvasTranslateY = e.touches[0].clientY - panStartY;
             _applyCanvasTransform(wrapper);
+
+        } else if (isSwipingPage && e.touches.length === 1) {
+            // ── FEEDBACK FISIK SWIPE HALAMAN ──
+            // Terapkan translateX horizontal mengikuti jari (tanpa mengubah state translate global)
+            const deltaX = e.touches[0].clientX - swipeStartX;
+            wrapper.style.transform = `translateX(${deltaX}px) scale(1)`;
+            // ──────────────────────────────────
         }
     }, { passive: false });
 
-    // Timer untuk menunda navigasi halaman — dibatalkan jika tap kedua datang
     let _navTimer = null;
 
     // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
-        // Jari ke-2 terangkat → akhiri pinch, perbarui anchor pan agar tidak loncat
         if (e.touches.length === 1 && isPinching) {
             isPinching = false;
             if (currentCanvasScale > 1.01) {
@@ -2358,7 +2370,40 @@ function initCanvasGestures() {
             isPinching = false;
             isPanning  = false;
 
-            // Snap balik ke scale 1 jika terlalu kecil
+            // ── EVALUASI SWIPE HALAMAN ──
+            if (isSwipingPage) {
+                isSwipingPage = false;
+                const deltaX  = e.changedTouches[0].clientX - swipeStartX;
+                const THRESHOLD = 80; // px minimum untuk ganti halaman
+
+                if (deltaX < -THRESHOLD) {
+                    // Swipe kiri → halaman berikutnya
+                    wrapper.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+                    wrapper.style.transform  = 'translateX(-100vw) scale(1)';
+                    setTimeout(() => {
+                        wrapper.style.transition = 'none';
+                        wrapper.style.transform  = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
+                        window.nextCanvasPage();
+                    }, 280);
+                } else if (deltaX > THRESHOLD) {
+                    // Swipe kanan → halaman sebelumnya
+                    wrapper.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+                    wrapper.style.transform  = 'translateX(100vw) scale(1)';
+                    setTimeout(() => {
+                        wrapper.style.transition = 'none';
+                        wrapper.style.transform  = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
+                        window.prevCanvasPage();
+                    }, 280);
+                } else {
+                    // Tidak cukup jauh → snap balik ke posisi semula
+                    wrapper.style.transition = 'transform 0.22s cubic-bezier(0.2,0,0,1)';
+                    wrapper.style.transform  = `translate(${canvasTranslateX}px,${canvasTranslateY}px) scale(${currentCanvasScale})`;
+                    setTimeout(() => { wrapper.style.transition = 'none'; }, 230);
+                }
+                return; // ← wajib: cegah logika tap/double-tap di bawah
+            }
+            // ───────────────────────────
+
             if (currentCanvasScale <= 1.01) {
                 currentCanvasScale = 1.0;
                 canvasTranslateX   = 0;
@@ -2375,7 +2420,6 @@ function initCanvasGestures() {
             const ey    = e.changedTouches[0].clientY;
             const moved = Math.hypot(ex - tapStartX, ey - tapStartY);
 
-            // Bukan tap yang valid (geser terlalu jauh atau terlalu lama tekan)
             if (dt >= 300 || moved >= 18) return;
 
             const now          = Date.now();
@@ -2383,13 +2427,11 @@ function initCanvasGestures() {
             const doubleMoved  = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
 
             if (dtDoubleTap < 320 && doubleMoved < 40) {
-                // ── DOUBLE TAP — batalkan timer navigasi yang mungkin sedang pending ──
                 clearTimeout(_navTimer);
                 _navTimer = null;
-                _canvasLastTapTime = 0; // reset agar tidak triple-tap
+                _canvasLastTapTime = 0;
 
                 if (currentCanvasScale > 1.01) {
-                    // Zoom OUT ke 1× dengan animasi
                     wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
                     currentCanvasScale = 1.0;
                     canvasTranslateX   = 0;
@@ -2397,7 +2439,6 @@ function initCanvasGestures() {
                     _applyCanvasTransform(wrapper);
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 } else {
-                    // Zoom IN 2.5× ke titik yang di-tap
                     const fc = screenToContent(ex, ey);
                     wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
                     zoomToContentPoint(2.5, fc.cx, fc.cy,
@@ -2406,13 +2447,10 @@ function initCanvasGestures() {
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 }
             } else {
-                // ── SINGLE TAP — catat dulu, tunda navigasi sampai window double-tap berakhir ──
                 _canvasLastTapTime = now;
                 _canvasLastTapX    = ex;
                 _canvasLastTapY    = ey;
 
-                // Navigasi halaman hanya saat scale = 1
-                // Ditunda 320ms agar double-tap bisa membatalkannya
                 if (currentCanvasScale <= 1.01) {
                     const sw      = window.innerWidth;
                     const isLeft  = ex < sw * 0.30;
@@ -2421,7 +2459,6 @@ function initCanvasGestures() {
                         clearTimeout(_navTimer);
                         _navTimer = setTimeout(() => {
                             _navTimer = null;
-                            // Cek ulang: pastikan belum di-zoom oleh double-tap yang datang
                             if (currentCanvasScale <= 1.01) {
                                 if (isLeft)  window.prevCanvasPage();
                                 if (isRight) window.nextCanvasPage();
