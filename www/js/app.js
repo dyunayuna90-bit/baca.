@@ -2085,6 +2085,35 @@ window.openBook = async function(book) {
     }
 }
 
+// --- RENDER STABILO CANVAS (Kotak Highlight atas halaman PDF) ---
+window.renderCanvasHighlights = function(pageNum) {
+    const hlLayer = document.getElementById('canvas-highlight-layer');
+    if (!hlLayer || !activeBookId) return;
+    hlLayer.innerHTML = '';
+
+    const book = library.find(b => b.id === activeBookId);
+    if (!book || !book.annotations) return;
+
+    const pageAnnots = book.annotations.filter(a => parseInt(a.nodeIdx) === pageNum && a.rects && a.rects.length > 0);
+    pageAnnots.forEach(annot => {
+        let colorCode = "rgba(103, 80, 164, 0.4)"; // Default ungu (M3 primary)
+        if (annot.color === 'yellow') colorCode = "rgba(250, 204, 21, 0.45)";
+        if (annot.color === 'green')  colorCode = "rgba(74, 222, 128, 0.45)";
+        if (annot.color === 'pink')   colorCode = "rgba(244, 114, 182, 0.45)";
+
+        annot.rects.forEach(r => {
+            const box = document.createElement('div');
+            box.className = 'canvas-annot-hl absolute rounded-[2px]';
+            box.style.left            = r.left + 'px';
+            box.style.top             = r.top + 'px';
+            box.style.width           = r.width + 'px';
+            box.style.height          = r.height + 'px';
+            box.style.backgroundColor = colorCode;
+            hlLayer.appendChild(box);
+        });
+    });
+};
+
 // --- ENGINE RENDER CANVAS PDF ---
 
 // [FIX RACE CONDITION] Token unik per-request render. Jika token berubah saat
@@ -2178,6 +2207,14 @@ async function renderCanvasPage(pageNum) {
         // Pastikan wrapper kembali ke posisi tengah (transform dikelola _resetCanvasTransform)
         wrapper.style.transition = 'none';
         wrapper.style.transform  = `translate(0px,0px) scale(1)`;
+
+        // --- RENDER STABILO: set ukuran layer & gambar highlight untuk halaman ini ---
+        const hlLayer = document.getElementById('canvas-highlight-layer');
+        if (hlLayer) {
+            hlLayer.style.width  = dW + 'px';
+            hlLayer.style.height = dH + 'px';
+            window.renderCanvasHighlights(pageNum);
+        }
 
         const lbl = document.getElementById('canvas-page-num');
         if (lbl) lbl.textContent = pageNum;
@@ -2916,8 +2953,17 @@ function _handleSelectionChange() {
                 if (!_isTouchDragging) window.hideSelectionMenu();
                 return;
             }
-            // Seleksi dari TextLayer — izinkan capsule menu muncul
-            currentSelection = { text: text, nodeIdx: currentCanvasPage, startOff: 0, endOff: 0 };
+            // Ekstrak posisi kotak (rectangles) murni dari teks yang diblok
+            const wrapperRect = textLayerDiv.getBoundingClientRect();
+            const rects = Array.from(range.getClientRects()).map(r => ({
+                left: (r.left - wrapperRect.left) / currentCanvasScale,
+                top: (r.top - wrapperRect.top) / currentCanvasScale,
+                width: r.width / currentCanvasScale,
+                height: r.height / currentCanvasScale
+            }));
+
+            // Izinkan capsule menu muncul & simpan array rects
+            currentSelection = { text: text, nodeIdx: currentCanvasPage, startOff: 0, endOff: 0, rects: rects };
             menu.classList.remove('hidden');
             const rect = range.getBoundingClientRect(); const menuWidth = menu.offsetWidth || 220; const padding = 16;
             let targetLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
@@ -3024,6 +3070,9 @@ async function registerAnnotation(annotObj) {
             nodeEl.innerHTML = window.renderNodeText(book.nodes[annotObj.nodeIdx].text, currentAnnots);
         }
         window.getSelection().removeAllRanges();
+    } else {
+        // Canvas Mode: gambar ulang stabilo agar langsung muncul
+        if (typeof window.renderCanvasHighlights === 'function') window.renderCanvasHighlights(currentCanvasPage);
     }
 
     window.renderBookmarkPanel();
@@ -3119,6 +3168,7 @@ window.saveBookmarkAnnotation = function() {
                 text: snippetText, 
                 isCanvasMode: true, // flag untuk render di panel bookmark
                 color: activeNoteColor, 
+                rects: currentSelection.rects || [], // KOORDINAT STABILO
                 title: titleVal || (hasTextSnippet ? (snippetText.length > 30 ? snippetText.substring(0, 30) + '...' : snippetText) : `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage}`), 
                 note: noteVal,
                 meta: `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage} / ${book.pages}`
@@ -3197,6 +3247,9 @@ window.deleteAnnotationById = async function(annotId) {
             const currentAnnots = book.annotations.filter(a => a.nodeIdx === nodeIdx);
             nodeEl.innerHTML = window.renderNodeText(book.nodes[nodeIdx].text, currentAnnots);
         }
+    } else {
+        // Canvas Mode: hapus stabilo langsung dari layer
+        if (typeof window.renderCanvasHighlights === 'function') window.renderCanvasHighlights(currentCanvasPage);
     }
 
     window.renderBookmarkPanel();
