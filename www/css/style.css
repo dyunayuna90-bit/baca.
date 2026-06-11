@@ -334,3 +334,37 @@ body.hide-book-titles .book-badge {
 
 /* Archive download overlay spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
+/* Archive download overlay spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===================================================================
+   FIX LIGHT MODE: VISIBILITAS TEKS PADA BACKGROUND TERANG
+   =================================================================== */
+/* Paksa teks inactive, subjudul h2, dan toggle menjadi gelap di Light Mode */
+body:not(.dark) .text-m3-onSurfaceVariant,
+body:not(.dark) .text-m3-onSecondaryContainer,
+body:not(.dark) #toc-list button,
+body:not(.dark) .reader-dynamic-text h2,
+body:not(.dark) #theme-label-text {
+    color: var(--md-sys-color-on-surface) !important;
+    opacity: 0.85;
+}
+
+/* Paksa background kapsul inactive menjadi abu-abu transparan biar kelihatan */
+body:not(.dark) .bg-m3-onSurfaceVariant\/20 {
+    background-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* KECUALIKAN elemen yang memang berada di atas card/warna solid (kembalikan ke putih tajam) */
+body:not(.dark) .card-morph .text-m3-onSurfaceVariant,
+body:not(.dark) .card-morph .text-m3-onSecondaryContainer,
+body:not(.dark) .search-capsule .text-m3-onSurfaceVariant,
+body:not(.dark) #canvas-page-controller .text-m3-onSurfaceVariant {
+    color: #FFFFFF !important;
+    opacity: 1;
+}
+
+body:not(.dark) #reader-floating-header .text-m3-onSurfaceVariant {
+    color: var(--md-sys-color-on-surface) !important;
+}
+
