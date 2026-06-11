@@ -30,8 +30,6 @@ window.tailwind.config = {
     }
 };
 
-// Data Palet Warna Material 3
-const EXPRESSIVE_PALETTES = {
 // Data Palet Warna Material 3 (Expressive & Standard digabung logikanya)
 const EXPRESSIVE_PALETTES = {
     orchid: { 
