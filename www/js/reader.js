@@ -47,12 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
         searchInputEl.addEventListener('input', (e) => {
             clearTimeout(inbookSearchTimeout);
             const val = e.target.value.trim().toLowerCase();
-            if (!val || val.length < 2) { 
+    if (!val || val.length < 2) { 
                 if(searchResEl) searchResEl.classList.add('hidden'); 
                 clearSearchHighlights();
+                window.activeCanvasSearchKeyword = "";
                 return; 
-            }
-            
+            }            
             inbookSearchTimeout = setTimeout(() => {
                 const lib = typeof library !== 'undefined' ? library : [];
                 const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
