@@ -336,4 +336,11 @@ body.hide-book-titles .book-badge {
 @keyframes spin { to { transform: rotate(360deg); } }
 /* Archive download overlay spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
+/* ===================================================================
+   FIX LIGHT MODE: KONTRAS TEKS & KAPSUL (VERSI ELEGAN)
+   =================================================================== */
+/* Bikin list Daftar Isi (TOC) nggak nyaru */
+body:not(.dark) #toc-list button {
+    color: var(--md-sys-color-on-surface) !important;
+}
 
