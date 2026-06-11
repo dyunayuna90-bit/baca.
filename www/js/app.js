@@ -2389,13 +2389,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Tutup zoom capsule saat tap di luar (overlay dismiss)
-    document.addEventListener('click', (e) => {
+    // Pakai mousedown + touchstart, dan exclude tombol trigger agar tidak langsung tertutup
+    function _zoomOutsideHandler(e) {
         const container = document.getElementById('canvas-zoom-slider-container');
         if (!container || container.classList.contains('hidden')) return;
-        if (!container.contains(e.target)) {
-            _closeZoomSlider();
-        }
-    });
+        const pt = e.touches ? e.touches[0] : e;
+        const target = document.elementFromPoint ? document.elementFromPoint(pt.clientX, pt.clientY) : e.target;
+        // Cek apakah tap di dalam capsule
+        if (container.contains(target)) return;
+        // Cek apakah tap di tombol trigger zoom
+        if (target && target.closest('[onclick*="toggleZoomSlider"]')) return;
+        _closeZoomSlider();
+    }
+    document.addEventListener('mousedown', _zoomOutsideHandler);
+    document.addEventListener('touchstart', _zoomOutsideHandler, { passive: true });
 });
 
 window.toggleJumpBar = function() {
