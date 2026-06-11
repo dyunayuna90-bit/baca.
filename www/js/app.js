@@ -1703,8 +1703,11 @@ window.saveBookEdit = async function() {
 function applyThemeToDOM() {
     document.documentElement.classList.toggle('dark', isDark);
     
-    if(typeof M3_PALETTES !== 'undefined') {
-        let rootVars = M3_PALETTES[currentThemeKey][isDark ? 'dark' : 'light'];
+    const _palettes = (typeof EXPRESSIVE_PALETTES !== 'undefined' && typeof STANDARD_PALETTES !== 'undefined')
+        ? (isExpressive ? EXPRESSIVE_PALETTES : STANDARD_PALETTES)
+        : (typeof EXPRESSIVE_PALETTES !== 'undefined' ? EXPRESSIVE_PALETTES : (typeof M3_PALETTES !== 'undefined' ? M3_PALETTES : null));
+    if (_palettes) {
+        let rootVars = _palettes[currentThemeKey][isDark ? 'dark' : 'light'];
         if (isDark && isAmoled) {
             rootVars += `--md-sys-color-background:#000000;--md-sys-color-surface:#000000;`;
         }
@@ -1777,7 +1780,8 @@ function applyThemeToDOM() {
             ta.classList.remove('amoled-unavailable');
         }
     }
-
+    
+_syncExpressiveUI();
     if(window.lucide) window.lucide.createIcons();
     localStorage.setItem('theme', isDark ? 'dark' : 'light'); 
     localStorage.setItem('m3-key', currentThemeKey);
@@ -1799,7 +1803,29 @@ function applyThemeToDOM() {
 window.setTheme = function(key) { currentThemeKey = key; applyThemeToDOM(); };
 window.toggleThemeState = function() { isDark = !isDark; applyThemeToDOM(); };
 window.toggleAmoled = function() { isAmoled = !isAmoled; applyThemeToDOM(); };
+window.toggleExpressive = function() {
+    isExpressive = !isExpressive;
+    localStorage.setItem('expressive', isExpressive.toString());
+    applyThemeToDOM();
+};
 
+function _syncExpressiveUI() {
+    const bg   = document.getElementById('expressive-switch-bg');
+    const knob = document.getElementById('expressive-switch-knob');
+    if (!bg || !knob) return;
+    if (isExpressive) {
+        bg.classList.add('bg-m3-primary');
+        bg.classList.remove('bg-m3-onSurfaceVariant/20');
+        knob.style.transform = 'translateX(32px)';
+        knob.classList.replace('bg-m3-onSurface', 'bg-m3-onPrimary');
+    } else {
+        bg.classList.remove('bg-m3-primary');
+        bg.classList.add('bg-m3-onSurfaceVariant/20');
+        knob.style.transform = 'translateX(0)';
+        knob.classList.replace('bg-m3-onPrimary', 'bg-m3-onSurface');
+    }
+    localStorage.setItem('expressive', isExpressive.toString());
+}
 // ── Global Loading Spinner (untuk jeda antar modal / proses berat) ──
 window.showGlobalLoading = function(text) {
     const d    = i18n[wikiLang] || i18n['id'];
