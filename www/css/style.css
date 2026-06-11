@@ -195,7 +195,7 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
 .reader-dynamic-text { word-wrap: break-word; overflow-wrap: anywhere; hyphens: auto; }
 .reader-dynamic-text p { font-family: var(--reader-font) !important; font-size: var(--reader-size) !important; text-align: var(--reader-align) !important; line-height: var(--reader-line-height) !important; max-width: 100%; overflow-x: hidden; }
 .reader-dynamic-text h1 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.8) !important; text-align: left !important; line-height: 1.3 !important; font-weight: bold; margin-top: 2rem; margin-bottom: 1.5rem; color: var(--md-sys-color-primary); }
-.reader-dynamic-text h2 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.4) !important; text-align: left !important; line-height: 1.4 !important; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--md-sys-color-on-surface-variant); border-bottom: 1px solid var(--md-sys-color-surface-variant); padding-bottom: 0.5rem; opacity: 1; }
+.reader-dynamic-text h2 { font-family: var(--reader-font) !important; font-size: calc(var(--reader-size) * 1.4) !important; text-align: left !important; line-height: 1.4 !important; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: var(--md-sys-color-primary); border-bottom: 2px solid var(--md-sys-color-primary); padding-bottom: 0.5rem; opacity: 1; }
 ::-webkit-scrollbar { width: 0px; }
 
 /* ===================================================================
@@ -338,33 +338,21 @@ body.hide-book-titles .book-badge {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ===================================================================
-   FIX LIGHT MODE: VISIBILITAS TEKS PADA BACKGROUND TERANG
+   FIX LIGHT MODE: KONTRAS TEKS & KAPSUL (VERSI ELEGAN)
    =================================================================== */
-/* Paksa teks inactive, subjudul h2, dan toggle menjadi gelap di Light Mode */
-body:not(.dark) .text-m3-onSurfaceVariant,
-body:not(.dark) .text-m3-onSecondaryContainer,
-body:not(.dark) #toc-list button,
-body:not(.dark) .reader-dynamic-text h2,
-body:not(.dark) #theme-label-text {
-    color: var(--md-sys-color-on-surface) !important;
-    opacity: 0.85;
-}
-
-/* Paksa background kapsul inactive menjadi abu-abu transparan biar kelihatan */
-body:not(.dark) .bg-m3-onSurfaceVariant\/20 {
-    background-color: rgba(0, 0, 0, 0.12) !important;
-}
-
-/* KECUALIKAN elemen yang memang berada di atas card/warna solid (kembalikan ke putih tajam) */
-body:not(.dark) .card-morph .text-m3-onSurfaceVariant,
-body:not(.dark) .card-morph .text-m3-onSecondaryContainer,
-body:not(.dark) .search-capsule .text-m3-onSurfaceVariant,
-body:not(.dark) #canvas-page-controller .text-m3-onSurfaceVariant {
-    color: #FFFFFF !important;
-    opacity: 1;
-}
-
-body:not(.dark) #reader-floating-header .text-m3-onSurfaceVariant {
+/* Bikin teks opsi di dalam panel/setting jadi gelap tegas */
+body:not(.dark) #settings-panel .text-m3-onSurfaceVariant,
+body:not(.dark) [id$="-sheet"] .text-m3-onSurfaceVariant {
     color: var(--md-sys-color-on-surface) !important;
 }
 
+/* Bikin kapsul/toggle yang lagi OFF pakai warna netral tembus pandang */
+body:not(.dark) .capsule-btn:not(.nav-active) {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: var(--md-sys-color-on-surface) !important;
+}
+
+/* Bikin list Daftar Isi (TOC) nggak nyaru */
+body:not(.dark) #toc-list button {
+    color: var(--md-sys-color-on-surface) !important;
+}
