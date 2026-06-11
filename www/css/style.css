@@ -337,22 +337,3 @@ body.hide-book-titles .book-badge {
 /* Archive download overlay spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ===================================================================
-   FIX LIGHT MODE: KONTRAS TEKS & KAPSUL (VERSI ELEGAN)
-   =================================================================== */
-/* Bikin teks opsi di dalam panel/setting jadi gelap tegas */
-body:not(.dark) #settings-panel .text-m3-onSurfaceVariant,
-body:not(.dark) [id$="-sheet"] .text-m3-onSurfaceVariant {
-    color: var(--md-sys-color-on-surface) !important;
-}
-
-/* Bikin kapsul/toggle yang lagi OFF pakai warna netral tembus pandang */
-body:not(.dark) .capsule-btn:not(.nav-active) {
-    background-color: rgba(0, 0, 0, 0.05) !important;
-    color: var(--md-sys-color-on-surface) !important;
-}
-
-/* Bikin list Daftar Isi (TOC) nggak nyaru */
-body:not(.dark) #toc-list button {
-    color: var(--md-sys-color-on-surface) !important;
-}
