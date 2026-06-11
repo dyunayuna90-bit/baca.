@@ -2222,19 +2222,32 @@ async function renderCanvasPage(pageNum) {
             try {
                 const textContent = await page.getTextContent();
                 if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
-                if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
-                    pdfjsLib.renderTextLayer({
+if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
+                    const renderTask = pdfjsLib.renderTextLayer({
                         textContent: textContent,
                         container: textLayerDiv,
                         viewport: fit,
                         textDivs: []
                     });
+                    // Setelah TextLayer selesai, highlight keyword pencarian jika ada
+                    Promise.resolve(renderTask && renderTask.promise ? renderTask.promise : renderTask).then(() => {
+                        const kw = window.activeCanvasSearchKeyword;
+                        if (!kw || kw.length < 2) return;
+                        const spans = textLayerDiv.querySelectorAll('span');
+                        const kwLower = kw.toLowerCase();
+                        spans.forEach(span => {
+                            if (!span.textContent.toLowerCase().includes(kwLower)) return;
+                            const regex = new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                            // Bungkus teks yang cocok dengan <mark>
+                            span.innerHTML = span.textContent.replace(regex,
+                                '<mark class="search-hl canvas-search-hl">$1</mark>');
+                        });
+                    }).catch(() => {});
                 }
             } catch(tlErr) {
                 console.warn('TextLayer render error:', tlErr);
             }
         }
-
         // Pastikan wrapper kembali ke posisi tengah (transform dikelola _resetCanvasTransform)
         wrapper.style.transition = 'none';
         wrapper.style.transform  = `translate(0px,0px) scale(${window.defaultCanvasScale})`;
