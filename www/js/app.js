@@ -20,6 +20,7 @@ let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 
 // State baru untuk menyembunyikan judul buku dari rak
 let isTitlesHidden = localStorage.getItem('hide_book_titles') === 'true';
+let isExpressive = localStorage.getItem('expressive') === 'true';
 
 // --- ARCHIVE.ORG STATE ---
 let _archiveMode = false;
