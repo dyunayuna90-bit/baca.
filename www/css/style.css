@@ -159,7 +159,24 @@ html, body {
 .progress-smooth { transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 mark.search-hl { background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; border-radius: 4px; padding: 0 4px; transition: background-color 1.5s ease, color 1.5s ease; }
-
+/* Highlight pencarian khusus Canvas Mode — override transparansi TextLayer span */
+.textLayer mark.search-hl,
+.textLayer .canvas-search-hl {
+    background-color: #FACC15 !important; /* Kuning cerah — kontras di atas canvas PDF */
+    color: #1A1A1A !important;
+    border-radius: 3px;
+    padding: 0 2px;
+    opacity: 0.85 !important;
+    mix-blend-mode: multiply;
+    transition: none;
+}
+.dark .textLayer mark.search-hl,
+.dark .textLayer .canvas-search-hl {
+    background-color: #FDE047 !important;
+    color: #000000 !important;
+    mix-blend-mode: screen;
+    opacity: 0.9 !important;
+}
 /* Updated Annotations Colors with !important for priority */
 .hl-yellow { background-color: #FDE047 !important; color: #000 !important; }
 .hl-green { background-color: #86EFAC !important; color: #000 !important; }
