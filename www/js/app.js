@@ -293,7 +293,7 @@ function renderStatChart() {
     // Ambil warna dari CSS variable
     const style = getComputedStyle(document.documentElement);
     const primary = style.getPropertyValue('--md-sys-color-primary').trim() || '#6750A4';
-    const onSecCont = style.getPropertyValue('--md-sys-color-on-surface').trim() || '#1C1B1F';
+    const onSecCont = style.getPropertyValue('--md-sys-color-on-primary').trim() || '#1C1B1F';
 
     // Destroy chart lama kalau ada
     if (_statChartInstance) { try { _statChartInstance.destroy(); } catch(e) {} _statChartInstance = null; }
