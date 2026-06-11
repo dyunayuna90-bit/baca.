@@ -636,6 +636,7 @@ function applyLanguage() {
     setElementText('str-amoled-label', d.amoledLabel);
     setElementText('str-hide-titles-label', d.setHideTitles || 'Sembunyikan Judul Buku');
     _syncHideTitlesUI();
+    setElementText('str-expressive-label', d.expressiveLabel || 'Ekspresif');
     
     setElementText('shape-default', d.shapeDyn);
     setElementText('shape-rounded', d.shapeRound);
@@ -1427,7 +1428,7 @@ function createBookCard(book, isSlider = false, index = 0) {
             </div>
             <div class="mt-auto flex flex-col border-none">
                 ${!isSlider ? `<i data-lucide="book" class="w-6 h-6 mb-2 opacity-80" id="book-icon-${book.id}"></i>` : ''}
-                <h3 class="font-bold ${isSlider ? 'text-sm line-clamp-2' : 'text-sm mt-1 line-clamp-3'} leading-tight drop-shadow-md" id="title-${book.id}">${book.title}</h3>
+                <h3 class="font-bold ${isSlider ? 'text-sm line-clamp-1' : 'text-[13px] mt-1 line-clamp-2 mb-1'} leading-tight drop-shadow-md" id="title-${book.id}">${book.title}</h3>
                 <div class="w-full ${isSlider ? 'mt-2' : 'mt-2'} border-none">
                     <div class="flex justify-between text-[${isSlider ? '0.65rem' : '0.6rem'}] font-bold opacity-90 mb-1" id="pct-${book.id}"><span>${progress}%</span></div>
                     <div class="h-1.5 w-full bg-black/20 dark:bg-white/20 rounded-full overflow-hidden border-none">
