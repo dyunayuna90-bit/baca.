@@ -59,12 +59,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 const book = lib.find(b => b.id === currentBookId);
                 if (!book) return;
 
-                // Jika buku adalah Mode Canvas, hentikan fitur pencarian teks dinamis
+// Canvas Mode: cari di data teks yang sudah diekstrak per halaman
                 if (book.pdfMode === 'canvas') {
-                    if(searchResEl) {
-                        searchResEl.innerHTML = `<div class="p-4 text-center text-xs opacity-60 font-bold">${i18n[wikiLang].pdfCanvasWarning}</div>`;
-                        searchResEl.classList.remove('hidden');
-                    }
+                    localforage.getItem('content_' + book.id).then(pageTextData => {
+                        if (!pageTextData || !Array.isArray(pageTextData)) {
+                            if(searchResEl) {
+                                searchResEl.innerHTML = `<div class="p-4 text-center text-xs opacity-60 font-bold">${i18n[wikiLang].pdfCanvasWarning}</div>`;
+                                searchResEl.classList.remove('hidden');
+                            }
+                            return;
+                        }
+                        const canvasResults = [];
+                        const regex = new RegExp(`(${val.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        pageTextData.forEach(({ page, text }) => {
+                            if (!text || !text.toLowerCase().includes(val)) return;
+                            const matchIdx = text.toLowerCase().indexOf(val);
+                            let start = Math.max(0, matchIdx - 50);
+                            let end = Math.min(text.length, matchIdx + val.length + 50);
+                            let preview = text.substring(start, end);
+                            if (start > 0) preview = "..." + preview;
+                            if (end < text.length) preview += "...";
+                            preview = preview.replace(regex, '<mark class="bg-m3-primary text-m3-onPrimary rounded px-0.5">$1</mark>');
+                            canvasResults.push({ page, preview });
+                        });
+                        renderCanvasSearchResults(canvasResults, val);
+                    });
                     return;
                 }
 
@@ -675,19 +694,42 @@ function clearSearchHighlights() {
     });
 }
 
-function renderSearchResults(results, keyword) {
+function renderCanvasSearchResults(results, keyword) {
     const searchResEl = document.getElementById('search-results-panel');
-    const readContentEl = document.getElementById('reader-content');
-    if(!searchResEl) return;
+    if (!searchResEl) return;
     searchResEl.innerHTML = '';
-    const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
-    const d = (typeof i18n !== 'undefined' ? (i18n[lang] || i18n['id']) : {});
-    
-    if(results.length === 0) {
-        searchResEl.innerHTML = `<div class="p-6 text-center text-sm opacity-60 font-medium">${d.searchNotFound || 'Tidak ditemukan'}</div>`;
+
+    if (results.length === 0) {
+        const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+        const noResultMsg = lang === 'id' ? 'Tidak ditemukan.' : (lang === 'es' ? 'No encontrado.' : 'No results found.');
+        searchResEl.innerHTML = `<div class="p-4 text-center text-xs opacity-60 font-bold">${noResultMsg}</div>`;
         searchResEl.classList.remove('hidden');
         return;
     }
+
+    results.forEach(res => {
+        const item = document.createElement('div');
+        item.className = 'p-3 mb-2 bg-m3-surfaceVariant rounded-2xl cursor-pointer btn-morph';
+        item.innerHTML = `
+            <div class="text-[10px] font-bold text-m3-primary mb-1 uppercase tracking-widest">Halaman ${res.page}</div>
+            <div class="text-sm text-m3-onSurface leading-relaxed line-clamp-3">${res.preview}</div>
+        `;
+        item.onclick = () => {
+            searchResEl.classList.add('hidden');
+            // Set keyword aktif untuk highlight di Canvas
+            if (typeof activeCanvasSearchKeyword !== 'undefined') {
+                window.activeCanvasSearchKeyword = keyword;
+            }
+            // Navigasi ke halaman tersebut
+            if (typeof currentCanvasPage !== 'undefined' && typeof renderCanvasPage === 'function') {
+                currentCanvasPage = res.page;
+                renderCanvasPage(res.page);
+            }
+        };
+        searchResEl.appendChild(item);
+    });
+    searchResEl.classList.remove('hidden');
+}
     
     const countHeader = document.createElement('div');
     countHeader.className = "px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-m3-primary/80 border-b border-m3-surfaceVariant";
@@ -782,10 +824,23 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
         DOM.loadBar.style.width = '50%';
         if(DOM.loadPct) DOM.loadPct.textContent = '50%';
         
-        const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
+const pdfBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
         await localforage.setItem('rawpdf_' + newBookId, pdfBlob);
         if(coverBlob) await localforage.setItem('cover_' + newBookId, coverBlob);
 
+        // Ekstrak teks per halaman untuk fitur pencarian Canvas Mode
+        try {
+            const pageTextData = [];
+            for (let pi = 1; pi <= total; pi++) {
+                const pg = await pdf.getPage(pi);
+                const tc = await pg.getTextContent();
+                const pageText = tc.items.map(item => item.str).join(' ').replace(/\s+/g, ' ').trim();
+                pageTextData.push({ page: pi, text: pageText });
+            }
+            await localforage.setItem('content_' + newBookId, pageTextData);
+        } catch(textErr) {
+            console.warn('Canvas text extraction failed:', textErr);
+        }
         const existingIndex = library.findIndex(b => b.id === newBookId);
         if (existingIndex === -1) {
             library.push({
