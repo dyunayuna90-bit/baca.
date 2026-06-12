@@ -276,6 +276,25 @@ html[data-amoled="true"] .dark #canvas-next {
     transition: opacity 0.3s ease;
 }
 
+/* Bar pencarian Canvas Mode untuk PDF tanpa teks (gambar saja) — abu-abu/disabled */
+#inbook-search-capsule.search-disabled-canvas {
+    opacity: 0.4 !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* Progress bar Canvas Mode: bisa diketuk/digeser untuk lompat halaman */
+#progress-container.progress-draggable {
+    height: 6px !important;
+    cursor: pointer;
+    touch-action: none;
+}
+#progress-container.progress-draggable #progress-drag-handle {
+    width: 14px;
+    height: 14px;
+}
+
+
 /* Kustomisasi gaya navigasi bottom-controller pada Canvas Mode */
 #canvas-page-controller {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
