@@ -3953,74 +3953,99 @@ function _showArchiveFormatPicker(epubFile, pdfFile, epubSizeMb, pdfSizeMb, onCh
 }
 
 // ─── SIMPAN FILE KE PENYIMPANAN HP (Capacitor Filesystem) ────────────────────
-// Menyimpan file hasil download ke folder Downloads HP user supaya bisa diakses
-// dari File Manager atau aplikasi lain. Hanya berjalan di APK (Capacitor).
-// Di browser/web, fallback ke <a download> biasa.
 async function _saveFileToDevice(file, fileName) {
+    const langNow = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+
+    // Konversi File/Blob → base64 string
+    const _toBase64 = (blob) => new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result.split(',')[1]);
+        reader.onerror = () => rej(new Error('FileReader gagal'));
+        reader.readAsDataURL(blob);
+    });
+
+    const _toast = (msg, type) => {
+        if (typeof window.showPersistentToast === 'function') {
+            window.showPersistentToast(msg, type || 'success', 4500);
+        }
+    };
+
     try {
-        // --- Capacitor path (APK) ---
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
-            const { Filesystem } = window.Capacitor.Plugins;
-
-            // Minta izin tulis storage (Android < 10 butuh ini)
-            try {
-                const perm = await Filesystem.requestPermissions();
-                if (perm && perm.publicStorage === 'denied') {
-                    console.warn('[saveFileToDevice] Izin penyimpanan ditolak user.');
-                    return; // Tidak error — buku tetap masuk ke library lewat localforage
-                }
-            } catch (permErr) {
-                // Android 10+ tidak butuh izin eksplisit — lanjutkan
-            }
-
-            // Konversi Blob/File → base64
-            const base64 = await new Promise((res, rej) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    // hasil: "data:application/pdf;base64,AAAA..."
-                    const b64 = reader.result.split(',')[1];
-                    res(b64);
-                };
-                reader.onerror = () => rej(new Error('FileReader gagal'));
-                reader.readAsDataURL(file);
-            });
-
-            // Tulis ke folder Downloads publik HP
-            await Filesystem.writeFile({
-                path: fileName,
-                data: base64,
-                directory: 'DOWNLOADS', // Capacitor Directory.Downloads
-                recursive: true
-            });
-
-            console.log(`[saveFileToDevice] Tersimpan di Downloads: ${fileName}`);
-
-            // Beri tahu user via toast kecil
-            const langNow = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
-            const savedMsg = langNow === 'en'
-                ? `Saved to Downloads: ${fileName}`
-                : (langNow === 'es'
-                    ? `Guardado en Descargas: ${fileName}`
-                    : `Tersimpan di Downloads: ${fileName}`);
-            if (typeof window.showPersistentToast === 'function') {
-                window.showPersistentToast(savedMsg, 'success', 4000);
-            }
-
-        } else {
-            // --- Fallback browser: trigger <a download> ---
+        // Cek apakah jalan di Capacitor APK
+        const FS = window.Capacitor?.Plugins?.Filesystem;
+        if (!FS) {
+            // Browser fallback: <a download>
             const url = URL.createObjectURL(file);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+            a.href = url; a.download = fileName;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 2000);
+            return;
         }
+
+        // Minta izin storage (wajib Android ≤ 9, diabaikan Android 10+)
+        try {
+            const perm = await FS.requestPermissions();
+            // Kalau user deny, coba tetap lanjut — Android 10+ kadang return 'denied' tapi tetap bisa nulis
+            if (perm?.publicStorage === 'denied') {
+                console.warn('[saveFileToDevice] Izin storage denied, mencoba tetap nulis...');
+            }
+        } catch (permErr) {
+            // Android 10+ lempar error di requestPermissions — normal, lanjutkan
+            console.log('[saveFileToDevice] requestPermissions error (normal di Android 10+):', permErr.message);
+        }
+
+        const base64 = await _toBase64(file);
+
+        // Coba tulis ke EXTERNAL_STORAGE dulu (paling visible di File Manager)
+        let saved = false;
+        const directories = ['EXTERNAL_STORAGE', 'DOWNLOADS', 'DOCUMENTS'];
+
+        for (const dir of directories) {
+            try {
+                await FS.writeFile({
+                    path: `Download/${fileName}`,
+                    data: base64,
+                    directory: dir,
+                    recursive: true
+                });
+                console.log(`[saveFileToDevice] Sukses di ${dir}/Download/${fileName}`);
+                saved = true;
+
+                const msg = langNow === 'en' ? `Saved to Downloads ✓`
+                    : langNow === 'es' ? `Guardado en Descargas ✓`
+                    : `Tersimpan di Downloads ✓`;
+                _toast(msg, 'success');
+                break;
+            } catch (dirErr) {
+                console.warn(`[saveFileToDevice] Gagal di ${dir}:`, dirErr.message);
+            }
+        }
+
+        if (!saved) {
+            // Last resort: simpan di folder internal app yang bisa di-share
+            try {
+                await FS.writeFile({
+                    path: fileName,
+                    data: base64,
+                    directory: 'DATA',
+                    recursive: true
+                });
+                const msg = langNow === 'en' ? `Saved to app storage ✓`
+                    : `Tersimpan di storage app ✓`;
+                _toast(msg, 'duplicate');
+                console.log('[saveFileToDevice] Fallback ke DATA berhasil');
+            } catch (dataErr) {
+                console.error('[saveFileToDevice] Semua direktori gagal:', dataErr.message);
+            }
+        }
+
     } catch (err) {
-        // Gagal simpan ke device tidak menghentikan proses masuk ke library
-        console.error('[saveFileToDevice] Gagal:', err);
+        // Error tidak menghentikan proses masuk library
+        console.error('[saveFileToDevice] Error utama:', err);
     }
 }
+// ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.archiveDownload = async function(identifier, title) {
