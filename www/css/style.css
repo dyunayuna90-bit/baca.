@@ -177,6 +177,15 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
     mix-blend-mode: screen;
     opacity: 0.9 !important;
 }
+/* Highlight pencarian Canvas Mode: transisi memudar setelah beberapa saat */
+.textLayer .canvas-search-hl {
+    transition: background-color 1s ease, opacity 1s ease, color 1s ease !important;
+}
+.textLayer .canvas-search-hl.canvas-search-hl-fade {
+    background-color: transparent !important;
+    color: inherit !important;
+    opacity: 0 !important;
+}
 /* Updated Annotations Colors with !important for priority */
 .hl-yellow { background-color: #FDE047 !important; color: #000 !important; }
 .hl-green { background-color: #86EFAC !important; color: #000 !important; }
