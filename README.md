@@ -9,20 +9,22 @@
 ## Logo
 <img width="1920" height="1080" alt="Baca Logo" src="https://github.com/user-attachments/assets/bbfff3df-8edc-43be-8813-873ccfd07e92" />
 
-## 🌟 What's New in v2.0?
-* **Internet Archive Integration:** Discover and download millions of free books directly within the app. Features a smart format picker (EPUB/PDF), real-time native download engine, and seamless auto-import straight to your shelf.
-* **Dual PDF Reading Modes:** * **Scroll Mode:** Dynamic text extraction for a continuous, flowing reading experience.
-  * **Canvas Mode:** Preserves the original layout and typography of the PDF—perfect for textbooks or image-heavy documents, complete with pinch-to-zoom gestures.
-* **Complete Data Portability:** Backup and restore your entire library locally. Choose between a lightweight JSON export (progress & notes only) or a full ZIP export (including book files and covers).
-* **Reading Statistics:** Track your reading habits with a built-in interactive line chart displaying your 7-day reading activity, completed books, and total annotations.
+## 🌟 What's New in v2.1.0?
+
+* **Permanent Dark UI:** Light, dark, and AMOLED mode toggles now apply exclusively to book content — not the app interface. The UI is permanently dark for a cleaner, more consistent look.
+* **Expressive Mode:** A new toggle in settings lets you switch between a colorful Expressive UI or a minimal, subdued appearance. Your call.
+* **Canvas Mode — Page Slider & Text Search:** Navigate PDFs instantly with a new page slider. Full-text search is now supported for PDFs with embedded text (not applicable to scanned/image-based PDFs).
+* **Archive.org Downloads to Device:** Books downloaded from Internet Archive are now saved directly to your device's Downloads folder — not just inside the app. Access them from any file manager or share them freely.
 
 ## ✨ Material 3 Expressive Design
 The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 Expressive** design principles to provide an organic, dynamic, and engaging user experience:
- * **Fluid Morphing & Animation:** UI elements like buttons and book cards don't just register clicks; they morph and react to your touch with butter-smooth bezier curve transitions.
- * **Immersive Reading Mode:** Navigation elements intuitively slide out of the way as you scroll down to focus on reading, giving you a 100% distraction-free canvas.
- * **10 Vibrant Palettes:** Choose from 10 meticulously crafted Material 3 color palettes (including the elegant *Warm Teal*) that dynamically shift the entire app's accent and mood.
- * **True AMOLED Dark Mode:** Features a pitch-black dark mode optimized for OLED/AMOLED screens to save battery, complete with perfectly symmetrical and satisfying toggle switches.
- * **Minimalist Control:** Want a cleaner shelf? Toggle "Hide Book Titles" to let the book covers speak for themselves.
+
+* **Fluid Morphing & Animation:** UI elements like buttons and book cards don't just register clicks; they morph and react to your touch with butter-smooth bezier curve transitions.
+* **Immersive Reading Mode:** Navigation elements intuitively slide out of the way as you scroll down to focus on reading, giving you a 100% distraction-free canvas.
+* **10 Vibrant Palettes:** Choose from 10 meticulously crafted Material 3 color palettes (including the elegant *Warm Teal*) that dynamically shift the entire app's accent and mood.
+* **Expressive vs. Minimal:** Toggle Expressive Mode in settings to switch between a vibrant, colorful UI and a clean, subdued one.
+* **AMOLED Dark for Book Content:** The pitch-black AMOLED theme is available exclusively for book content, optimized for OLED screens to save battery.
+* **Minimalist Control:** Want a cleaner shelf? Toggle "Hide Book Titles" to let the book covers speak for themselves.
 
 ## 📷 Screenshots
 
@@ -33,13 +35,20 @@ The UI of **Baca.** is anything but static. We deeply adopted the **Material 3 E
 </p>
 
 ## 🚀 Key Features
- * **100% Offline & Privacy-Focused:** Zero cloud uploads and fully bundled local libraries. We utilize localforage (IndexedDB) and native device storage to parse, render, and save your books locally. Your data belongs to you.
- * **Smart Hybrid Bookmarks:** We merged highlights and notes into one powerful side panel. Simply select text (or tag a page in Canvas Mode) to create a bookmark, add custom notes, and click the bookmark card later to instantly jump back.
- * **Built-in Update Checker:** Never miss a patch. The settings menu includes an auto-update checker that directly routes you to the latest GitHub release.
- * **AI Explanations (Gemini API):** Stumbled upon a difficult word or concept? Just select it, and our AI feature will pull explanations seamlessly using your own Gemini API key (supports Gemini 2.0 Flash/Lite).
- * **In-Book Search Engine:** A highly intuitive search bar integrated right into the side panel. Instantly sweeps through the book and auto-scrolls to the exact highlighted paragraph.
- * **Typography Control:** Ultimate reading comfort for Scroll Mode/EPUBs. Adjust text size, paragraph alignment, and pick from premium fonts (*Lora, Merriweather, Playfair, Inter, Space Mono, Google Sans*).
- * **Batch Management:** Easily clear RAM by removing all generated book covers, or execute batch deletions to keep your library organized.
+
+* **100% Offline & Privacy-Focused:** Zero cloud uploads and fully bundled local libraries. We utilize localforage (IndexedDB) and native device storage to parse, render, and save your books locally. Your data belongs to you.
+* **Internet Archive Integration:** Discover and download millions of free books directly within the app. Features a smart format picker (EPUB/PDF), real-time native download progress, seamless auto-import to your shelf, and automatic save to your device's Downloads folder.
+* **Dual PDF Reading Modes:**
+  * **Scroll Mode:** Dynamic text extraction for a continuous, flowing reading experience.
+  * **Canvas Mode:** Preserves the original layout and typography of the PDF — perfect for textbooks or image-heavy documents. Includes pinch-to-zoom, a page slider for quick navigation, and full-text search for text-based PDFs.
+* **Complete Data Portability:** Backup and restore your entire library locally. Choose between a lightweight JSON export (progress & notes only) or a full ZIP export (including book files and covers).
+* **Reading Statistics:** Track your reading habits with a built-in interactive line chart displaying your 7-day reading activity, completed books, and total annotations.
+* **Smart Hybrid Bookmarks:** Highlights and notes merged into one powerful side panel. Select text (or tag a page in Canvas Mode) to create a bookmark, add custom notes, and tap the card later to instantly jump back.
+* **Built-in Update Checker:** The settings menu includes an auto-update checker that directly routes you to the latest GitHub release.
+* **AI Explanations (Gemini API):** Select any word or passage and get instant AI-powered explanations using your own Gemini API key (supports Gemini 2.0 Flash/Lite).
+* **In-Book Search Engine:** Integrated right into the side panel. Instantly sweeps through the book and auto-scrolls to the exact highlighted paragraph.
+* **Typography Control:** Adjust text size, paragraph alignment, and pick from premium fonts (*Lora, Merriweather, Playfair, Inter, Space Mono, Google Sans*) for Scroll Mode and EPUBs.
+* **Batch Management:** Clear RAM by removing all generated book covers, or run batch deletions to keep your library organized.
 
 ## 🤔 Why Baca? (And not the others?)
 
@@ -47,10 +56,10 @@ Most e-book readers on the market fall into two frustrating extremes: they are e
 
 **Baca.** exists to break that compromise. The logic is simple:
 
-* **Zero Feature Creep (~5MB Size):** We don't shove unnecessary tools down your throat. Just a pure, uncompromised visual reading experience.
-* **Open-Source Doesn't Mean Ugly:** Just because an app is free doesn't mean it should look cheap. By deeply integrating Material 3 Expressive, navigating your library actually feels fluid and satisfying.
+* **Zero Feature Creep (~5MB Size):** Just a pure, uncompromised visual reading experience. Nothing more.
+* **Open-Source Doesn't Mean Ugly:** By deeply integrating Material 3 Expressive, navigating your library actually feels fluid and satisfying.
 * **True Local Privacy:** Most "free" apps harvest your reading habits. Baca is strictly local-first. Zero tracking, zero CDNs, zero servers involved.
-   
+
 ## 📦 Download & Installation
 [![Download Latest Release](https://img.shields.io/github/v/release/dyunayuna90-bit/baca.?style=for-the-badge&logo=android&color=3DDC84&label=DOWNLOAD%20APK)](https://github.com/dyunayuna90-bit/baca./releases/latest)
 
@@ -63,13 +72,13 @@ Most e-book readers on the market fall into two frustrating extremes: they are e
 
 Initially built as a rapid prototype, **Baca.** has been fully refactored into a clean, modular architecture running natively on Android via Capacitor.
 
- * **Capacitor & GitHub Actions** (Native Android compilation & bridging).
- * **Vanilla Web-Native Tech** (Zero framework bloat for the core logic).
- * **Tailwind CSS** (Bundled locally for absolute offline support).
- * **PDF.js** (Locally hosted worker for Canvas rendering and text extraction).
- * **JSZip** (Local EPUB file extraction & Full ZIP Backup creation).
- * **LocalForage** (Asynchronous IndexedDB storage management).
- * **Lucide Icons** (Locally bundled modern iconography).
+* **Capacitor & GitHub Actions** (Native Android compilation & bridging).
+* **Vanilla Web-Native Tech** (Zero framework bloat for the core logic).
+* **Tailwind CSS** (Bundled locally for absolute offline support).
+* **PDF.js** (Locally hosted worker for Canvas rendering and text extraction).
+* **JSZip** (Local EPUB file extraction & Full ZIP Backup creation).
+* **LocalForage** (Asynchronous IndexedDB storage management).
+* **Lucide Icons** (Locally bundled modern iconography).
 
 ## 🤝 Contributing
 With the new modular architecture in place, the codebase is primed for community collaboration. Whether it's optimizing the rendering engine, adding new parsing logic, or refining the UI, **Pull Requests are highly welcome and deeply appreciated!** Let's build a better open-source reading experience together.
