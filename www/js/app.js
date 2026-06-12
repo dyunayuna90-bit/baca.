@@ -3952,6 +3952,77 @@ function _showArchiveFormatPicker(epubFile, pdfFile, epubSizeMb, pdfSizeMb, onCh
     document.getElementById('archive-fmt-cancel').onclick = () => { _close(); onChoose(null); };
 }
 
+// ─── SIMPAN FILE KE PENYIMPANAN HP (Capacitor Filesystem) ────────────────────
+// Menyimpan file hasil download ke folder Downloads HP user supaya bisa diakses
+// dari File Manager atau aplikasi lain. Hanya berjalan di APK (Capacitor).
+// Di browser/web, fallback ke <a download> biasa.
+async function _saveFileToDevice(file, fileName) {
+    try {
+        // --- Capacitor path (APK) ---
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+            const { Filesystem } = window.Capacitor.Plugins;
+
+            // Minta izin tulis storage (Android < 10 butuh ini)
+            try {
+                const perm = await Filesystem.requestPermissions();
+                if (perm && perm.publicStorage === 'denied') {
+                    console.warn('[saveFileToDevice] Izin penyimpanan ditolak user.');
+                    return; // Tidak error — buku tetap masuk ke library lewat localforage
+                }
+            } catch (permErr) {
+                // Android 10+ tidak butuh izin eksplisit — lanjutkan
+            }
+
+            // Konversi Blob/File → base64
+            const base64 = await new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // hasil: "data:application/pdf;base64,AAAA..."
+                    const b64 = reader.result.split(',')[1];
+                    res(b64);
+                };
+                reader.onerror = () => rej(new Error('FileReader gagal'));
+                reader.readAsDataURL(file);
+            });
+
+            // Tulis ke folder Downloads publik HP
+            await Filesystem.writeFile({
+                path: fileName,
+                data: base64,
+                directory: 'DOWNLOADS', // Capacitor Directory.Downloads
+                recursive: true
+            });
+
+            console.log(`[saveFileToDevice] Tersimpan di Downloads: ${fileName}`);
+
+            // Beri tahu user via toast kecil
+            const langNow = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+            const savedMsg = langNow === 'en'
+                ? `Saved to Downloads: ${fileName}`
+                : (langNow === 'es'
+                    ? `Guardado en Descargas: ${fileName}`
+                    : `Tersimpan di Downloads: ${fileName}`);
+            if (typeof window.showPersistentToast === 'function') {
+                window.showPersistentToast(savedMsg, 'success', 4000);
+            }
+
+        } else {
+            // --- Fallback browser: trigger <a download> ---
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+        }
+    } catch (err) {
+        // Gagal simpan ke device tidak menghentikan proses masuk ke library
+        console.error('[saveFileToDevice] Gagal:', err);
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 window.archiveDownload = async function(identifier, title) {
     if (_archiveDownloading) return;
     _archiveDownloading = true;
@@ -4104,6 +4175,9 @@ window.archiveDownload = async function(identifier, title) {
 
         _hideDlOverlay();
         _archiveDownloading = false;
+
+        // Step 2b: Simpan file ke penyimpanan HP (Capacitor Filesystem)
+        await _saveFileToDevice(file, fileName);
 
         // Step 3: tutup search, tunggu animasi, proses ke library
         const _doProcess = async () => {
