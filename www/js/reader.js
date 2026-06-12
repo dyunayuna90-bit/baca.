@@ -707,6 +707,11 @@ function renderCanvasSearchResults(results, keyword) {
         return;
     }
 
+    const countHeader = document.createElement('div');
+    countHeader.className = "px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-m3-primary/80 border-b border-m3-surfaceVariant";
+    countHeader.textContent = `${results.length} Found`;
+    searchResEl.appendChild(countHeader);
+
     results.forEach(res => {
         const item = document.createElement('div');
         item.className = 'p-3 mb-2 bg-m3-surfaceVariant rounded-2xl cursor-pointer btn-morph';
@@ -730,7 +735,21 @@ function renderCanvasSearchResults(results, keyword) {
     });
     searchResEl.classList.remove('hidden');
 }
-    
+
+// Pencarian untuk Scroll Mode (buku EPUB/TXT/MD/PDF-scroll dengan nodes)
+function renderSearchResults(results, keyword) {
+    const searchResEl = document.getElementById('search-results-panel');
+    if (!searchResEl) return;
+    searchResEl.innerHTML = '';
+
+    if (results.length === 0) {
+        const lang = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
+        const noResultMsg = lang === 'id' ? 'Tidak ditemukan.' : (lang === 'es' ? 'No encontrado.' : 'No results found.');
+        searchResEl.innerHTML = `<div class="p-4 text-center text-xs opacity-60 font-bold">${noResultMsg}</div>`;
+        searchResEl.classList.remove('hidden');
+        return;
+    }
+
     const countHeader = document.createElement('div');
     countHeader.className = "px-4 pt-3 pb-2 text-xs font-bold uppercase tracking-wider text-m3-primary/80 border-b border-m3-surfaceVariant";
     countHeader.textContent = `${results.length} Found`;
@@ -743,27 +762,27 @@ function renderCanvasSearchResults(results, keyword) {
             <div class="text-[10px] font-bold text-m3-primary mb-1 uppercase tracking-widest">${res.context}</div>
             <div class="text-sm text-m3-onSurface leading-relaxed line-clamp-3">${res.preview}</div>
         `;
-        
+
         item.onclick = () => {
             const lib = typeof library !== 'undefined' ? library : [];
             const currentBookId = typeof activeBookId !== 'undefined' ? activeBookId : null;
             const book = lib.find(b => b.id === currentBookId);
             if(!book) return;
-            
+
             searchResEl.classList.add('hidden');
             const targetEl = document.getElementById(`node-${res.nodeIdx}`);
             const container = readContentEl;
-            
+
             if(targetEl && container) {
                 clearSearchHighlights();
-                
+
                 const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                
+
                 const walker = document.createTreeWalker(targetEl, NodeFilter.SHOW_TEXT, null, false);
                 const textNodes = [];
                 let n;
                 while(n = walker.nextNode()) textNodes.push(n);
-                
+
                 textNodes.forEach(node => {
                     const text = node.nodeValue;
                     if(regex.test(text)) {
@@ -776,9 +795,9 @@ function renderCanvasSearchResults(results, keyword) {
                 const cRect = container.getBoundingClientRect();
                 const tRect = targetEl.getBoundingClientRect();
                 const offset = tRect.top - cRect.top + container.scrollTop - (cRect.height / 2) + (tRect.height / 2);
-                
+
                 container.scrollTo({ top: offset, behavior: 'smooth' });
-                
+
                 setTimeout(() => {
                     const marks = targetEl.querySelectorAll('mark.search-hl');
                     marks.forEach(m => {
@@ -789,13 +808,13 @@ function renderCanvasSearchResults(results, keyword) {
                 }, 2000);
             }
         };
-        
+
         searchResEl.appendChild(item);
     });
     searchResEl.classList.remove('hidden');
 }
 
-// 2. FUNGSI EKSTRAK PDF DENGAN LOGIKA PENUH
+
 async function processPdfDirect(file, bookTitle, finalMode, total) {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
