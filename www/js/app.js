@@ -3955,94 +3955,67 @@ function _showArchiveFormatPicker(epubFile, pdfFile, epubSizeMb, pdfSizeMb, onCh
 // ─── SIMPAN FILE KE PENYIMPANAN HP (Capacitor Filesystem) ────────────────────
 async function _saveFileToDevice(file, fileName) {
     const langNow = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
-
-    // Konversi File/Blob → base64 string
-    const _toBase64 = (blob) => new Promise((res, rej) => {
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result.split(',')[1]);
-        reader.onerror = () => rej(new Error('FileReader gagal'));
-        reader.readAsDataURL(blob);
-    });
-
+    const FS = window.Capacitor?.Plugins?.Filesystem;
+    
     const _toast = (msg, type) => {
         if (typeof window.showPersistentToast === 'function') {
             window.showPersistentToast(msg, type || 'success', 4500);
         }
     };
 
-    try {
-        // Cek apakah jalan di Capacitor APK
-        const FS = window.Capacitor?.Plugins?.Filesystem;
-        if (!FS) {
-            // Browser fallback: <a download>
-            const url = URL.createObjectURL(file);
-            const a = document.createElement('a');
-            a.href = url; a.download = fileName;
-            document.body.appendChild(a); a.click();
-            setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 2000);
-            return;
-        }
+    if (!FS) {
+        const url = URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 2000);
+        return;
+    }
 
-        // Minta izin storage (wajib Android ≤ 9, diabaikan Android 10+)
+    try { await FS.requestPermissions(); } catch (e) {}
+
+    // OPTIMASI DEWA: BLOB SLICING (Mencincang File Anti-OOM)
+    // Potong Blob raksasa jadi ~2MB per bagian. Ukuran dibikin kelipatan 3 murni (2097150 bytes) 
+    // agar konversi Base64 tetap presisi dan tidak korup di area perbatasan blok.
+    const CHUNK_SIZE = 2097150; 
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    
+    const _chunkToBase64 = (blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const res = reader.result;
+            resolve(res.includes(',') ? res.split(',')[1] : res);
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+    });
+
+    const directories = ['DOWNLOADS', 'DOCUMENTS', 'EXTERNAL_STORAGE', 'DATA'];
+    let saved = false;
+
+    for (const dir of directories) {
         try {
-            const perm = await FS.requestPermissions();
-            // Kalau user deny, coba tetap lanjut — Android 10+ kadang return 'denied' tapi tetap bisa nulis
-            if (perm?.publicStorage === 'denied') {
-                console.warn('[saveFileToDevice] Izin storage denied, mencoba tetap nulis...');
+            const targetPath = dir === 'EXTERNAL_STORAGE' ? `Download/${fileName}` : fileName;
+
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunk = file.slice(start, end);
+                const base64Chunk = await _chunkToBase64(chunk);
+
+                if (i === 0) {
+                    await FS.writeFile({ path: targetPath, data: base64Chunk, directory: dir, recursive: true });
+                } else {
+                    await FS.appendFile({ path: targetPath, data: base64Chunk, directory: dir });
+                }
             }
-        } catch (permErr) {
-            // Android 10+ lempar error di requestPermissions — normal, lanjutkan
-            console.log('[saveFileToDevice] requestPermissions error (normal di Android 10+):', permErr.message);
+
+            saved = true;
+            _toast(langNow === 'en' ? `Saved to Downloads ✓` : `Tersimpan di perangkat ✓`, 'success');
+            break; 
+        } catch (err) {
+            console.warn(`[saveFileToDevice] Gagal di ${dir}:`, err);
         }
-
-        const base64 = await _toBase64(file);
-
-        // Coba tulis ke EXTERNAL_STORAGE dulu (paling visible di File Manager)
-        let saved = false;
-        const directories = ['EXTERNAL_STORAGE', 'DOWNLOADS', 'DOCUMENTS'];
-
-        for (const dir of directories) {
-            try {
-                await FS.writeFile({
-                    path: `Download/${fileName}`,
-                    data: base64,
-                    directory: dir,
-                    recursive: true
-                });
-                console.log(`[saveFileToDevice] Sukses di ${dir}/Download/${fileName}`);
-                saved = true;
-
-                const msg = langNow === 'en' ? `Saved to Downloads ✓`
-                    : langNow === 'es' ? `Guardado en Descargas ✓`
-                    : `Tersimpan di Downloads ✓`;
-                _toast(msg, 'success');
-                break;
-            } catch (dirErr) {
-                console.warn(`[saveFileToDevice] Gagal di ${dir}:`, dirErr.message);
-            }
-        }
-
-        if (!saved) {
-            // Last resort: simpan di folder internal app yang bisa di-share
-            try {
-                await FS.writeFile({
-                    path: fileName,
-                    data: base64,
-                    directory: 'DATA',
-                    recursive: true
-                });
-                const msg = langNow === 'en' ? `Saved to app storage ✓`
-                    : `Tersimpan di storage app ✓`;
-                _toast(msg, 'duplicate');
-                console.log('[saveFileToDevice] Fallback ke DATA berhasil');
-            } catch (dataErr) {
-                console.error('[saveFileToDevice] Semua direktori gagal:', dataErr.message);
-            }
-        }
-
-    } catch (err) {
-        // Error tidak menghentikan proses masuk library
-        console.error('[saveFileToDevice] Error utama:', err);
     }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -4157,14 +4130,11 @@ window.archiveDownload = async function(identifier, title) {
         const fileName   = `${cleanTitle}.${chosenType}`;
         const mimeType   = chosenType === 'epub' ? 'application/epub+zip' : 'application/pdf';
 
-        // Tentukan path tujuan di native storage
-        const FS = window.Capacitor?.Plugins?.Filesystem;
-
-        // Jika tidak ada Filesystem plugin (berjalan di browser), fallback ke XHR lama
-        const _fallbackXhr = () => new Promise((resolve, reject) => {
+        // ── XHR DOWNLOADER: Mengambil file murni tanpa korup ──
+        const _downloadViaXHR = () => new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', fileUrl, true);
-            xhr.responseType = 'blob';
+            xhr.responseType = 'blob'; // Pastikan formatnya mentah (binary)
             let lastUpdate = 0;
             xhr.onprogress = (event) => {
                 const now = Date.now();
@@ -4183,122 +4153,24 @@ window.archiveDownload = async function(identifier, title) {
             };
             xhr.onload = () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
-                    _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\nSelesai (100%)`);
+                    _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\nMenyimpan file...`);
                     resolve(new File([xhr.response], fileName, { type: mimeType }));
                 } else {
-                    reject(new Error(`Gagal mengunduh file (HTTP ${xhr.status})`));
+                    reject(new Error(`HTTP ${xhr.status}`));
                 }
             };
-            xhr.onerror = () => reject(new Error('Koneksi terputus atau diblokir CORS.'));
-            signal.addEventListener('abort', () => {
-                xhr.abort();
-                reject(new DOMException('Aborted', 'AbortError'));
-            });
+            xhr.onerror = () => reject(new Error('Koneksi terputus.'));
+            signal.addEventListener('abort', () => { xhr.abort(); reject(new DOMException('Aborted', 'AbortError')); });
             xhr.send();
         });
 
-        // Path sementara di cache internal Capacitor untuk downloadFile
-        const nativeTempPath = `__dl_tmp_${Date.now()}.${chosenType}`;
-
         let file = null;
-
-        if (FS) {
-            // ── PATH NATIVE: Filesystem.downloadFile ──────────────────────
-            // File ditulis langsung ke disk oleh native layer → zero JS heap
-            let progressListener = null;
-            let lastProgressUpdate = 0;
-
-            try {
-                // 1. GUNAKAN FS.addListener (Bukan CapHttp)
-                progressListener = await FS.addListener('progress', (progressData) => {
-                    const now = Date.now();
-                    if (now - lastProgressUpdate < 150) return;
-                    lastProgressUpdate = now;
-
-                    const receivedMB = (progressData.bytes / 1024 / 1024).toFixed(1);
-                    if (progressData.contentLength && progressData.contentLength > 0) {
-                        const totalMB = (progressData.contentLength / 1024 / 1024).toFixed(1);
-                        let pct = Math.round((progressData.bytes / progressData.contentLength) * 100);
-                        if (pct > 100) pct = 100;
-                        _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\n${receivedMB} MB / ${totalMB} MB (${pct}%)`);
-                    } else {
-                        _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\n${receivedMB} MB terunduh...`);
-                    }
-                });
-
-                let _aborted = false;
-                const _abortHandler = () => { _aborted = true; };
-                signal.addEventListener('abort', _abortHandler);
-
-                _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\n0.0 MB terunduh...`);
-
-                // 2. GUNAKAN FS.downloadFile (Parameter 'path' & 'directory')
-                const dlResult = await FS.downloadFile({
-                    url: fileUrl,
-                    path: nativeTempPath,
-                    directory: 'CACHE',
-                    progress: true
-                });
-
-                if (progressListener) { try { progressListener.remove(); } catch (_) {} progressListener = null; }
-                signal.removeEventListener('abort', _abortHandler);
-
-                if (_aborted) {
-                    try { await FS.deleteFile({ path: nativeTempPath, directory: 'CACHE' }); } catch (_) {}
-                    throw new DOMException('Aborted', 'AbortError');
-                }
-
-                if (!dlResult || !dlResult.path) {
-                    throw new Error('Filesystem.downloadFile gagal.');
-                }
-
-                _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\nMenyimpan file...`);
-
-                // 3. OPTIMASI DEWA: COPY NATIVE (BYPASS BASE64)
-                let savedToDevice = false;
-                const directories = ['EXTERNAL_STORAGE', 'DOWNLOADS', 'DOCUMENTS'];
-                for (const dir of directories) {
-                    try {
-                        await FS.copy({
-                            from: nativeTempPath, directory: 'CACHE',
-                            to: `Download/${fileName}`, toDirectory: dir
-                        });
-                        savedToDevice = true;
-                        if (typeof window.showPersistentToast === 'function') {
-                            window.showPersistentToast(
-                                lang === 'en' ? 'Saved to Downloads ✓' : (lang === 'es' ? 'Guardado en Descargas ✓' : 'Tersimpan di Downloads ✓'), 
-                                'success', 3500
-                            );
-                        }
-                        break;
-                    } catch (e) {}
-                }
-                
-                if (!savedToDevice) {
-                    try { await FS.copy({ from: nativeTempPath, directory: 'CACHE', to: fileName, toDirectory: 'DATA' }); } catch (e) {}
-                }
-
-                // 4. LOAD KE JS VIA LOCAL FETCH (Mencegah OOM dari atob)
-                // Membaca file dari cache secara streaming ke Blob
-                const uriResult = await FS.getUri({ path: nativeTempPath, directory: 'CACHE' });
-                const localUrl = window.Capacitor.convertFileSrc(uriResult.uri);
-                const response = await fetch(localUrl);
-                const blob = await response.blob();
-                file = new File([blob], fileName, { type: mimeType });
-
-                // Hapus file temp dari cache
-                try { await FS.deleteFile({ path: nativeTempPath, directory: 'CACHE' }); } catch (_) {}
-
-            } catch (capErr) {
-                if (progressListener) { try { progressListener.remove(); } catch (_) {} progressListener = null; }
-                try { await FS.deleteFile({ path: nativeTempPath, directory: 'CACHE' }); } catch (_) {}
-                throw capErr; 
-            }
-
-        } else {
-            // ── FALLBACK BROWSER: XHR biasa ──────────────────────────────────
-            file = await _fallbackXhr();
+        try {
+            file = await _downloadViaXHR();
+            // File murni diumpankan ke Blob Slicing, menjamin 0% korup dan RAM stabil
             await _saveFileToDevice(file, fileName);
+        } catch (dlErr) {
+            throw dlErr;
         }
 
         _hideDlOverlay();
