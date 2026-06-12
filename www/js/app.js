@@ -1869,11 +1869,13 @@ function applyReaderThemeToDOM() {
     }
 
     // Canvas: terapkan filter invert berdasarkan tema buku
+    // PENTING: filter HANYA diterapkan ke canvas (anak), bukan wrapper —
+    // jika keduanya difilter, efeknya saling membatalkan (double invert).
     const canvasWrapper = document.getElementById('canvas-wrapper');
     const canvasPrev = document.getElementById('canvas-prev');
     const canvasNext = document.getElementById('canvas-next');
     const pdfCanvas = document.getElementById('pdf-canvas');
-    [canvasWrapper, canvasPrev, canvasNext, pdfCanvas].forEach(el => {
+    [canvasPrev, canvasNext, pdfCanvas].forEach(el => {
         if (!el) return;
         if (readerTheme === 'amoled') {
             el.style.filter = 'invert(1) hue-rotate(180deg) contrast(1.1)';
