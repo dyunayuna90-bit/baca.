@@ -1839,7 +1839,18 @@ function applyReaderThemeToDOM() {
     }
     const readerStyleEl = document.getElementById('reader-theme-style');
     if (readerStyleEl) {
-        readerStyleEl.innerHTML = readerCss ? `#reader-content, #canvas-wrapper { ${readerCss} }` : '';
+        if (readerCss) {
+            readerStyleEl.innerHTML = `
+                #reader-content, #reader-inner, #canvas-wrapper { ${readerCss} }
+                #reader-content {
+                    background-color: var(--md-sys-color-background) !important;
+                    color: var(--md-sys-color-on-background) !important;
+                }
+                #reader-inner { color: var(--md-sys-color-on-background) !important; }
+            `;
+        } else {
+            readerStyleEl.innerHTML = '';
+        }
     }
 
     // Sinkronkan tombol Light/Dark/AMOLED di panel pengaturan buku
