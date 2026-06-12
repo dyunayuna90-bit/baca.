@@ -62,7 +62,8 @@
     transition: opacity 0.2s ease;
     pointer-events: none;
 }
-.dark .canvas-annot-hl {
+#reader-view[data-reader-theme="dark"] .canvas-annot-hl,
+#reader-view[data-reader-theme="amoled"] .canvas-annot-hl {
     mix-blend-mode: screen;
 }
 
@@ -170,8 +171,10 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
     mix-blend-mode: multiply;
     transition: none;
 }
-.dark .textLayer mark.search-hl,
-.dark .textLayer .canvas-search-hl {
+#reader-view[data-reader-theme="dark"] .textLayer mark.search-hl,
+#reader-view[data-reader-theme="dark"] .textLayer .canvas-search-hl,
+#reader-view[data-reader-theme="amoled"] .textLayer mark.search-hl,
+#reader-view[data-reader-theme="amoled"] .textLayer .canvas-search-hl {
     background-color: #FDE047 !important;
     color: #000000 !important;
     mix-blend-mode: screen;
@@ -191,10 +194,10 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
 .hl-green { background-color: #86EFAC !important; color: #000 !important; }
 .hl-pink { background-color: #F9A8D4 !important; color: #000 !important; }
 .hl-blue { background-color: #93C5FD !important; color: #000 !important; }
-.dark .hl-yellow { background-color: #854D0E !important; color: #FFF !important; }
-.dark .hl-green { background-color: #166534 !important; color: #FFF !important; }
-.dark .hl-pink { background-color: #831843 !important; color: #FFF !important; }
-.dark .hl-blue { background-color: #1E3A8A !important; color: #FFF !important; }
+#reader-view[data-reader-theme="dark"] .hl-yellow, #reader-view[data-reader-theme="amoled"] .hl-yellow { background-color: #854D0E !important; color: #FFF !important; }
+#reader-view[data-reader-theme="dark"] .hl-green, #reader-view[data-reader-theme="amoled"] .hl-green { background-color: #166534 !important; color: #FFF !important; }
+#reader-view[data-reader-theme="dark"] .hl-pink, #reader-view[data-reader-theme="amoled"] .hl-pink { background-color: #831843 !important; color: #FFF !important; }
+#reader-view[data-reader-theme="dark"] .hl-blue, #reader-view[data-reader-theme="amoled"] .hl-blue { background-color: #1E3A8A !important; color: #FFF !important; }
 
 .hide-scroll::-webkit-scrollbar { display: none; }
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -255,29 +258,18 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
     transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* Efek Dark Mode murni untuk Mode Canvas */
-.dark #pdf-canvas, .dark #canvas-prev, .dark #canvas-next {
-    filter: invert(0.92) hue-rotate(180deg);
+/* Filter invert untuk Canvas Mode kini diatur via JS (applyReaderThemeToDOM)
+   berdasarkan readerTheme — agar tidak terikat ke tema UI global */
+#reader-view[data-reader-theme="dark"] #pdf-canvas,
+#reader-view[data-reader-theme="dark"] #canvas-prev,
+#reader-view[data-reader-theme="dark"] #canvas-next,
+#reader-view[data-reader-theme="amoled"] #pdf-canvas,
+#reader-view[data-reader-theme="amoled"] #canvas-prev,
+#reader-view[data-reader-theme="amoled"] #canvas-next {
     box-shadow: none !important;
     border: none !important;
 }
 
-/* AMOLED Mode khusus untuk Canvas agar lebih pekat */
-.dark[data-theme="amoled"] #pdf-canvas,
-.dark[data-theme="amoled"] #canvas-prev,
-.dark[data-theme="amoled"] #canvas-next,
-html[data-amoled="true"] .dark #pdf-canvas,
-html[data-amoled="true"] .dark #canvas-prev,
-html[data-amoled="true"] .dark #canvas-next {
-    filter: invert(1) hue-rotate(180deg) contrast(1.1);
-}
-
-/* Fix 3: Grey out AMOLED button saat light mode aktif (AMOLED butuh dark mode) */
-#theme-btn-amoled.amoled-unavailable {
-    opacity: 0.35 !important;
-    pointer-events: none !important;
-    cursor: not-allowed !important;
-}
 .ui-disabled-group {
     opacity: 0.4 !important;
     pointer-events: none !important;
