@@ -13,10 +13,14 @@ let selectedForDelete = [];
 let activeNoteColor = 'yellow';
 let editingAnnotId = null;
 
-let isDark = localStorage.getItem('theme') !== 'light'; 
+let isDark = true; // UI selalu Dark Mode (tidak bisa diubah)
 let currentThemeKey = localStorage.getItem('m3-key') || 'orchid';
-let isAmoled = localStorage.getItem('amoled') === 'true';
+let isAmoled = false; // UI tidak pernah AMOLED — hanya untuk konten buku (lihat readerTheme)
 let wikiLang = localStorage.getItem('wiki_lang') || 'en';
+
+// Tema khusus untuk KONTEN BUKU (scroll & canvas) — terpisah dari tema UI
+// Nilai: 'light' | 'dark' | 'amoled'
+let readerTheme = localStorage.getItem('reader_theme') || 'dark';
 
 // State baru untuk menyembunyikan judul buku dari rak
 let isTitlesHidden = localStorage.getItem('hide_book_titles') === 'true';
@@ -678,8 +682,6 @@ function applyLanguage() {
     if (bmSearchInput) bmSearchInput.placeholder = d.bookmarkSearchPlaceholder || 'Cari bookmark...';
     if(DOM.count) DOM.count.textContent = `${(library.length)} ${d.booksCount}`;
     
-    const themeLabel = document.getElementById('theme-label-text');
-    if (themeLabel) themeLabel.textContent = isDark ? d.themeDark : d.themeLight;
 
     updateBatchSelectionUI();
 
@@ -1710,109 +1712,31 @@ window.saveBookEdit = async function() {
 }
 
 // 9. TEMA & TIPOGRAFI
+// UI (panel, side panel, bottom bar, dll) SELALU Dark Mode — tidak bisa diubah user.
+// light/dark/amoled HANYA berlaku untuk konten BUKU (scroll & canvas), lihat applyReaderThemeToDOM().
 function applyThemeToDOM() {
-    document.documentElement.classList.toggle('dark', isDark);
-    
+    document.documentElement.classList.add('dark'); // UI selalu dark
+
     const _palettes = (typeof EXPRESSIVE_PALETTES !== 'undefined' && typeof STANDARD_PALETTES !== 'undefined')
         ? (isExpressive ? EXPRESSIVE_PALETTES : STANDARD_PALETTES)
         : (typeof EXPRESSIVE_PALETTES !== 'undefined' ? EXPRESSIVE_PALETTES : (typeof M3_PALETTES !== 'undefined' ? M3_PALETTES : null));
     if (_palettes) {
-        let rootVars = _palettes[currentThemeKey][isDark ? 'dark' : 'light'];
-        if (isDark && isAmoled) {
-            rootVars += `--md-sys-color-background:#000000;--md-sys-color-surface:#000000;`;
-        }
+        let rootVars = _palettes[currentThemeKey]['dark'];
         const dynamicTheme = document.getElementById('dynamic-theme');
         if(dynamicTheme) dynamicTheme.innerHTML = `:root { ${rootVars} }`;
     }
-    
+
     const metaTheme = document.querySelector('meta[name="theme-color"]');
-    if(metaTheme) {
-        if(isDark && isAmoled) metaTheme.setAttribute("content", "#000000");
-        else if (isDark) metaTheme.setAttribute("content", "#0B0314");
-        else metaTheme.setAttribute("content", "#FAF5FF");
-    }
+    if(metaTheme) metaTheme.setAttribute("content", "#0B0314");
 
-    const bg = document.getElementById('theme-switch-bg');
-    const knob = document.getElementById('theme-switch-knob');
-    const icon = document.getElementById('theme-switch-icon');
-    const dLabel = document.getElementById('theme-label-text');
-    const d = typeof i18n !== 'undefined' ? (i18n[wikiLang] || i18n['id']) : {};
-    
-    if (bg && knob && icon && dLabel) {
-        dLabel.textContent = isDark ? d.themeDark : d.themeLight;
-        if (isDark) {
-            bg.classList.replace('bg-m3-onSurfaceVariant/20', 'bg-m3-primary');
-            knob.classList.add('translate-x-[32px]');
-            icon.setAttribute('data-lucide', 'moon');
-            icon.classList.replace('text-m3-onSurface', 'text-m3-primary');
-        } else {
-            bg.classList.replace('bg-m3-primary', 'bg-m3-onSurfaceVariant/20');
-            knob.classList.remove('translate-x-[32px]');
-            icon.setAttribute('data-lucide', 'sun');
-            icon.classList.replace('text-m3-primary', 'text-m3-onSurface');
-        }
-    }
-
-    const amoContainer = document.getElementById('amoled-toggle-container');
-    const amoBg = document.getElementById('amoled-switch-bg');
-    const amoKnob = document.getElementById('amoled-switch-knob');
-    if (isDark) {
-        if (amoContainer) amoContainer.classList.remove('hidden');
-        if (isAmoled && amoBg && amoKnob) {
-            amoBg.classList.add('bg-m3-primary');
-            amoKnob.classList.add('translate-x-[32px]');
-            amoKnob.classList.replace('bg-m3-onSurface', 'bg-m3-onPrimary');
-        } else if (amoBg && amoKnob) {
-            amoBg.classList.remove('bg-m3-primary');
-            amoKnob.classList.remove('translate-x-[32px]');
-            amoKnob.classList.replace('bg-m3-onPrimary', 'bg-m3-onSurface');
-        }
-    } else {
-        if (amoContainer) amoContainer.classList.add('hidden');
-    }
-
-    const tl = document.getElementById('theme-btn-light');
-    const td = document.getElementById('theme-btn-dark');
-    const ta = document.getElementById('theme-btn-amoled');
-    if (tl && td && ta) {
-        [tl, td, ta].forEach(el => {
-            el.classList.remove('bg-m3-primary', 'text-m3-onPrimary');
-            el.classList.add('text-m3-onSurfaceVariant');
-        });
-        if (!isDark) { tl.classList.add('bg-m3-primary', 'text-m3-onPrimary'); tl.classList.remove('text-m3-onSurfaceVariant'); }
-        else if (isDark && !isAmoled) { td.classList.add('bg-m3-primary', 'text-m3-onPrimary'); td.classList.remove('text-m3-onSurfaceVariant'); }
-        else if (isDark && isAmoled) { ta.classList.add('bg-m3-primary', 'text-m3-onPrimary'); ta.classList.remove('text-m3-onSurfaceVariant'); }
-        
-        // Grey out AMOLED button saat light mode — AMOLED butuh dark mode
-        if (!isDark) {
-            ta.classList.add('amoled-unavailable');
-        } else {
-            ta.classList.remove('amoled-unavailable');
-        }
-    }
-    
 _syncExpressiveUI();
     if(window.lucide) window.lucide.createIcons();
-    localStorage.setItem('theme', isDark ? 'dark' : 'light'); 
     localStorage.setItem('m3-key', currentThemeKey);
-    localStorage.setItem('amoled', isAmoled);
 
-    // Canvas AMOLED: background kertas jadi hitam pekat, teks jadi putih
-    const canvasWrapper = document.getElementById('canvas-wrapper');
-    if (canvasWrapper) {
-        if (isDark && isAmoled) {
-            canvasWrapper.style.backgroundColor = '#000000';
-            canvasWrapper.style.filter = 'invert(1) hue-rotate(180deg)';
-        } else {
-            canvasWrapper.style.backgroundColor = '';
-            canvasWrapper.style.filter = '';
-        }
-    }
+    applyReaderThemeToDOM();
 }
 
 window.setTheme = function(key) { currentThemeKey = key; applyThemeToDOM(); };
-window.toggleThemeState = function() { isDark = !isDark; applyThemeToDOM(); };
-window.toggleAmoled = function() { isAmoled = !isAmoled; applyThemeToDOM(); };
 window.toggleExpressive = function() {
     isExpressive = !isExpressive;
     localStorage.setItem('expressive', isExpressive.toString());
@@ -1885,16 +1809,73 @@ function _syncHideTitlesUI() {
     }
 }
 
+// ── TEMA KONTEN BUKU (scroll & canvas) — light/dark/amoled ──
+// Terpisah total dari tema UI (yang selalu dark). Diterapkan secara scoped
+// ke #reader-view lewat CSS variable override + atribut data-reader-theme.
 window.setReaderTheme = function(mode) {
-    if (mode === 'light') { isDark = false; isAmoled = false; }
-    else if (mode === 'dark') { isDark = true; isAmoled = false; }
-    else if (mode === 'amoled') { 
-        // AMOLED hanya bisa aktif saat dark mode — paksa dark dulu
-        isDark = true; 
-        isAmoled = true; 
-    }
-    applyThemeToDOM();
+    if (mode !== 'light' && mode !== 'dark' && mode !== 'amoled') mode = 'dark';
+    readerTheme = mode;
+    localStorage.setItem('reader_theme', readerTheme);
+    applyReaderThemeToDOM();
 };
+
+function applyReaderThemeToDOM() {
+    const readerView = document.getElementById('reader-view');
+    if (readerView) readerView.setAttribute('data-reader-theme', readerTheme);
+
+    // Override variabel warna M3 khusus untuk konten buku
+    const _palettes = (typeof EXPRESSIVE_PALETTES !== 'undefined' && typeof STANDARD_PALETTES !== 'undefined')
+        ? (isExpressive ? EXPRESSIVE_PALETTES : STANDARD_PALETTES)
+        : (typeof EXPRESSIVE_PALETTES !== 'undefined' ? EXPRESSIVE_PALETTES : (typeof M3_PALETTES !== 'undefined' ? M3_PALETTES : null));
+    let readerCss = '';
+    if (_palettes) {
+        if (readerTheme === 'light') {
+            readerCss = _palettes[currentThemeKey]['light'];
+        } else if (readerTheme === 'dark') {
+            readerCss = _palettes[currentThemeKey]['dark'];
+        } else if (readerTheme === 'amoled') {
+            readerCss = _palettes[currentThemeKey]['dark'] + `--md-sys-color-background:#000000;--md-sys-color-surface:#000000;`;
+        }
+    }
+    const readerStyleEl = document.getElementById('reader-theme-style');
+    if (readerStyleEl) {
+        readerStyleEl.innerHTML = readerCss ? `#reader-content, #canvas-wrapper { ${readerCss} }` : '';
+    }
+
+    // Sinkronkan tombol Light/Dark/AMOLED di panel pengaturan buku
+    const tl = document.getElementById('theme-btn-light');
+    const td = document.getElementById('theme-btn-dark');
+    const ta = document.getElementById('theme-btn-amoled');
+    if (tl && td && ta) {
+        [tl, td, ta].forEach(el => {
+            el.classList.remove('bg-m3-primary', 'text-m3-onPrimary');
+            el.classList.add('text-m3-onSurfaceVariant');
+            el.classList.remove('amoled-unavailable');
+        });
+        const active = readerTheme === 'light' ? tl : (readerTheme === 'amoled' ? ta : td);
+        active.classList.add('bg-m3-primary', 'text-m3-onPrimary');
+        active.classList.remove('text-m3-onSurfaceVariant');
+    }
+
+    // Canvas: terapkan filter invert berdasarkan tema buku
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    const canvasPrev = document.getElementById('canvas-prev');
+    const canvasNext = document.getElementById('canvas-next');
+    const pdfCanvas = document.getElementById('pdf-canvas');
+    [canvasWrapper, canvasPrev, canvasNext, pdfCanvas].forEach(el => {
+        if (!el) return;
+        if (readerTheme === 'amoled') {
+            el.style.filter = 'invert(1) hue-rotate(180deg) contrast(1.1)';
+        } else if (readerTheme === 'dark') {
+            el.style.filter = 'invert(0.92) hue-rotate(180deg)';
+        } else {
+            el.style.filter = '';
+        }
+    });
+    if (canvasWrapper) {
+        canvasWrapper.style.backgroundColor = (readerTheme === 'amoled') ? '#000000' : '';
+    }
+}
 
 let typoPrefs = JSON.parse(localStorage.getItem('typo_prefs')) || { size: '1.2rem', align: 'left', font: 'Lora' };
 function applyTypo() {
@@ -1939,6 +1920,7 @@ window.openBook = async function(book) {
     activeBookId = book.id; pushAppHistory(`reader-${book.id}`);
     DOM.libView.style.transform = 'scale(0.95)'; DOM.readView.classList.remove('translate-y-full');
     DOM.title.textContent = book.title; 
+    applyReaderThemeToDOM();
     
     const loader = document.getElementById('reader-loading-overlay');
     loader.classList.remove('hidden'); requestAnimationFrame(() => loader.classList.remove('opacity-0'));
