@@ -4158,10 +4158,9 @@ window.archiveDownload = async function(identifier, title) {
         const mimeType   = chosenType === 'epub' ? 'application/epub+zip' : 'application/pdf';
 
         // Tentukan path tujuan di native storage
-        const CapHttp = window.Capacitor?.Plugins?.CapacitorHttp;
-        const FS      = window.Capacitor?.Plugins?.Filesystem;
+        const FS = window.Capacitor?.Plugins?.Filesystem;
 
-        // Jika tidak ada CapacitorHttp (berjalan di browser), fallback ke XHR lama
+        // Jika tidak ada Filesystem plugin (berjalan di browser), fallback ke XHR lama
         const _fallbackXhr = () => new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', fileUrl, true);
@@ -4203,16 +4202,15 @@ window.archiveDownload = async function(identifier, title) {
 
         let file = null;
 
-        if (CapHttp && FS) {
-            // ── PATH NATIVE: CapacitorHttp.downloadFile ──────────────────────
-            // File ditulis langsung ke disk oleh native layer → zero JS heap untuk data binary
+        if (FS) {
+            // ── PATH NATIVE: Filesystem.downloadFile ──────────────────────
+            // File ditulis langsung ke disk oleh native layer → zero JS heap
             let progressListener = null;
             let lastProgressUpdate = 0;
 
             try {
-                // Pasang listener progress SEBELUM memanggil downloadFile
-                progressListener = await CapHttp.addListener('progress', (progressData) => {
-                    // progressData: { url, bytes, contentLength }
+                // 1. GUNAKAN FS.addListener (Bukan CapHttp)
+                progressListener = await FS.addListener('progress', (progressData) => {
                     const now = Date.now();
                     if (now - lastProgressUpdate < 150) return;
                     lastProgressUpdate = now;
@@ -4228,65 +4226,73 @@ window.archiveDownload = async function(identifier, title) {
                     }
                 });
 
-                // Tangani pembatalan oleh user — tidak ada native abort di CapacitorHttp,
-                // jadi kita tandai flag dan abaikan hasilnya setelah selesai
                 let _aborted = false;
                 const _abortHandler = () => { _aborted = true; };
                 signal.addEventListener('abort', _abortHandler);
 
                 _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\n0.0 MB terunduh...`);
 
-                // downloadFile menulis langsung ke native filesystem — tidak ada blob di RAM JS
-                const dlResult = await CapHttp.downloadFile({
+                // 2. GUNAKAN FS.downloadFile (Parameter 'path' & 'directory')
+                const dlResult = await FS.downloadFile({
                     url: fileUrl,
-                    filePath: nativeTempPath,
-                    fileDirectory: 'CACHE',  // Tulis ke cache internal app
-                    progress: true,           // Aktifkan event progress
-                    headers: {},
+                    path: nativeTempPath,
+                    directory: 'CACHE',
+                    progress: true
                 });
 
-                // Bersihkan listener segera setelah selesai/gagal
                 if (progressListener) { try { progressListener.remove(); } catch (_) {} progressListener = null; }
                 signal.removeEventListener('abort', _abortHandler);
 
                 if (_aborted) {
-                    // Hapus file temp jika sempat terbuat
                     try { await FS.deleteFile({ path: nativeTempPath, directory: 'CACHE' }); } catch (_) {}
                     throw new DOMException('Aborted', 'AbortError');
                 }
 
                 if (!dlResult || !dlResult.path) {
-                    throw new Error('CapacitorHttp.downloadFile tidak mengembalikan path file.');
+                    throw new Error('Filesystem.downloadFile gagal.');
                 }
 
-                _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\nSelesai (100%)`);
+                _updateDlMsg(`${txt.downloading} ${chosenType.toUpperCase()}...\nMenyimpan file...`);
 
-                // Baca file dari native storage sebagai base64 untuk dibungkus File object
-                // (diperlukan oleh _processFilesFromArchive & _saveFileToDevice)
-                const readResult = await FS.readFile({
-                    path: nativeTempPath,
-                    directory: 'CACHE',
-                });
+                // 3. OPTIMASI DEWA: COPY NATIVE (BYPASS BASE64)
+                let savedToDevice = false;
+                const directories = ['EXTERNAL_STORAGE', 'DOWNLOADS', 'DOCUMENTS'];
+                for (const dir of directories) {
+                    try {
+                        await FS.copy({
+                            from: nativeTempPath, directory: 'CACHE',
+                            to: `Download/${fileName}`, toDirectory: dir
+                        });
+                        savedToDevice = true;
+                        if (typeof window.showPersistentToast === 'function') {
+                            window.showPersistentToast(
+                                lang === 'en' ? 'Saved to Downloads ✓' : (lang === 'es' ? 'Guardado en Descargas ✓' : 'Tersimpan di Downloads ✓'), 
+                                'success', 3500
+                            );
+                        }
+                        break;
+                    } catch (e) {}
+                }
+                
+                if (!savedToDevice) {
+                    try { await FS.copy({ from: nativeTempPath, directory: 'CACHE', to: fileName, toDirectory: 'DATA' }); } catch (e) {}
+                }
 
-                // Konversi base64 → Blob → File (hanya untuk diproses, bukan disimpan ulang sebagai blob unduhan)
-                const byteChars = atob(readResult.data);
-                const byteArr  = new Uint8Array(byteChars.length);
-                for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
-                const blob = new Blob([byteArr], { type: mimeType });
+                // 4. LOAD KE JS VIA LOCAL FETCH (Mencegah OOM dari atob)
+                // Membaca file dari cache secara streaming ke Blob
+                const uriResult = await FS.getUri({ path: nativeTempPath, directory: 'CACHE' });
+                const localUrl = window.Capacitor.convertFileSrc(uriResult.uri);
+                const response = await fetch(localUrl);
+                const blob = await response.blob();
                 file = new File([blob], fileName, { type: mimeType });
 
                 // Hapus file temp dari cache
                 try { await FS.deleteFile({ path: nativeTempPath, directory: 'CACHE' }); } catch (_) {}
 
-                // Simpan salinan permanen ke storage yang terlihat user (Downloads)
-                await _saveFileToDevice(file, fileName);
-
             } catch (capErr) {
-                // Bersihkan listener jika ada error
                 if (progressListener) { try { progressListener.remove(); } catch (_) {} progressListener = null; }
-                // Hapus file temp jika ada
                 try { await FS.deleteFile({ path: nativeTempPath, directory: 'CACHE' }); } catch (_) {}
-                throw capErr; // Lempar ulang agar ditangani outer catch
+                throw capErr; 
             }
 
         } else {
