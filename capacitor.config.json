@@ -9,6 +9,7 @@
     },
     "CapacitorHttp": {
       "enabled": true
-    }
+    },
+    "Filesystem": {}
   }
 }
