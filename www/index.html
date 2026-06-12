@@ -317,26 +317,21 @@
 
                     <div id="setting-group-search">
                         <label id="str-set-search" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Pencarian</label>
-                        <!-- Scroll mode: pencarian teks -->
+                        <!-- Search teks dalam buku: aktif untuk Scroll Mode & Canvas Mode (jika PDF punya teks) -->
                         <div id="search-scroll-area">
-                            <div class="search-capsule bg-m3-surface p-1 rounded-full relative flex items-center h-14 border-none transition-all duration-300">
+                            <div id="inbook-search-capsule" class="search-capsule bg-m3-surface p-1 rounded-full relative flex items-center h-14 border-none transition-all duration-300">
                                 <i data-lucide="search" class="w-5 h-5 ml-4 opacity-70 text-m3-onSurface shrink-0 pointer-events-none"></i>
                                 <input type="text" id="inbook-search-input" class="w-full bg-transparent border-none outline-none py-2 pl-3 pr-4 text-sm font-bold text-m3-onSurface placeholder:opacity-60" placeholder="Cari dalam buku...">
                             </div>
                             <div id="search-results-panel" class="hidden mt-3 max-h-48 overflow-y-auto rounded-2xl bg-m3-surface text-xs shadow-md border-none pointer-events-auto flex-col gap-1 p-2"></div>
                         </div>
-                        <!-- Canvas mode: lompat ke halaman -->
-                        <div id="search-canvas-area" class="hidden">
-                            <div class="flex items-center gap-2 bg-m3-surface p-2 pl-4 rounded-full h-14">
-                                <i data-lucide="corner-down-right" class="w-5 h-5 opacity-70 text-m3-primary shrink-0 pointer-events-none"></i>
-                                <input type="number" id="canvas-jump-input" min="1"
-                                    class="flex-1 bg-transparent border-none outline-none text-sm font-bold text-m3-onSurface placeholder:opacity-60 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                    placeholder="Halaman..."
-                                    onkeydown="if(event.key==='Enter') window.executeJumpToPage()">
-                                <button onclick="window.executeJumpToPage()" class="px-4 py-2 bg-m3-primary text-m3-onPrimary rounded-full font-bold text-xs btn-morph shrink-0">Go</button>
-                            </div>
+                        <!-- Canvas mode + PDF tanpa teks (hasil scan/gambar): tampilkan indikator -->
+                        <div id="search-canvas-image-warning" class="hidden p-3 rounded-2xl bg-m3-surface flex items-center gap-2.5 opacity-70">
+                            <i data-lucide="image-off" class="w-4 h-4 shrink-0 text-m3-onSurfaceVariant"></i>
+                            <p id="str-search-canvas-image-warning" class="text-xs font-bold text-m3-onSurfaceVariant">PDF ini hanya berisi gambar, pencarian kata tidak tersedia.</p>
                         </div>
                     </div>
+
 
                     <div id="setting-group-theme">
                         <label id="str-set-theme" class="text-xs font-bold opacity-70 block mb-3 uppercase tracking-wider">Mode Tema</label>
@@ -389,9 +384,10 @@
             </button>
         </div>
 
-        <!-- PROGRESS BAR -->
+        <!-- PROGRESS BAR (di Canvas Mode: bisa digeser/diketuk untuk lompat halaman) -->
         <div id="progress-container" class="h-1 w-full bg-m3-surfaceVariant shrink-0 z-40 relative">
             <div id="reading-progress-bar" class="h-full bg-m3-primary progress-smooth w-0"></div>
+            <div id="progress-drag-handle" class="hidden absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-m3-primary shadow-md pointer-events-none" style="left:0%"></div>
         </div>
 
         <!-- CANVAS PAGE INDICATOR (di atas bottom bar, hanya canvas mode) -->
@@ -422,6 +418,9 @@
             </div>
             <button onclick="window.toggleZoomSlider()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-onSurfaceVariant btn-morph hover:bg-m3-surface transition-colors shrink-0" title="Atur Default Zoom">
                 <i data-lucide="zoom-in" class="w-4 h-4"></i>
+            </button>
+            <button onclick="window.toggleJumpBar()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-onSurfaceVariant btn-morph hover:bg-m3-surface transition-colors shrink-0" title="Lompat ke Halaman">
+                <i data-lucide="hash" class="w-4 h-4"></i>
             </button>
             <button onclick="window.nextCanvasPage()" class="w-7 h-7 rounded-full flex items-center justify-center text-m3-primary btn-morph hover:bg-m3-surface transition-colors" title="Halaman Berikutnya">
                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
