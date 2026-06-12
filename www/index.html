@@ -29,6 +29,7 @@
     <!-- CSS Terpisah & Tema Dinamis -->
     <link rel="stylesheet" href="css/style.css">
     <style id="dynamic-theme"></style>
+    <style id="reader-theme-style"></style>
     <style>
         @keyframes splash-bar {
             0%   { left: -50%; width: 40%; }
@@ -39,17 +40,15 @@
             animation: splash-bar 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
     </style>
-    <!-- Deteksi tema awal agar splash screen tidak kedip putih di dark mode -->
+    <!-- UI selalu Dark Mode -->
     <script>
         (function() {
             try {
-                if (localStorage.getItem('theme') !== 'light') {
-                    document.documentElement.classList.add('dark');
-                    document.getElementById && document.addEventListener('DOMContentLoaded', function() {
-                        var s = document.getElementById('splash-screen');
-                        if (s) s.style.backgroundColor = '#0B0314';
-                    });
-                }
+                document.documentElement.classList.add('dark');
+                document.getElementById && document.addEventListener('DOMContentLoaded', function() {
+                    var s = document.getElementById('splash-screen');
+                    if (s) s.style.backgroundColor = '#0B0314';
+                });
             } catch(e) {}
         })();
     </script>
@@ -497,21 +496,6 @@
             <div class="w-12 h-1.5 bg-m3-onSurfaceVariant/30 rounded-full mx-auto mb-6 shrink-0 sticky top-0"></div>
             <h3 id="str-set-main-title" class="text-2xl font-bold mb-6 text-m3-onSurface">Pengaturan</h3>
             
-            <div class="flex items-center justify-between mb-2 bg-m3-surfaceVariant p-2 pl-5 rounded-full cursor-pointer btn-morph" onclick="toggleThemeState()">
-                <span class="font-bold text-sm tracking-wide" id="theme-label-text">Mode Terang</span>
-                <div class="relative w-16 h-8 rounded-full bg-m3-onSurfaceVariant/20 transition-colors" id="theme-switch-bg">
-                    <div id="theme-switch-knob" class="absolute top-1 left-1 w-6 h-6 rounded-full bg-m3-surface flex items-center justify-center transition-transform">
-                        <i data-lucide="sun" id="theme-switch-icon" class="w-4 h-4 text-m3-onSurface"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div id="amoled-toggle-container" class="flex items-center justify-between mb-6 bg-m3-surfaceVariant p-2 pl-5 rounded-full cursor-pointer btn-morph hidden" onclick="toggleAmoled()">
-                <span class="font-bold text-sm tracking-wide opacity-80" id="str-amoled-label">AMOLED (Hitam Pekat)</span>
-                <div class="relative w-16 h-8 rounded-full transition-colors" id="amoled-switch-bg">
-                    <div id="amoled-switch-knob" class="absolute top-[2px] left-[2px] w-6 h-6 rounded-full bg-m3-onSurface transition-transform duration-300 ease-out"></div>
-                </div>
-            </div>
 <!-- Toggle Mode Ekspresif -->
             <div id="expressive-toggle-container" class="flex items-center justify-between mb-2 bg-m3-surfaceVariant p-2 pl-5 rounded-full cursor-pointer btn-morph" onclick="toggleExpressive()">
                 <span class="font-bold text-sm tracking-wide opacity-80" id="str-expressive-label">Mode Ekspresif</span>
