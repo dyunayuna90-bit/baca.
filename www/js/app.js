@@ -1622,9 +1622,9 @@ window.executeBatchDelete = async function() {
     if(selectedForDelete.length === 0) return;
     const d = i18n[wikiLang] || i18n['id'];
     
-    showDialog("Hapus Buku", d.deleteConfirm, "trash-2", [
-        { text: "Batal", primary: false },
-        { text: "Hapus", primary: true, action: async () => {
+    showDialog(d.optDelete || "Hapus Buku", d.deleteConfirm, "trash-2", [
+        { text: d.cancel || "Batal", primary: false },
+        { text: d.delete || "Hapus", primary: true, action: async () => {
             window.closeDialog();
             const toDeleteSet = new Set(selectedForDelete.map(String));
             
@@ -1645,9 +1645,9 @@ window.executeBatchDelete = async function() {
 window.triggerDeleteView = async function() {
     if(!activeOptsId) return;
     const d = i18n[wikiLang] || i18n['id'];
-    showDialog("Hapus Permanen", d.deleteConfirm, "trash-2", [
-        { text: "Batal", primary: false },
-        { text: "Hapus", primary: true, action: async () => {
+    showDialog(d.optDelete || "Hapus Permanen", d.deleteConfirm, "trash-2", [
+        { text: d.cancel || "Batal", primary: false },
+        { text: d.delete || "Hapus", primary: true, action: async () => {
             window.closeDialog();
             
             await localforage.removeItem('content_' + activeOptsId);
@@ -3129,7 +3129,9 @@ window.toggleFullscreenReading = function(isFromHistory = false) {
 };
 
 window.setupIntersectionObserver = function() {
-    if (observer) observer.disconnect(); const totalNodes = DOM.inner.children.length;
+    if (observer) observer.disconnect();
+    const book = library.find(b => b.id === activeBookId);
+    const totalNodes = (book && book.nodes) ? book.nodes.length : DOM.inner.children.length;
     observer = new IntersectionObserver((entries) => {
         let visibleEntry = entries.find(e => e.isIntersecting);
         if (visibleEntry) {
