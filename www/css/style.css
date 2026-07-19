@@ -365,14 +365,22 @@ body:not(.dark) #toc-list button {
 }
 
 #search-mode-row {
+    display: flex !important; /* Paksa timpa class .hidden bawaan tailwind */
     max-height: 0;
     opacity: 0;
     overflow: hidden;
     margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     transition: max-height 0.4s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease, margin-top 0.4s ease;
 }
 #search-mode-row.search-mode-expanded {
     max-height: 50px;
     opacity: 1;
     margin-top: 0.625rem !important; /* mt-2.5 di Tailwind */
+}
+
+/* Cegah input bisa diklik native saat kapsul belum membesar */
+#search-area:not(.search-active) #global-search {
+    pointer-events: none;
 }
