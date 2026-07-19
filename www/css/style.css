@@ -364,3 +364,15 @@ body:not(.dark) #toc-list button {
     color: var(--md-sys-color-on-surface) !important;
 }
 
+#search-mode-row {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0 !important;
+    transition: max-height 0.4s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease, margin-top 0.4s ease;
+}
+#search-mode-row.search-mode-expanded {
+    max-height: 50px;
+    opacity: 1;
+    margin-top: 0.625rem !important; /* mt-2.5 di Tailwind */
+}
