@@ -5,6 +5,7 @@
 let library = []; 
 let activeBookId = null; 
 let observer = null; 
+let coverObserver = null; 
 let activePanel = null;
 let activeOptsId = null; 
 let currentSelection = { text: "", nodeIdx: -1, startOff: 0, endOff: 0 }; 
@@ -392,22 +393,29 @@ function setupScrollListeners() {
     }
 
     let lastScrollTop = 0;
+    let isScrolling = false;
     if(DOM.readContent) {
         DOM.readContent.addEventListener('scroll', () => {
-            const bottomBar = document.getElementById('reader-bottom-bar');
-            if (bottomBar && bottomBar.classList.contains('hidden')) return;
+            if (isScrolling) return;
+            isScrolling = true;
 
-            const currentScroll = DOM.readContent.scrollTop;
-            const header = document.getElementById('reader-floating-header');
-            
-            if (currentScroll > lastScrollTop && currentScroll > 50) {
-                header.classList.add('-translate-y-[150%]', 'opacity-0');
-                header.classList.remove('translate-y-0', 'opacity-100');
-            } else {
-                header.classList.remove('-translate-y-[150%]', 'opacity-0');
-                header.classList.add('translate-y-0', 'opacity-100');
-            }
-            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+            requestAnimationFrame(() => {
+                const bottomBar = document.getElementById('reader-bottom-bar');
+                if (bottomBar && bottomBar.classList.contains('hidden')) { isScrolling = false; return; }
+
+                const currentScroll = DOM.readContent.scrollTop;
+                const header = document.getElementById('reader-floating-header');
+
+                if (currentScroll > lastScrollTop && currentScroll > 50) {
+                    header.classList.add('-translate-y-[150%]', 'opacity-0');
+                    header.classList.remove('translate-y-0', 'opacity-100');
+                } else {
+                    header.classList.remove('-translate-y-[150%]', 'opacity-0');
+                    header.classList.add('translate-y-0', 'opacity-100');
+                }
+                lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+                isScrolling = false;
+            });
         }, { passive: true });
     }
 }
@@ -1397,6 +1405,75 @@ function renderLibrary(filterText = "") {
     updateStatistics(); 
     if(window.lucide) window.lucide.createIcons();
     window.updateBatchSelectionUI();
+    initCoverObserver();
+}
+
+function initCoverObserver() {
+    if (coverObserver) coverObserver.disconnect();
+
+    coverObserver = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const card = entry.target;
+            const id = card.dataset.coverId;
+            const baseClass = card.dataset.baseClass || '';
+            if (!id) { obs.unobserve(card); return; }
+
+            localforage.getItem('cover_' + id).then(coverData => {
+                if (!coverData) return;
+
+                // Support format baru (Blob) dan format lama (base64 string) secara bersamaan
+                let coverUrl = null;
+                if (coverData instanceof Blob) {
+                    coverUrl = URL.createObjectURL(coverData);
+                } else if (typeof coverData === 'string' && coverData.length > 50) {
+                    coverUrl = coverData;
+                }
+                if (!coverUrl) return;
+
+                // Transisi transparan -> solid saat gambar sampul diterapkan
+                card.style.transition = 'opacity 0.3s ease';
+                card.style.opacity = '0';
+
+                requestAnimationFrame(() => {
+                    card.style.backgroundImage = `url('${coverUrl}')`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'top center';
+
+                    if (baseClass) card.classList.remove(...baseClass.split(' '));
+                    card.classList.add('text-white', 'shadow-lg');
+
+                    const overlay = document.getElementById(`overlay-${id}`);
+                    if(overlay) overlay.classList.remove('hidden');
+
+                    ['title-', 'top-icons-', 'pct-'].forEach(prefix => {
+                        const el = document.getElementById(prefix + id);
+                        if(el) el.classList.add('text-white');
+                    });
+
+                    const bar = document.getElementById(`bar-${id}`);
+                    if(bar) { bar.classList.remove('bg-m3-primary', 'dark:bg-m3-primaryContainer'); bar.classList.add('bg-white'); }
+
+                    const icon = document.getElementById(`book-icon-${id}`);
+                    if(icon) icon.classList.add('hidden');
+
+                    card.style.opacity = '1';
+                });
+
+                // Revoke ObjectURL saat card dihapus dari DOM agar tidak leak
+                if (coverData instanceof Blob) {
+                    const mo = new MutationObserver(() => {
+                        if (!document.body.contains(card)) { URL.revokeObjectURL(coverUrl); mo.disconnect(); }
+                    });
+                    mo.observe(document.body, { childList: true, subtree: true });
+                }
+            });
+
+            obs.unobserve(card);
+        });
+    }, { root: null, rootMargin: '200px', threshold: 0.01 });
+
+    document.querySelectorAll('.lazy-cover').forEach(el => coverObserver.observe(el));
 }
 
 function createBookCard(book, isSlider = false, index = 0) {
@@ -1414,7 +1491,9 @@ function createBookCard(book, isSlider = false, index = 0) {
     let baseClass = colors[index % colors.length];
     const dimensionClass = isSlider ? "w-64 h-40 shrink-0 snap-start" : "aspect-[3/4.5] w-full shadow-md hover:shadow-xl transition-shadow";
 
-    card.className = `${baseClass} ${shapeClass} ${dimensionClass} p-4 relative cursor-pointer card-morph flex flex-col justify-between overflow-hidden border-none outline-none ring-0`;
+    card.className = `${baseClass} ${shapeClass} ${dimensionClass} p-4 relative cursor-pointer card-morph lazy-cover flex flex-col justify-between overflow-hidden border-none outline-none ring-0`;
+    card.dataset.coverId = book.id;
+    card.dataset.baseClass = baseClass;
 
     let batchOverlayHTML = !isSlider ? `
         <div class="batch-overlay absolute inset-0 z-20 transition-all duration-300 pointer-events-none rounded-inherit" data-book-id="${book.id}" style="display: none; opacity: 0; background-color: transparent;">
@@ -1449,47 +1528,8 @@ function createBookCard(book, isSlider = false, index = 0) {
         </div>
     `;
 
-    localforage.getItem('cover_' + book.id).then(coverData => {
-        if (!coverData) return;
-
-        // Support format baru (Blob) dan format lama (base64 string) secara bersamaan
-        let coverUrl = null;
-        if (coverData instanceof Blob) {
-            coverUrl = URL.createObjectURL(coverData);
-        } else if (typeof coverData === 'string' && coverData.length > 50) {
-            coverUrl = coverData;
-        }
-        if (!coverUrl) return;
-
-        card.style.backgroundImage = `url('${coverUrl}')`;
-        card.style.backgroundSize = 'cover';
-        card.style.backgroundPosition = 'top center';
-        
-        card.classList.remove(...baseClass.split(' '));
-        card.classList.add('text-white', 'shadow-lg');
-        
-        const overlay = document.getElementById(`overlay-${book.id}`);
-        if(overlay) overlay.classList.remove('hidden');
-        
-        ['title-', 'top-icons-', 'pct-'].forEach(prefix => {
-            const el = document.getElementById(prefix + book.id);
-            if(el) el.classList.add('text-white');
-        });
-        
-        const bar = document.getElementById(`bar-${book.id}`);
-        if(bar) { bar.classList.remove('bg-m3-primary', 'dark:bg-m3-primaryContainer'); bar.classList.add('bg-white'); }
-        
-        const icon = document.getElementById(`book-icon-${book.id}`);
-        if(icon) icon.classList.add('hidden');
-
-        // Revoke ObjectURL saat card dihapus dari DOM agar tidak leak
-        if (coverData instanceof Blob) {
-            const mo = new MutationObserver(() => {
-                if (!document.body.contains(card)) { URL.revokeObjectURL(coverUrl); mo.disconnect(); }
-            });
-            mo.observe(document.body, { childList: true, subtree: true });
-        }
-    });
+    // Cover gambar di-lazy-load lewat coverObserver (lihat initCoverObserver) agar tidak
+    // membebani memori dengan localforage.getItem sinkron untuk semua buku sekaligus.
 
     let pressTimer = null; let isPressing = false; let hasLongPressed = false;
     const handleStart = (e) => {
@@ -3701,7 +3741,7 @@ function setupSwipeToDismiss() {
     sheets.forEach(sheetId => {
         const sheet = document.getElementById(sheetId);
         if (!sheet) return;
-        let touchStartY = 0; let isPulling = false;
+        let touchStartY = 0; let isPulling = false; let rafPending = false;
         
         sheet.addEventListener('touchstart', (e) => {
             let target = e.target;
@@ -3731,10 +3771,16 @@ function setupSwipeToDismiss() {
             if (deltaY > 0) { 
                 isPulling = true; if(e.cancelable) e.preventDefault(); 
                 
-                if (sheetId === 'global-settings-sheet' || sheetId === 'b-opt-sheet' || sheetId === 'ai-sheet') {
-                    sheet.style.transform = `translateY(${deltaY * 0.5}px)`; 
-                } else {
-                    sheet.style.transform = `scale(0.75) translateY(${12 + (deltaY * 0.5)}px)`;
+                if (!rafPending) {
+                    rafPending = true;
+                    requestAnimationFrame(() => {
+                        if (sheetId === 'global-settings-sheet' || sheetId === 'b-opt-sheet' || sheetId === 'ai-sheet') {
+                            sheet.style.transform = `translateY(${deltaY * 0.5}px)`; 
+                        } else {
+                            sheet.style.transform = `scale(0.75) translateY(${12 + (deltaY * 0.5)}px)`;
+                        }
+                        rafPending = false;
+                    });
                 }
             }
         }, { passive: false });
@@ -3763,7 +3809,7 @@ function setupSwipeToDismiss() {
     panels.forEach(panelId => {
         const panel = document.getElementById(panelId);
         if(!panel) return;
-        let touchStartX = 0; let touchStartY = 0; let isSwipingPanel = false;
+        let touchStartX = 0; let touchStartY = 0; let isSwipingPanel = false; let rafPendingPanel = false;
         panel.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; panel.style.transition = 'none';
         }, { passive: true });
@@ -3773,7 +3819,13 @@ function setupSwipeToDismiss() {
             if (deltaX > 0 && deltaX > deltaY) { 
                 isSwipingPanel = true;
                 if(e.cancelable) e.preventDefault();
-                panel.style.transform = `translateX(${deltaX}px)`;
+                if (!rafPendingPanel) {
+                    rafPendingPanel = true;
+                    requestAnimationFrame(() => {
+                        panel.style.transform = `translateX(${deltaX}px)`;
+                        rafPendingPanel = false;
+                    });
+                }
             }
         }, { passive: false }); 
         panel.addEventListener('touchend', (e) => {
