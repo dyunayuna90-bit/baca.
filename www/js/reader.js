@@ -139,7 +139,7 @@ async function processMultipleFiles(files) {
 
     // Helper: ambil ID asli buku dari nama file (sama dengan yang dipakai saat import)
     function _getBookId(file) {
-        return btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+        return btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 150);
     }
 
     // Helper: cek mode yang sudah ada di library untuk ID buku tertentu
@@ -580,7 +580,7 @@ async function handleTxt(file, bookTitle) {
     if (parsedNodes.length === 0) throw new Error("File TXT kosong atau tidak bisa dibaca.");
 
     // ID PERMANEN + CEK DUPLIKAT
-    let bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    let bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 150);
     if (file._isDuplicate) {
         bookId = bookId.substring(0, 20) + Date.now().toString(36);
         bookTitle = bookTitle + " (Copy)";
@@ -655,7 +655,7 @@ async function handleMd(file, bookTitle) {
     if (parsedNodes.length === 0) throw new Error("File MD kosong atau tidak valid.");
 
     // ID PERMANEN + CEK DUPLIKAT
-    let bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    let bookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 150);
     if (file._isDuplicate) {
         bookId = bookId.substring(0, 20) + Date.now().toString(36);
         bookTitle = bookTitle + " (Copy)";
@@ -832,7 +832,7 @@ async function processPdfDirect(file, bookTitle, finalMode, total) {
         coverBlob = await new Promise(resolve => coverCanvas.toBlob(resolve, 'image/jpeg', 0.8));
     } catch(e) { console.error("Gagal cover PDF", e); }
 
-    let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 150);
     if (file._isDuplicate) {
         newBookId = newBookId.substring(0, 20) + Date.now().toString(36);
         bookTitle = bookTitle + " (Copy)";
@@ -1405,7 +1405,7 @@ async function handleEpub(file, bookTitle) {
     }
     
     // ID PERMANEN + CEK DUPLIKAT
-    let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+    let newBookId = btoa(unescape(encodeURIComponent(file.name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 150);
     if (file._isDuplicate) {
         newBookId = newBookId.substring(0, 20) + Date.now().toString(36);
         bookTitle = bookTitle + " (Copy)";
