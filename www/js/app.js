@@ -518,7 +518,7 @@ function setupSearchListeners() {
                 if (window.location.hash !== '#search') pushAppHistory('search');
             }
             const modeRow = document.getElementById('search-mode-row');
-            if (modeRow) modeRow.classList.remove('hidden');
+            if (modeRow) modeRow.classList.add('search-mode-expanded');
             _syncOfflineBadge();
         });
         DOM.globalSearch.addEventListener('input', (e) => {
@@ -546,7 +546,13 @@ function setupSearchListeners() {
         searchCapsule.addEventListener('click', (e) => {
             if (searchArea.classList.contains('search-active')) {
                 if (e.target !== DOM.globalSearch) { window.closeSearch(false); }
-            } else { DOM.globalSearch.focus(); }
+            } else {
+                searchArea.classList.add('search-active');
+                if (window.location.hash !== '#search') pushAppHistory('search');
+                const modeRow = document.getElementById('search-mode-row');
+                if (modeRow) modeRow.classList.add('search-mode-expanded');
+                _syncOfflineBadge();
+            }
         });
     }
 
@@ -573,7 +579,7 @@ window.closeSearch = function(fromHistory = false) {
         _archiveLastQuery = '';
         const modeRow = document.getElementById('search-mode-row');
         const archivePanel = document.getElementById('archive-results-panel');
-        if (modeRow) modeRow.classList.add('hidden');
+        if (modeRow) modeRow.classList.remove('search-mode-expanded');
         if (archivePanel) archivePanel.classList.add('hidden');
         _hideRacksForSearch(false);
         _syncSearchModeUI();
@@ -780,10 +786,13 @@ window.showDialog = function(title, message, iconStr, buttons) {
     if(window.lucide) window.lucide.createIcons();
 
     m.classList.remove('hidden');
-    requestAnimationFrame(() => {
-        m.classList.remove('opacity-0');
-        s.classList.remove('scale-75');
-    });
+    // Bersihkan sisa inline style dari swipe-to-dismiss
+    s.style.transform = '';
+    s.style.transition = '';
+    // Forced reflow
+    void m.offsetWidth;
+    m.classList.remove('opacity-0');
+    s.classList.remove('scale-75');
 };
 
 window.closeDialog = function(isFromHistory = false) {
@@ -801,12 +810,15 @@ window.openModal = function(modalId, sheetId, isScale = false) {
     pushAppHistory(`modal-${modalId}`);
     const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
     if(m && s) {
-        m.classList.remove('hidden'); 
-        requestAnimationFrame(() => { 
-            m.classList.remove('opacity-0'); 
-            if(isScale) { s.classList.remove('scale-75', 'translate-y-12'); } 
-            else { s.classList.remove('translate-y-full'); } 
-        });
+        m.classList.remove('hidden');
+        // Bersihkan sisa inline style dari swipe-to-dismiss
+        s.style.transform = '';
+        s.style.transition = '';
+        // Forced reflow
+        void m.offsetWidth;
+        m.classList.remove('opacity-0');
+        if(isScale) { s.classList.remove('scale-75', 'translate-y-12'); }
+        else { s.classList.remove('translate-y-full'); }
     }
 }
 
@@ -3052,37 +3064,44 @@ function _applyCanvasTransform(wrapper) {
 
 window._closeReaderAction = function(isFromHistory = false) {
     if (!isFromHistory) { history.back(); return; }
-    DOM.readView.classList.add('translate-y-full'); DOM.libView.style.transform = 'scale(1)';
-    if(observer) observer.disconnect(); 
-    
-    // Reset Canvas State (v25: termasuk translate)
-    // Destroy PDF.js document sebelum null-kan untuk mencegah memory leak
-    if (currentPdfDoc) {
-        try { currentPdfDoc.destroy(); } catch(e) { console.warn('PDFDocumentProxy.destroy():', e); }
-    }
-    currentPdfDoc = null;
-    currentCanvasPage = 1;
-    currentCanvasScale = 1.0;
-    canvasTranslateX = 0;
-    canvasTranslateY = 0;
-    canvasIsPinching = false;
-    if (DOM.canvasWrapper) DOM.canvasWrapper.style.transform = '';
 
-    if (activeBookId) {
-        let bIdx = library.findIndex(b => b.id === activeBookId);
-        if (bIdx > -1 && library[bIdx].nodes) {
-            delete library[bIdx].nodes;
-        }
-    }
-
-    renderLibrary(DOM.globalSearch.value); activeBookId = null;
-    window.getSelection().removeAllRanges();
-    const menu = document.getElementById('selection-menu');
-    if(menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
-    // Kosongkan TextLayer saat reader ditutup
-    const textLayerDiv = document.getElementById('canvas-text-layer');
-    if (textLayerDiv) textLayerDiv.innerHTML = '';
+    // 1. Eksekusi murni visual (Animasi)
+    DOM.readView.classList.add('translate-y-full');
+    DOM.libView.style.transform = 'scale(1)';
     updateBottomNavUI(null);
+
+    // 2. Tunda pemrosesan memori yang berat agar animasi 60fps selesai dulu
+    setTimeout(() => {
+        if(observer) observer.disconnect();
+
+        // Reset Canvas State (v25: termasuk translate)
+        // Destroy PDF.js document sebelum null-kan untuk mencegah memory leak
+        if (currentPdfDoc) {
+            try { currentPdfDoc.destroy(); } catch(e) { console.warn('PDFDocumentProxy.destroy():', e); }
+        }
+        currentPdfDoc = null;
+        currentCanvasPage = 1;
+        currentCanvasScale = 1.0;
+        canvasTranslateX = 0;
+        canvasTranslateY = 0;
+        canvasIsPinching = false;
+        if (DOM.canvasWrapper) DOM.canvasWrapper.style.transform = '';
+
+        if (activeBookId) {
+            let bIdx = library.findIndex(b => b.id === activeBookId);
+            if (bIdx > -1 && library[bIdx].nodes) {
+                delete library[bIdx].nodes;
+            }
+        }
+
+        renderLibrary(DOM.globalSearch ? DOM.globalSearch.value : ""); activeBookId = null;
+        window.getSelection().removeAllRanges();
+        const menu = document.getElementById('selection-menu');
+        if(menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
+        // Kosongkan TextLayer saat reader ditutup
+        const textLayerDiv = document.getElementById('canvas-text-layer');
+        if (textLayerDiv) textLayerDiv.innerHTML = '';
+    }, 350); // Waktu eksekusi setelah animasi transisi selesai
 }
 
 if(document.getElementById('btn-back')) {
