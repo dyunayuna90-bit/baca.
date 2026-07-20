@@ -384,3 +384,17 @@ body:not(.dark) #toc-list button {
 #search-area:not(.search-active) #global-search {
     pointer-events: none;
 }
+
+#batch-delete-bar {
+    width: 90% !important;
+    max-width: 400px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px !important;
+    border-radius: 28px !important;
+}
+
+/* Nonaktifkan animasi morph mengecil saat memilih buku di mode batch */
+body.batch-mode-active .card-morph:active {
+    transform: none !important;
+}
