@@ -537,7 +537,13 @@ function setupSearchListeners() {
             if (_archiveMode) {
                 _archiveOnInput(e.target.value);
             } else {
-                renderLibrary(e.target.value);
+                const query = e.target.value.toLowerCase().trim();
+                document.querySelectorAll('.card-morph').forEach(card => {
+                    const titleEl = card.querySelector('h3');
+                    if (titleEl) {
+                        card.style.display = titleEl.textContent.toLowerCase().includes(query) ? '' : 'none';
+                    }
+                });
             }
         });
     }
@@ -584,8 +590,8 @@ window.closeSearch = function(fromHistory = false) {
         _hideRacksForSearch(false);
         _syncSearchModeUI();
 
-        // Tunda renderLibrary agar CSS transisi rak selesai, mencegah kedip
-        setTimeout(() => { renderLibrary(); }, 350);
+        // Reset filter CSS Display, hindari renderLibrary() agar tidak kedip
+        document.querySelectorAll('.card-morph').forEach(card => card.style.display = '');
         if (!fromHistory && window.location.hash === '#search') history.back();
     }
 };
@@ -827,13 +833,14 @@ window._closeModalAction = function(modalId, sheetId, isScale = false, isFromHis
     if (!isFromHistory) { history.back(); return; }
     const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
     if(m && s) {
-        // Bersihkan bloker dari swipe-to-dismiss
         s.style.transform = '';
         s.style.transition = '';
-        void m.offsetWidth; // Forced reflow
-        if(isScale) { s.classList.add('scale-75', 'translate-y-12'); } 
-        else { s.classList.add('translate-y-full'); }
-        m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300);
+        requestAnimationFrame(() => {
+            if(isScale) { s.classList.add('scale-75', 'translate-y-12'); }
+            else { s.classList.add('translate-y-full'); }
+            m.classList.add('opacity-0');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        });
     }
 }
 
@@ -1550,8 +1557,9 @@ function createBookCard(book, isSlider = false, index = 0) {
 
     let pressTimer = null; let isPressing = false; let hasLongPressed = false;
     const handleStart = (e) => {
+        hasLongPressed = false;
         if (isBatchDeleteMode) return;
-        isPressing = true; hasLongPressed = false;
+        isPressing = true;
         pressTimer = setTimeout(() => { if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); } }, 400);
     };
     const handleEnd = () => { isPressing = false; clearTimeout(pressTimer); };
@@ -1562,7 +1570,7 @@ function createBookCard(book, isSlider = false, index = 0) {
     card.addEventListener('mouseleave', handleMove); card.addEventListener('touchmove', handleMove, {passive: true});
     
     card.addEventListener('click', (e) => { 
-        if (hasLongPressed) { e.preventDefault(); e.stopPropagation(); return; } 
+        if (hasLongPressed) { hasLongPressed = false; e.preventDefault(); e.stopPropagation(); return; } 
         if (isBatchDeleteMode && !isSlider) {
             e.preventDefault(); e.stopPropagation();
             const strId = String(book.id);
