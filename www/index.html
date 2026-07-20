@@ -222,11 +222,11 @@
             <input type="file" id="folder-scan-upload" accept=".epub,.pdf,.txt,.md" multiple webkitdirectory class="hidden">
         </div>
         
-        <div id="batch-delete-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-m3-surfaceVariant text-m3-onSurfaceVariant pl-6 pr-2 py-2 z-[60] translate-y-32 transition-transform duration-300 flex justify-between items-center rounded-full shadow-lg gap-6 border-none pointer-events-auto min-w-[320px]">
-            <span id="batch-delete-count" class="font-bold text-sm tracking-wide whitespace-nowrap">0 Terpilih</span>
-            <div class="flex gap-2 shrink-0">
-                <button onclick="toggleBatchDelete()" id="btn-batch-cancel" class="px-5 py-2.5 font-bold text-xs uppercase tracking-wider text-m3-onSurfaceVariant bg-transparent rounded-full btn-morph hover:bg-m3-onSurfaceVariant/10 transition-colors">Batal</button>
-                <button onclick="executeBatchDelete()" id="btn-batch-exec" class="px-5 py-2.5 font-bold text-xs uppercase tracking-wider bg-m3-primary text-m3-onPrimary rounded-full btn-morph shadow-sm">Hapus</button>
+        <div id="batch-delete-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[360px] bg-m3-surfaceVariant text-m3-onSurfaceVariant pl-5 pr-2 py-2 z-[60] translate-y-32 transition-transform duration-300 flex justify-between items-center rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.2)] gap-3 border-none pointer-events-auto">
+            <span id="batch-delete-count" class="font-bold text-sm tracking-wide truncate flex-1">0 Terpilih</span>
+            <div class="flex gap-1 shrink-0">
+                <button onclick="toggleBatchDelete()" id="btn-batch-cancel" class="px-4 py-2.5 font-bold text-[11px] uppercase tracking-wider text-m3-onSurfaceVariant bg-transparent rounded-full btn-morph hover:bg-m3-onSurfaceVariant/10 transition-colors">Batal</button>
+                <button onclick="executeBatchDelete()" id="btn-batch-exec" class="px-4 py-2.5 font-bold text-[11px] uppercase tracking-wider bg-m3-primary text-m3-onPrimary rounded-full btn-morph shadow-sm">Hapus</button>
             </div>
         </div>
     </div>
