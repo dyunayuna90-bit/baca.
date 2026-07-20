@@ -177,9 +177,15 @@ window.updateStatistics = function() {
     recordReadingActivity();
 };
 
-// Simpan & ambil data aktivitas membaca harian
+let _lastActivityLogTime = 0;
+// Simpan & ambil data aktivitas membaca harian (1 poin = 1 menit membaca aktif)
 function recordReadingActivity() {
     try {
+        const now = Date.now();
+        // Hanya rekam 1 poin (1 menit) jika sudah berlalu minimal 60 detik dari log terakhir
+        if (now - _lastActivityLogTime < 60000) return;
+        _lastActivityLogTime = now;
+
         const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         const raw = localStorage.getItem('reading_activity_v1');
         const act = raw ? JSON.parse(raw) : {};
@@ -1558,7 +1564,7 @@ function createBookCard(book, isSlider = false, index = 0) {
     let pressTimer = null; let isPressing = false; let hasLongPressed = false;
     const handleStart = (e) => {
         hasLongPressed = false;
-        if (isBatchDeleteMode) return;
+        if (isBatchDeleteMode || isSlider) return; // Tambahkan isSlider di sini
         isPressing = true;
         pressTimer = setTimeout(() => { if (isPressing) { hasLongPressed = true; window.openBookOptions(book.id); } }, 400);
     };
@@ -2928,28 +2934,27 @@ function initCanvasGestures() {
                 } else if (deltaX < -80) {
                     // SWIPE KIRI → halaman berikutnya
                     if (currentPdfDoc && currentCanvasPage < currentPdfDoc.numPages) {
-                        // [FIX FLICKER] Salin piksel canvas-next ke pdf-canvas SEBELUM reset posisi.
-                        // Karena canvas utama sudah menampilkan gambar tujuan, reset wrapper ke tengah
-                        // tidak menimbulkan perubahan visual apapun (zero-flicker).
-                        const cnNext = document.getElementById('canvas-next');
-                        const cnCurr = document.getElementById('pdf-canvas');
-                        if (cnNext && cnNext.width > 1 && cnCurr) {
-                            cnCurr.width        = cnNext.width;
-                            cnCurr.height       = cnNext.height;
-                            cnCurr.style.width  = cnNext.style.width;
-                            cnCurr.style.height = cnNext.style.height;
-                            const ctxCurr = cnCurr.getContext('2d');
-                            ctxCurr.imageSmoothingEnabled = false;
-                            ctxCurr.drawImage(cnNext, 0, 0);
-                            // [FIX FLICKER] Set flag agar renderCanvasPage melewati render ulang
-                            _canvasAlreadyCopied = true;
-                        }
-                        // [FIX FLICKER] Reset wrapper INSTAN (tanpa transisi) — visual sudah siap
-                        wrapper.style.transition = 'none';
-                        wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
-                        currentCanvasPage++;
-                        _resetCanvasTransform();
-                        renderCanvasPage(currentCanvasPage);
+                        wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+                        wrapper.style.transform = `translate(-${window.innerWidth}px, 0px) scale(1)`;
+                        setTimeout(() => {
+                            const cnNext = document.getElementById('canvas-next');
+                            const cnCurr = document.getElementById('pdf-canvas');
+                            if (cnNext && cnNext.width > 1 && cnCurr) {
+                                cnCurr.width        = cnNext.width;
+                                cnCurr.height       = cnNext.height;
+                                cnCurr.style.width  = cnNext.style.width;
+                                cnCurr.style.height = cnNext.style.height;
+                                const ctxCurr = cnCurr.getContext('2d');
+                                ctxCurr.imageSmoothingEnabled = false;
+                                ctxCurr.drawImage(cnNext, 0, 0);
+                                _canvasAlreadyCopied = true;
+                            }
+                            wrapper.style.transition = 'none';
+                            wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
+                            currentCanvasPage++;
+                            _resetCanvasTransform();
+                            renderCanvasPage(currentCanvasPage);
+                        }, 300);
                     } else {
                         _snapSliderToCenter();
                     }
@@ -2958,26 +2963,27 @@ function initCanvasGestures() {
                 } else if (deltaX > 80) {
                     // SWIPE KANAN → halaman sebelumnya
                     if (currentPdfDoc && currentCanvasPage > 1) {
-                        // [FIX FLICKER] Salin piksel canvas-prev ke pdf-canvas SEBELUM reset posisi.
-                        const cnPrev = document.getElementById('canvas-prev');
-                        const cnCurr = document.getElementById('pdf-canvas');
-                        if (cnPrev && cnPrev.width > 1 && cnCurr) {
-                            cnCurr.width        = cnPrev.width;
-                            cnCurr.height       = cnPrev.height;
-                            cnCurr.style.width  = cnPrev.style.width;
-                            cnCurr.style.height = cnPrev.style.height;
-                            const ctxCurr = cnCurr.getContext('2d');
-                            ctxCurr.imageSmoothingEnabled = false;
-                            ctxCurr.drawImage(cnPrev, 0, 0);
-                            // [FIX FLICKER] Set flag agar renderCanvasPage melewati render ulang
-                            _canvasAlreadyCopied = true;
-                        }
-                        // [FIX FLICKER] Reset wrapper INSTAN (tanpa transisi) — visual sudah siap
-                        wrapper.style.transition = 'none';
-                        wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
-                        currentCanvasPage--;
-                        _resetCanvasTransform();
-                        renderCanvasPage(currentCanvasPage);
+                        wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)';
+                        wrapper.style.transform = `translate(${window.innerWidth}px, 0px) scale(1)`;
+                        setTimeout(() => {
+                            const cnPrev = document.getElementById('canvas-prev');
+                            const cnCurr = document.getElementById('pdf-canvas');
+                            if (cnPrev && cnPrev.width > 1 && cnCurr) {
+                                cnCurr.width        = cnPrev.width;
+                                cnCurr.height       = cnPrev.height;
+                                cnCurr.style.width  = cnPrev.style.width;
+                                cnCurr.style.height = cnPrev.style.height;
+                                const ctxCurr = cnCurr.getContext('2d');
+                                ctxCurr.imageSmoothingEnabled = false;
+                                ctxCurr.drawImage(cnPrev, 0, 0);
+                                _canvasAlreadyCopied = true;
+                            }
+                            wrapper.style.transition = 'none';
+                            wrapper.style.transform  = 'translate(0px, 0px) scale(1)';
+                            currentCanvasPage--;
+                            _resetCanvasTransform();
+                            renderCanvasPage(currentCanvasPage);
+                        }, 300);
                     } else {
                         _snapSliderToCenter();
                     }
@@ -3115,7 +3121,20 @@ window._closeReaderAction = function(isFromHistory = false) {
             }
         }
 
-        renderLibrary(DOM.globalSearch ? DOM.globalSearch.value : ""); activeBookId = null;
+        // Update spesifik progress bar tanpa render ulang seluruh DOM library (mencegah blink)
+        if (activeBookId) {
+            const book = library.find(b => b.id === activeBookId);
+            if (book) {
+                // Update teks persentase
+                const pctEls = document.querySelectorAll(`[id="pct-${book.id}"]`);
+                pctEls.forEach(el => el.innerHTML = `<span>${book.progressPct || 0}%</span>`);
+
+                // Update panjang progress bar
+                const barEls = document.querySelectorAll(`[id="bar-${book.id}"]`);
+                barEls.forEach(el => el.style.width = `${book.progressPct || 0}%`);
+            }
+        }
+        activeBookId = null;
         window.getSelection().removeAllRanges();
         const menu = document.getElementById('selection-menu');
         if(menu) { menu.classList.add('opacity-0', 'scale-75'); setTimeout(() => menu.classList.add('hidden'), 200); }
