@@ -398,3 +398,24 @@ body:not(.dark) #toc-list button {
 body.batch-mode-active .card-morph:active {
     transform: none !important;
 }
+
+/* Override agar teks panjang tidak keluar layar */
+#batch-delete-count {
+    white-space: normal !important;
+    text-align: center;
+    line-height: 1.2;
+}
+#batch-delete-bar {
+    width: 90% !important;
+    max-width: 380px;
+    flex-wrap: wrap;
+    text-align: center;
+}
+
+/* Matikan efek morph/membal saat batch mode agar tap-tap lebih mulus */
+body.batch-mode-active .card-morph {
+    transition: none !important;
+}
+body.batch-mode-active .card-morph:active {
+    transform: none !important;
+}
