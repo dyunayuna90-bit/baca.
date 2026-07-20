@@ -584,7 +584,8 @@ window.closeSearch = function(fromHistory = false) {
         _hideRacksForSearch(false);
         _syncSearchModeUI();
 
-        renderLibrary();
+        // Tunda renderLibrary agar CSS transisi rak selesai, mencegah kedip
+        setTimeout(() => { renderLibrary(); }, 350);
         if (!fromHistory && window.location.hash === '#search') history.back();
     }
 };
@@ -826,6 +827,10 @@ window._closeModalAction = function(modalId, sheetId, isScale = false, isFromHis
     if (!isFromHistory) { history.back(); return; }
     const m = document.getElementById(modalId); const s = document.getElementById(sheetId);
     if(m && s) {
+        // Bersihkan bloker dari swipe-to-dismiss
+        s.style.transform = '';
+        s.style.transition = '';
+        void m.offsetWidth; // Forced reflow
         if(isScale) { s.classList.add('scale-75', 'translate-y-12'); } 
         else { s.classList.add('translate-y-full'); }
         m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300);
@@ -1564,6 +1569,11 @@ function createBookCard(book, isSlider = false, index = 0) {
             const idx = selectedForDelete.findIndex(id => String(id) === strId);
             if (idx > -1) {
                 selectedForDelete.splice(idx, 1);
+                // Auto-exit jika tidak ada buku tersisa
+                if (selectedForDelete.length === 0) {
+                    window.toggleBatchDelete();
+                    return;
+                }
             } else {
                 selectedForDelete.push(strId);
             }
@@ -1621,8 +1631,11 @@ window.toggleBatchDelete = function(isFromHistory = false, initialSelectId = nul
     if (!isBatchDeleteMode) { selectedForDelete = []; } 
     else {
         selectedForDelete = [];
-        if (initialSelectId) selectedForDelete.push(String(initialSelectId));
+        if (initialSelectId && !selectedForDelete.includes(String(initialSelectId))) {
+            selectedForDelete.push(String(initialSelectId));
+        }
     }
+    document.body.classList.toggle('batch-mode-active', isBatchDeleteMode);
     
     const bar = document.getElementById('batch-delete-bar');
     const fab = document.getElementById('fab-container');
