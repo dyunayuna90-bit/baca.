@@ -39,7 +39,7 @@ let archiveAbortController = null;
 let currentPdfDoc = null;
 let currentCanvasPage = 1;
 let currentCanvasScale = 1.0;
-let isRenderingCanvas = false;
+let activeRenderTasks = { main: null, next: null, prev: null };
 window.defaultCanvasScale = parseFloat(localStorage.getItem('default_canvas_scale')) || 1.0;
 
 // Variabel untuk gesture Canvas (upgrade v25: pinch + pan + tap)
@@ -2307,8 +2307,12 @@ let _renderToken = 0;
 let _canvasAlreadyCopied = false;
 
 async function renderCanvasPage(pageNum) {
-    if (!currentPdfDoc || isRenderingCanvas) return;
-    isRenderingCanvas = true;
+    if (!currentPdfDoc) return;
+
+    // BATALKAN SEMUA RENDER SEBELUMNYA SAAT GESER CEPAT
+    if (activeRenderTasks.main) { activeRenderTasks.main.cancel(); activeRenderTasks.main = null; }
+    if (activeRenderTasks.next) { activeRenderTasks.next.cancel(); activeRenderTasks.next = null; }
+    if (activeRenderTasks.prev) { activeRenderTasks.prev.cancel(); activeRenderTasks.prev = null; }
 
     // [FIX RACE CONDITION] Naikkan token — pre-render lama (jika ada) akan berhenti sendiri
     const myToken = ++_renderToken;
@@ -2318,16 +2322,16 @@ async function renderCanvasPage(pageNum) {
 
     try {
         const vpEl = document.getElementById('canvas-zoom-viewport');
-        if (!canvas || !wrapper || !vpEl) { isRenderingCanvas = false; return; }
+        if (!canvas || !wrapper || !vpEl) return;
 
         const pixelRatio  = window.devicePixelRatio || 1;
-        const renderScale = pixelRatio * 3.0;
+        const renderScale = pixelRatio * 3.0; // Tetap 3.0 (Resolusi HD Terjaga)
         const cW = vpEl.clientWidth;
         const cH = vpEl.clientHeight;
 
         // Hitung dimensi dari halaman aktif (diperlukan untuk ukuran wrapper)
         const page = await currentPdfDoc.getPage(pageNum);
-        if (myToken !== _renderToken) { isRenderingCanvas = false; return; } // dibatalkan
+        if (myToken !== _renderToken) return; // dibatalkan
 
         const nat = page.getViewport({ scale: 1 });
         const fit = page.getViewport({ scale: cW / nat.width });
@@ -2354,12 +2358,17 @@ async function renderCanvasPage(pageNum) {
             canvas.style.height = dH + 'px';
             const ctx = canvas.getContext('2d');
             ctx.imageSmoothingEnabled = false;
-            await page.render({
+            activeRenderTasks.main = page.render({
                 canvasContext: ctx,
                 viewport: fit,
                 transform: [renderScale, 0, 0, renderScale, 0, 0]
-            }).promise;
-            if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
+            });
+            try {
+                await activeRenderTasks.main.promise;
+            } catch (err) {
+                if (err.name === 'RenderingCancelledException') return; // Dibatalkan otomatis
+            }
+            if (myToken !== _renderToken) return;
         }
 
         // --- RENDER TEXTLAYER TRANSPARAN (untuk text selection di Canvas Mode) ---
@@ -2373,7 +2382,7 @@ async function renderCanvasPage(pageNum) {
             textLayerDiv.style.setProperty('--scale-factor', '1'); // FIX AKURASI PDF.JS
             try {
                 const textContent = await page.getTextContent();
-                if (myToken !== _renderToken) { isRenderingCanvas = false; return; }
+                if (myToken !== _renderToken) return;
 if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
                     const renderTask = pdfjsLib.renderTextLayer({
                         textContent: textContent,
@@ -2449,20 +2458,17 @@ if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
 
     } catch (e) {
         console.error('renderCanvasPage:', e);
-    } finally {
-        isRenderingCanvas = false;
     }
 
-    // [PRE-RENDER BERURUTAN] Jalankan SETELAH isRenderingCanvas = false.
     // next dulu (prioritas maju), baru prev — satu-satu agar worker PDF.js tidak crash.
-    await renderCanvasBuffer(pageNum + 1, 'canvas-next', myToken);
-    await renderCanvasBuffer(pageNum - 1, 'canvas-prev', myToken);
+    await renderCanvasBuffer(pageNum + 1, 'canvas-next', myToken, 'next');
+    await renderCanvasBuffer(pageNum - 1, 'canvas-prev', myToken, 'prev');
 }
 
 // [PRE-RENDER BUFFER] Fungsi terisolasi untuk merender satu halaman ke canvas buffer.
 // Menggunakan scale yang identik dengan render utama (fit-to-viewport-width),
 // BUKAN currentCanvasScale — agar dimensi fisik canvas selalu benar dan tidak 0×0.
-async function renderCanvasBuffer(pageNum, canvasId, token) {
+async function renderCanvasBuffer(pageNum, canvasId, token, taskKey) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !currentPdfDoc) return;
 
@@ -2503,11 +2509,16 @@ async function renderCanvasBuffer(pageNum, canvasId, token) {
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        await page.render({
+        activeRenderTasks[taskKey] = page.render({
             canvasContext: ctx,
             viewport: fit,
             transform: [renderScale, 0, 0, renderScale, 0, 0]
-        }).promise;
+        });
+        try {
+            await activeRenderTasks[taskKey].promise;
+        } catch(err) {
+            if (err.name === 'RenderingCancelledException') return; // Dibatalkan otomatis
+        }
 
     } catch(err) {
         console.warn(`[buffer] render gagal halaman ${pageNum}:`, err);
@@ -2515,7 +2526,7 @@ async function renderCanvasBuffer(pageNum, canvasId, token) {
 }
 
 window.nextCanvasPage = function() {
-    if (!currentPdfDoc || currentCanvasPage >= currentPdfDoc.numPages || isRenderingCanvas) return;
+    if (!currentPdfDoc || currentCanvasPage >= currentPdfDoc.numPages) return;
     currentCanvasPage++;
     _resetCanvasTransform();
     window.getSelection().removeAllRanges();
@@ -2523,7 +2534,7 @@ window.nextCanvasPage = function() {
     renderCanvasPage(currentCanvasPage); // fire & forget — tidak pakai await agar tap langsung direspon
 };
 window.prevCanvasPage = function() {
-    if (!currentPdfDoc || currentCanvasPage <= 1 || isRenderingCanvas) return;
+    if (!currentPdfDoc || currentCanvasPage <= 1) return;
     currentCanvasPage--;
     _resetCanvasTransform();
     window.getSelection().removeAllRanges();
@@ -2706,7 +2717,7 @@ function setupProgressBarDrag() {
         const pt = e.changedTouches ? e.changedTouches[0] : e;
         const { page } = _pageFromClientX(pt.clientX);
 
-        if (page !== currentCanvasPage && !isRenderingCanvas) {
+        if (page !== currentCanvasPage) {
             currentCanvasPage = page;
             if (typeof _resetCanvasTransform === 'function') _resetCanvasTransform();
             window.getSelection().removeAllRanges();
