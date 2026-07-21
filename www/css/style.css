@@ -104,6 +104,12 @@ html, body {
 .btn-morph { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease, background-color 0.4s ease, opacity 0.4s ease; border-radius: 99px; will-change: transform; }
 .btn-morph:active { transform: scale(0.85); border-radius: 12px; background-color: var(--md-sys-color-primary) !important; color: var(--md-sys-color-on-primary) !important; }
 
+/* Tombol Pengaturan & Ganti Layout (samping search bar): tanpa efek highlight/cahaya, transparan penuh */
+#layout-btn:active, #settings-btn:active {
+    background-color: transparent !important;
+    color: var(--md-sys-color-on-background) !important;
+}
+
 .card-morph { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border-radius 0.4s ease; user-select: none; -webkit-user-select: none; will-change: transform; transform: translateZ(0); }
 .card-morph:active { transform: scale(0.92); border-radius: 16px !important; }
 
@@ -146,6 +152,35 @@ html, body {
 
 /* Hapus delay border-radius dari transisi biar pas ditarik bawah ga keliatan aneh/delay */
 .modal-content { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1); transform-origin: bottom; }
+.search-morph {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width, height, top, left, border-radius;
+}
+
+/* ===================================================================
+   RIPPLE EFFECT (Material Design) — untuk .btn-morph, .card-morph, dan tombol
+   =================================================================== */
+/* Skeleton Loading (tab Home) */
+.skeleton { background: linear-gradient(90deg, var(--md-sys-color-surface-variant) 25%, color-mix(in srgb, var(--md-sys-color-surface-variant) 60%, white 10%) 37%, var(--md-sys-color-surface-variant) 63%); background-size: 400% 100%; animation: skeleton-shimmer 1.4s ease infinite; border-radius: 16px; }
+@keyframes skeleton-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* Animasi Pindah Halaman 3D (opsional, opt-in via Pengaturan) */
+.page-turn-3d { perspective: 1400px; }
+#fold-shadow, #seam-shadow { transition: opacity .12s ease; will-change: opacity; }
+
+.ripple-container { position: relative; overflow: hidden; }
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background-color: currentColor;
+    opacity: 0.28;
+    transform: scale(0);
+    pointer-events: none;
+    animation: ripple-grow 0.55s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+@keyframes ripple-grow {
+    to { transform: scale(1); opacity: 0; }
+}
 .side-panel { transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease; }
 
 /* Mencegah default browser gesture (kayak pull-to-refresh) di modal/panel saat swipe-dismiss */
@@ -320,37 +355,6 @@ mark.search-hl { background-color: var(--md-sys-color-primary) !important; color
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-/* ===================================================================
-   TAMBAHAN CLASS TOGGLE UNTUK MENYEMBUNYIKAN JUDUL BUKU
-   =================================================================== */
-body.hide-book-titles [id^="title-"]:not(#title-area),
-body.hide-book-titles [id^="pct-"],
-body.hide-book-titles [id^="book-icon-"] {
-    display: none !important;
-}
-
-/* Progress bar tetap tampil di hide-titles mode — hanya container teks pct yang disembunyiin */
-/* bg-black/20 dan bar jangan disembunyiin */
-
-body.hide-book-titles .card-morph > div:last-child {
-    justify-content: flex-end !important;
-    align-items: stretch !important;
-    height: 100% !important;
-    margin-top: 0 !important;
-}
-
-body.hide-book-titles .card-morph [id^="top-icons-"] {
-    justify-content: flex-start !important;
-    margin-bottom: auto;
-    margin-top: 0;
-}
-
-/* Badge tetap kecil di hide-titles mode — sama seperti saat judul aktif */
-body.hide-book-titles .book-badge {
-    font-size: 0.55rem;
-    padding: 2px 8px;
-}
-
 
 /* Archive download overlay spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -362,22 +366,6 @@ body.hide-book-titles .book-badge {
 /* Bikin list Daftar Isi (TOC) nggak nyaru */
 body:not(.dark) #toc-list button {
     color: var(--md-sys-color-on-surface) !important;
-}
-
-#search-mode-row {
-    display: flex !important; /* Paksa timpa class .hidden bawaan tailwind */
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    transition: max-height 0.4s cubic-bezier(0.2, 0, 0, 1), opacity 0.3s ease, margin-top 0.4s ease;
-}
-#search-mode-row.search-mode-expanded {
-    max-height: 50px;
-    opacity: 1;
-    margin-top: 0.625rem !important; /* mt-2.5 di Tailwind */
 }
 
 /* Cegah input bisa diklik native saat kapsul belum membesar */
@@ -396,4 +384,31 @@ body.batch-mode-active .card-morph {
 }
 body.batch-mode-active .card-morph:active {
     transform: none !important;
+}
+
+/* ===================================================================
+   M3 EXPRESSIVE BOTTOM NAV + TAB SYSTEM (Home/Scroll/Canvas)
+   =================================================================== */
+body { padding-bottom: env(safe-area-inset-bottom); }
+
+#bottom-nav-bar button .nav-indicator {
+    transition: background-color 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.35s ease;
+}
+
+/* Cover thumbnail milik item mode List (lihat createBookListItem di app.js) */
+.list-cover-thumb {
+    background-size: cover;
+    background-position: top center;
+    transition: opacity 0.3s ease;
+}
+
+/* ===================================================================
+   FIX Z-INDEX FLICKERING PADA UI FLOATING (HARDWARE ACCELERATION)
+   =================================================================== */
+#reader-floating-header,
+#canvas-page-controller,
+#bottom-nav-bar {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform, opacity;
 }
