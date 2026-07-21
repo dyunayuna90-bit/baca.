@@ -20,10 +20,10 @@ let layoutMode = localStorage.getItem('layout_mode') || 'grid';
 
 let isDark = true; // UI selalu Dark Mode (tidak bisa diubah)
 let currentThemeKey = localStorage.getItem('m3-key') || 'orchid';
-let isAmoled = false; // UI tidak pernah AMOLED â€” hanya untuk konten buku (lihat readerTheme)
+let isAmoled = false; // UI tidak pernah AMOLED — hanya untuk konten buku (lihat readerTheme)
 let wikiLang = localStorage.getItem('wiki_lang') || 'en';
 
-// Tema khusus untuk KONTEN BUKU (scroll & canvas) â€” terpisah dari tema UI
+// Tema khusus untuk KONTEN BUKU (scroll & canvas) — terpisah dari tema UI
 // Nilai: 'light' | 'dark' | 'amoled'
 let readerTheme = localStorage.getItem('reader_theme') || 'dark';
 
@@ -254,7 +254,7 @@ window.toggleStatChart = function() {
 
         const fullH = area.scrollHeight;
 
-        // Animate â€” gunakan height bukan max-height agar browser bisa optimize
+        // Animate — gunakan height bukan max-height agar browser bisa optimize
         area.style.transition = 'height 320ms cubic-bezier(0.4,0,0.2,1), opacity 260ms ease';
         area.style.height  = fullH + 'px';
         area.style.opacity = '1';
@@ -325,7 +325,7 @@ function renderStatChart() {
     const values = data.map(d => d.value);
     const maxVal = Math.max(...values, 1);
 
-    // Gambar chart manual (tanpa library) â€” simple line chart M3 style
+    // Gambar chart manual (tanpa library) — simple line chart M3 style
     const W = canvas.parentElement.clientWidth || 300;
     const H = 120;
     const dpr = window.devicePixelRatio || 1;
@@ -697,7 +697,7 @@ window.switchTab = function(tabId) {
 
     // --- Ganti tab secara seamless, tanpa lompatan scroll ---
     // 1. Elemen tab lama langsung disembunyikan (hidden) SEKETIKA, bukan difade lalu
-    //    ditunda dengan setTimeout â€” supaya tinggi kontainer scroll berubah instan
+    //    ditunda dengan setTimeout — supaya tinggi kontainer scroll berubah instan
     //    dan tidak ada momen di mana tab lama & baru sama-sama memakan ruang (dobel tinggi).
     const prevTabEl = previousTab !== tabId ? document.getElementById('tab-' + previousTab) : null;
     if (prevTabEl) {
@@ -707,7 +707,7 @@ window.switchTab = function(tabId) {
     }
 
     // 2. Tampilkan tab baru (masih transparan) lalu 3. terapkan scroll state SINKRON,
-    //    persis setelah hidden dihapus â€” sebelum browser sempat repaint dengan posisi lama.
+    //    persis setelah hidden dihapus — sebelum browser sempat repaint dengan posisi lama.
     const newTabEl = document.getElementById('tab-' + tabId);
     if (newTabEl) {
         newTabEl.style.transition = 'none';
@@ -771,7 +771,7 @@ window.toggleLayoutMode = function() {
         // Regenerate ulang sebagai <i data-lucide> segar tiap kali dipanggil.
         // Lucide mengganti tag <i> jadi <svg> begitu ikon dirender pertama kali,
         // jadi querySelector('#layout-btn i') berikutnya tidak akan pernah nemu
-        // apa-apa lagi (elemen itu sudah jadi <svg>, bukan <i>) â€” makanya ikon
+        // apa-apa lagi (elemen itu sudah jadi <svg>, bukan <i>) — makanya ikon
         // nyangkut di satu gambar selamanya. Bikin ulang <i>-nya tiap toggle
         // supaya Lucide selalu punya elemen segar untuk dikonversi.
         // Ikon menandakan aksi berikutnya (kebalikan dari mode aktif saat ini)
@@ -897,6 +897,7 @@ function applyLanguage() {
     setElementText('str-opt-delete', d.optDelete); setElementText('str-opt-cancel', d.optCancel);
     
     setElementText('str-pinned-books', d.pinnedBooks);
+    setElementText('str-pinned-books-canvas', d.pinnedBooks);
     setElementText('str-nav-bookmark', d.navBookmark);
     if (document.getElementById('str-bookmark-title')) { document.getElementById('str-bookmark-title').innerHTML = `<i data-lucide="bookmark"></i> ${d.bookmarkTitle}`; }
     setElementText('str-bookmark-empty', d.bookmarkEmpty);
@@ -1003,7 +1004,7 @@ function applyLanguage() {
     // TOC canvas warning
     setElementText('str-toc-canvas-warning', d.tocCanvasWarning || 'Untuk mode canvas, daftar isi tidak tersedia.');
 
-    // Indikator PDF Canvas tanpa teks (hanya gambar) â€” pencarian tidak tersedia
+    // Indikator PDF Canvas tanpa teks (hanya gambar) — pencarian tidak tersedia
     setElementText('str-search-canvas-image-warning', d.pdfCanvasImageOnlyWarning || 'PDF ini hanya berisi gambar, pencarian kata tidak tersedia.');
 
     // Label & tombol "Lompat ke Halaman" (Canvas Mode, di panel settings)
@@ -1308,7 +1309,7 @@ window.executeBackup = async function(type) {
                 for (const b of library) {
                     if (b.pdfMode === 'canvas') {
                         const rawPdf = await localforage.getItem('rawpdf_' + b.id);
-                        // PDF sudah terkompresi secara internal â€” DEFLATE ulang cuma makan RAM & CPU
+                        // PDF sudah terkompresi secara internal — DEFLATE ulang cuma makan RAM & CPU
                         // tanpa hasil signifikan, dan inilah penyebab utama force-close di HP RAM kecil.
                         if (rawPdf) canvasFolder.file(`${b.id}.pdf`, rawPdf, { compression: "STORE" });
                     } else {
@@ -1320,7 +1321,7 @@ window.executeBackup = async function(type) {
                     if (cover) coversFolder.file(`${b.id}.txt`, cover, { compression: "STORE" });
                 }
 
-                // Level kompresi diturunkan (6 â†’ 1): jauh lebih hemat memori/CPU saat generate,
+                // Level kompresi diturunkan (6 → 1): jauh lebih hemat memori/CPU saat generate,
                 // trade-off ukuran file sedikit lebih besar demi mencegah crash di HP low-RAM.
                 const content = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 1 } });
                 await saveFileNativeOrWebBlob(content, `Baca_FullBackup_${Date.now()}.zip`);
@@ -1379,7 +1380,7 @@ async function saveFileNativeOrWebBlob(blob, filename) {
             // tulis pakai writeFile untuk potongan pertama lalu appendFile untuk sisanya.
             const FS = window.Capacitor.Plugins.Filesystem;
             try { await FS.deleteFile({ path: filename, directory: 'DOCUMENTS' }); } catch(_) {} // jaga-jaga sisa file gagal sebelumnya
-            const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB per potongan â€” jauh di bawah batas crash
+            const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB per potongan — jauh di bawah batas crash
             let offset = 0;
             let isFirstChunk = true;
             while (offset < blob.size) {
@@ -1497,7 +1498,7 @@ window.importDataFile = async function(event) {
 
                             const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
                             if (existingIndex > -1) {
-                                // Pertahankan pdfMode lokal â€” jangan timpa dengan mode dari backup
+                                // Pertahankan pdfMode lokal — jangan timpa dengan mode dari backup
                                 const existingPdfMode = mergedLibrary[existingIndex].pdfMode;
                                 mergedLibrary[existingIndex] = { ...mergedLibrary[existingIndex], ...b };
                                 if (existingPdfMode) mergedLibrary[existingIndex].pdfMode = existingPdfMode;
@@ -1555,7 +1556,7 @@ async function executeRestoreLogic(jsonString) {
         // Set berisi id buku yang user minta skip (abaikan)
         const skippedIds = new Set();
 
-        // â”€â”€ definisikan dulu sebelum dipanggil â”€â”€
+        // ── definisikan dulu sebelum dipanggil ──
 
         const _doRestore = async () => {
             window.closeDialog();
@@ -1578,7 +1579,7 @@ async function executeRestoreLogic(jsonString) {
 
                 const existingIndex = mergedLibrary.findIndex(lib => lib.id === b.id);
                 if (existingIndex > -1) {
-                    // Jangan paksa ganti pdfMode â€” pertahankan mode yang sudah ada di library
+                    // Jangan paksa ganti pdfMode — pertahankan mode yang sudah ada di library
                     mergedLibrary[existingIndex] = {
                         ...mergedLibrary[existingIndex],
                         progressPct: meta.progressPct,
@@ -1586,7 +1587,7 @@ async function executeRestoreLogic(jsonString) {
                         annotations: meta.annotations || [],
                         isPinned: meta.isPinned,
                         title: meta.title
-                        // pdfMode TIDAK diubah â€” tetap ikut library lokal
+                        // pdfMode TIDAK diubah — tetap ikut library lokal
                     };
                 } else {
                     mergedLibrary.push(meta);
@@ -1690,12 +1691,14 @@ function renderLibrary(filterText = "") {
     
     const pinnedGrid = document.getElementById('pinned-book-grid');
     if(pinnedGrid) pinnedGrid.innerHTML = '';
+    const pinnedGridCanvas = document.getElementById('pinned-book-grid-canvas');
+    if(pinnedGridCanvas) pinnedGridCanvas.innerHTML = '';
 
     // Terapkan class kontainer sesuai mode Grid / List
     const isListMode = layoutMode === 'list';
     const gridClass = 'grid grid-cols-2 gap-4 w-full';
     const listClass = 'flex flex-col gap-4 w-full';
-    [DOM.scrollGrid, DOM.canvasGrid, pinnedGrid].forEach(el => {
+    [DOM.scrollGrid, DOM.canvasGrid, pinnedGrid, pinnedGridCanvas].forEach(el => {
         if (!el) return;
         el.className = isListMode ? listClass : gridClass;
     });
@@ -1710,6 +1713,11 @@ function renderLibrary(filterText = "") {
     
     const pinnedBooks = filteredLib.filter(b => b.isPinned);
     const regularBooks = filteredLib.filter(b => !b.isPinned);
+
+    // Pinned books juga dipisah per rak: pin di mode Scroll cuma nongol di tab Scroll,
+    // pin di mode Canvas cuma nongol di tab Canvas — gak lagi digabung jadi satu.
+    const pinnedScrollBooks = pinnedBooks.filter(b => b.pdfMode !== 'canvas');
+    const pinnedCanvasBooks = pinnedBooks.filter(b => b.pdfMode === 'canvas');
 
     // Pilah Regular Books menjadi 2 Rak: Scroll Mode & Canvas Mode
     const scrollBooks = regularBooks.filter(b => b.pdfMode !== 'canvas');
@@ -1734,11 +1742,19 @@ function renderLibrary(filterText = "") {
     } else if (DOM.canvasTopSection) { DOM.canvasTopSection.classList.add('hidden'); }
     
     const pinnedSection = document.getElementById('pinned-books-section');
-    if (pinnedBooks.length > 0) {
+    if (pinnedScrollBooks.length > 0) {
         if(pinnedSection) pinnedSection.classList.remove('hidden');
-        pinnedBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(makeCard(book, idx)); });
+        pinnedScrollBooks.forEach((book, idx) => { if(pinnedGrid) pinnedGrid.appendChild(makeCard(book, idx)); });
     } else {
         if(pinnedSection) pinnedSection.classList.add('hidden');
+    }
+
+    const pinnedSectionCanvas = document.getElementById('pinned-books-section-canvas');
+    if (pinnedCanvasBooks.length > 0) {
+        if(pinnedSectionCanvas) pinnedSectionCanvas.classList.remove('hidden');
+        pinnedCanvasBooks.forEach((book, idx) => { if(pinnedGridCanvas) pinnedGridCanvas.appendChild(makeCard(book, idx + 200)); });
+    } else {
+        if(pinnedSectionCanvas) pinnedSectionCanvas.classList.add('hidden');
     }
 
     if (scrollBooks.length === 0) {
@@ -1790,7 +1806,7 @@ function initCoverObserver() {
                 if (coverData instanceof Blob) {
                     coverUrl = URL.createObjectURL(coverData);
                 } else if (typeof coverData === 'string' && coverData.trim().length > 0) {
-                    // Deteksi otomatis: base64 data URI, blob:/http(s) URL, atau path/URL biasa â€” semua diterima
+                    // Deteksi otomatis: base64 data URI, blob:/http(s) URL, atau path/URL biasa — semua diterima
                     coverUrl = coverData.trim();
                 } else if (coverData && typeof coverData === 'object' && typeof coverData.url === 'string') {
                     // Format URL object custom { url: '...' }
@@ -2213,7 +2229,7 @@ window.saveBookEdit = async function() {
 }
 
 // 9. TEMA & TIPOGRAFI
-// UI (panel, side panel, bottom bar, dll) SELALU Dark Mode â€” tidak bisa diubah user.
+// UI (panel, side panel, bottom bar, dll) SELALU Dark Mode — tidak bisa diubah user.
 // light/dark/amoled HANYA berlaku untuk konten BUKU (scroll & canvas), lihat applyReaderThemeToDOM().
 function applyThemeToDOM() {
     document.documentElement.classList.add('dark'); // UI selalu dark
@@ -2262,7 +2278,7 @@ function _syncExpressiveUI() {
     }
     localStorage.setItem('expressive', isExpressive.toString());
 }
-// â”€â”€ Global Loading Spinner (untuk jeda antar modal / proses berat) â”€â”€
+// ── Global Loading Spinner (untuk jeda antar modal / proses berat) ──
 window.showGlobalLoading = function(text) {
     const d    = i18n[wikiLang] || i18n['id'];
     const overlay = document.getElementById('global-loading-overlay');
@@ -2280,7 +2296,7 @@ window.hideGlobalLoading = function() {
     setTimeout(() => overlay.classList.add('hidden'), 220);
 };
 
-// â”€â”€ TEMA KONTEN BUKU (scroll & canvas) â€” light/dark/amoled â”€â”€
+// ── TEMA KONTEN BUKU (scroll & canvas) — light/dark/amoled ──
 // Terpisah total dari tema UI (yang selalu dark). Diterapkan secara scoped
 // ke #reader-view lewat CSS variable override + atribut data-reader-theme.
 window.setPageTurnAnim = function(enabled) {
@@ -2356,7 +2372,7 @@ function applyReaderThemeToDOM() {
     }
 
     // Canvas: terapkan filter invert berdasarkan tema buku
-    // PENTING: filter HANYA diterapkan ke canvas (anak), bukan wrapper â€”
+    // PENTING: filter HANYA diterapkan ke canvas (anak), bukan wrapper —
     // jika keduanya difilter, efeknya saling membatalkan (double invert).
     const canvasWrapper = document.getElementById('canvas-wrapper');
     const canvasPrev = document.getElementById('canvas-prev');
@@ -2464,7 +2480,7 @@ window.openBook = async function(book) {
         // Terapkan AMOLED ke canvas wrapper jika aktif
         applyThemeToDOM();
 
-        // Redupkan grup setting tipografi (ukuran/perataan/font) â€” selalu nonaktif di Canvas Mode
+        // Redupkan grup setting tipografi (ukuran/perataan/font) — selalu nonaktif di Canvas Mode
         ['size', 'align', 'font'].forEach(grp => {
             const el = document.getElementById('setting-group-' + grp);
             if (el) el.classList.add('ui-disabled-group');
@@ -2722,7 +2738,7 @@ async function renderCanvasPage(pageNum) {
     if (activeRenderTasks.next) { activeRenderTasks.next.cancel(); activeRenderTasks.next = null; }
     if (activeRenderTasks.prev) { activeRenderTasks.prev.cancel(); activeRenderTasks.prev = null; }
 
-    // [FIX RACE CONDITION] Naikkan token â€” pre-render lama (jika ada) akan berhenti sendiri
+    // [FIX RACE CONDITION] Naikkan token — pre-render lama (jika ada) akan berhenti sendiri
     const myToken = ++_renderToken;
 
     const canvas  = document.getElementById('pdf-canvas');
@@ -2755,7 +2771,7 @@ async function renderCanvasPage(pageNum) {
         wrapper._cH = cH;
 
         // [FIX FLICKER] Jika canvas sudah diisi oleh pixel-copy dari gesture swipe,
-        // lewati render PDF.js ke pdf-canvas â€” gambarnya sudah ada, tidak perlu menggambar ulang.
+        // lewati render PDF.js ke pdf-canvas — gambarnya sudah ada, tidak perlu menggambar ulang.
         if (_canvasAlreadyCopied) {
             _canvasAlreadyCopied = false; // reset flag, hanya berlaku sekali
         } else {
@@ -2780,7 +2796,7 @@ async function renderCanvasPage(pageNum) {
         }
 
         // [FIX HALAMAN PUTIH SAAT DRAG] Mulai render buffer next & prev SEDINI MUNGKIN,
-        // PARALEL (Promise.all) â€” bukan satu-satu lagi. Tetap nunggu render halaman utama
+        // PARALEL (Promise.all) — bukan satu-satu lagi. Tetap nunggu render halaman utama
         // kelar dulu (biar worker PDF.js gak dibebani 3 render bersamaan), tapi setelahnya
         // next & prev jalan BARENG, jadi 2x lebih cepat siap. Jalan di background,
         // gak diblokir/blokir textLayer-highlight-progress bar di bawah.
@@ -2822,7 +2838,7 @@ if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
                                 '<mark class="search-hl canvas-search-hl">$1</mark>');
                         });
 
-                        // Highlight hanya bertahan sebentar â€” mulai memudar setelah 2 detik,
+                        // Highlight hanya bertahan sebentar — mulai memudar setelah 2 detik,
                         // lalu lepas wrapper <mark> setelah transisi selesai.
                         setTimeout(() => {
                             const marks = textLayerDiv.querySelectorAll('mark.canvas-search-hl');
@@ -2881,7 +2897,7 @@ if (typeof pdfjsLib !== 'undefined' && pdfjsLib.renderTextLayer) {
 
 // [PRE-RENDER BUFFER] Fungsi terisolasi untuk merender satu halaman ke canvas buffer.
 // Menggunakan scale yang identik dengan render utama (fit-to-viewport-width),
-// BUKAN currentCanvasScale â€” agar dimensi fisik canvas selalu benar dan tidak 0Ã—0.
+// BUKAN currentCanvasScale — agar dimensi fisik canvas selalu benar dan tidak 0×0.
 async function renderCanvasBuffer(pageNum, canvasId, token, taskKey) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !currentPdfDoc) return;
@@ -2913,7 +2929,7 @@ async function renderCanvasBuffer(pageNum, canvasId, token, taskKey) {
         const dW  = Math.floor(fit.width);
         const dH  = Math.floor(fit.height);
 
-        // [KUNCI DIMENSI] Set dimensi fisik SEBELUM render agar canvas tidak 0Ã—0 saat di-swipe
+        // [KUNCI DIMENSI] Set dimensi fisik SEBELUM render agar canvas tidak 0×0 saat di-swipe
         canvas.width        = dW * renderScale;
         canvas.height       = dH * renderScale;
         canvas.style.width  = dW + 'px';
@@ -2945,7 +2961,7 @@ window.nextCanvasPage = function() {
     _resetCanvasTransform();
     window.getSelection().removeAllRanges();
     window.hideSelectionMenu();
-    renderCanvasPage(currentCanvasPage); // fire & forget â€” tidak pakai await agar tap langsung direspon
+    renderCanvasPage(currentCanvasPage); // fire & forget — tidak pakai await agar tap langsung direspon
 };
 window.prevCanvasPage = function() {
     if (!currentPdfDoc || currentCanvasPage <= 1) return;
@@ -2963,7 +2979,7 @@ function _resetCanvasTransform() {
     canvasIsPinching   = false;
     const w = document.getElementById('canvas-wrapper');
     if (w) { w.style.transition = 'none'; w.style.transform = `translate(0px,0px) scale(${currentCanvasScale})`; }
-    // canvas-prev/next kini absolute di dalam wrapper â€” otomatis ikut reset bersama wrapper
+    // canvas-prev/next kini absolute di dalam wrapper — otomatis ikut reset bersama wrapper
     // Jaga-jaga: pastikan page-stage tidak "nyangkut" transparan kalau ada gesture animasi
     // page-turn yang ke-interrupt di tengah jalan (fail-safe untuk trik fade swap).
     const ps = document.getElementById('page-stage');
@@ -3058,7 +3074,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('touchstart', _zoomOutsideHandler, { passive: true });
 });
 
-// Lompat ke halaman tertentu â€” input "#" sekarang berada di panel settings (canvas-jump-area)
+// Lompat ke halaman tertentu — input "#" sekarang berada di panel settings (canvas-jump-area)
 window.executeJumpToPage = function() {
     const input = document.getElementById('canvas-jump-input');
     if (!input || !currentPdfDoc) return;
@@ -3203,7 +3219,7 @@ function initCanvasGestures() {
         // makin tipis begitu nyaris tak terlihat dari depan, dan yang lebih penting: dengan ini
         // shadow sudah otomatis mendekati 0 SEBELUM animasi commit selesai, jadi tidak ada lagi
         // efek "kedip/pop" saat halaman di-swap instan di akhir animasi.
-        const bell = Math.sin(absP * Math.PI); // 0 di awal â†’ puncak di tengah â†’ 0 lagi di akhir
+        const bell = Math.sin(absP * Math.PI); // 0 di awal → puncak di tengah → 0 lagi di akhir
         const shadeP = bell * 0.8;
         foldShadow.style.opacity = shadeP.toFixed(2);
         seamShadow.style.opacity = (shadeP * 0.9).toFixed(2);
@@ -3221,12 +3237,12 @@ function initCanvasGestures() {
             }
         }
         if (progress < 0) {
-            // ditarik ke kiri â†’ pivot kanan, seam nempel di canvas-next (kanan)
+            // ditarik ke kiri → pivot kanan, seam nempel di canvas-next (kanan)
             foldShadow.style.background = 'radial-gradient(ellipse at right, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.1) 45%, transparent 80%)';
             seamShadow.style.left = '100%'; seamShadow.style.right = 'auto';
             seamShadow.style.background = 'linear-gradient(to right, rgba(0,0,0,.45) 0%, rgba(0,0,0,.15) 25%, transparent 100%)';
         } else if (progress > 0) {
-            // ditarik ke kanan â†’ pivot kiri, seam nempel di canvas-prev (kiri)
+            // ditarik ke kanan → pivot kiri, seam nempel di canvas-prev (kiri)
             foldShadow.style.background = 'radial-gradient(ellipse at left, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.1) 45%, transparent 80%)';
             seamShadow.style.right = '100%'; seamShadow.style.left = 'auto';
             seamShadow.style.background = 'linear-gradient(to left, rgba(0,0,0,.45) 0%, rgba(0,0,0,.15) 25%, transparent 100%)';
@@ -3247,14 +3263,14 @@ function initCanvasGestures() {
     if (pageStage) { pageStage.style.willChange = 'transform'; pageStage.style.transition = 'none'; }
     _resetCanvasTransform();
 
-    // State internal gesture â€” semua di sini, tidak pakai variabel global yang bisa
+    // State internal gesture — semua di sini, tidak pakai variabel global yang bisa
     // terpolusi antar-gesture
     let isAnimatingPage = false; // Gembok pelindung animasi
     let forceFinishTurn = null; // Fungsi penuntas animasi instan
     let isPinching    = false;
     let pinchStartDist  = 0;
     let pinchStartScale = 1;
-    // Titik focal cubit di koordinat KONTEN (bukan layar) â€” pre-transform
+    // Titik focal cubit di koordinat KONTEN (bukan layar) — pre-transform
     // Ini yang membuat zoom tidak meloncat: focal point di konten harus diam.
     let pinchFocalContentX = 0;
     let pinchFocalContentY = 0;
@@ -3270,7 +3286,7 @@ function initCanvasGestures() {
     let tapStartY   = 0;
     let tapStartTime = 0;
 
-    // Helper: konversi koordinat layar â†’ koordinat konten wrapper (tanpa transform)
+    // Helper: konversi koordinat layar → koordinat konten wrapper (tanpa transform)
     // Dengan transform-origin center: titik layar P dalam konten =
     //   (P - naturalCenter - translate) / scale
     // naturalCenter = pusat wrapper di layar TANPA translate (= center viewport karena flex center)
@@ -3286,17 +3302,17 @@ function initCanvasGestures() {
 
     // Helper: terapkan zoom ke titik focal konten (fx, fy) dengan scale baru
     function zoomToContentPoint(newScale, fx, fy, startTX, startTY, startScale) {
-        // Saat scale berubah dari startScale â†’ newScale,
+        // Saat scale berubah dari startScale → newScale,
         // focal point konten (fx, fy) harus tetap di posisi layar yang sama.
         // Posisi layar focal = natCenter + tx + fx * scale
         // Agar sama: startTX + fx*startScale = newTX + fx*newScale
-        // â†’ newTX = startTX + fx*(startScale - newScale)
+        // → newTX = startTX + fx*(startScale - newScale)
         canvasTranslateX = startTX + fx * (startScale - newScale);
         canvasTranslateY = startTY + fy * (startScale - newScale);
         currentCanvasScale = newScale;
     }
 
-    // â”€â”€ touchstart â”€â”€
+    // ── touchstart ──
     newVP.addEventListener('touchstart', (e) => {
         // FAST SWIPE: Jika user buru-buru tap/geser saat kertas masih terbang,
         // langsung selesaikan animasi secara instan tanpa menunggu.
@@ -3310,7 +3326,7 @@ function initCanvasGestures() {
         }
 
         if (e.touches.length === 2) {
-            // Masuk mode pinch â€” batalkan semua state pan/tap & swipe halaman
+            // Masuk mode pinch — batalkan semua state pan/tap & swipe halaman
             isPinching    = true;
             isPanning     = false;
             isSwipingPage = false;
@@ -3336,7 +3352,7 @@ function initCanvasGestures() {
             tapStartTime = Date.now();
 
             if (currentCanvasScale <= window.defaultCanvasScale + 0.02) {
-                // Mode swipe halaman â€” wrapper akan digeser langsung (canvas-prev/next absolute ikut)
+                // Mode swipe halaman — wrapper akan digeser langsung (canvas-prev/next absolute ikut)
                 isSwipingPage = true;
                 swipeStartX   = e.touches[0].clientX;
                 // Pastikan tidak ada transisi saat dragging
@@ -3352,7 +3368,7 @@ function initCanvasGestures() {
         }
     }, { passive: true });
 
-    // â”€â”€ touchmove â”€â”€
+    // ── touchmove ──
     newVP.addEventListener('touchmove', (e) => {
         // FIX BUG DRAG SELECTION: Cegah halaman ikutan bergeser saat user menarik gagang seleksi
         if (window.getSelection().toString().trim().length > 0) {
@@ -3374,7 +3390,7 @@ function initCanvasGestures() {
                 canvasTranslateX   = 0;
                 canvasTranslateY   = 0;
             } else {
-                // Zoom ke focal point konten â€” tidak pakai mid layar sekarang
+                // Zoom ke focal point konten — tidak pakai mid layar sekarang
                 // karena mid bisa bergeser saat jari bergerak lateral.
                 // Focal point KONTEN tetap konstan sejak touchstart.
                 zoomToContentPoint(newScale,
@@ -3384,17 +3400,17 @@ function initCanvasGestures() {
             _applyCanvasTransform(wrapper);
 
         } else if (isSwipingPage && e.touches.length === 1) {
-            // [LAYOUT NUMPUK] Geser page-stage saja â€” canvas-prev/next statis, numpuk PAS di posisi
+            // [LAYOUT NUMPUK] Geser page-stage saja — canvas-prev/next statis, numpuk PAS di posisi
             // yang sama di belakang (bukan di samping lagi), jadi otomatis kebuka tanpa celah.
             const deltaX = e.touches[0].clientX - swipeStartX;
             _setRevealDirection(deltaX);
             if (pageTurnAnimEnabled && pageStage) {
                 // Tilt 3D ala Play Books: makin jauh drag, makin miring & sedikit mengecil.
-                // HANYA pageStage yang gerak â€” canvas-prev/next diam total di belakang.
+                // HANYA pageStage yang gerak — canvas-prev/next diam total di belakang.
                 const progress = Math.max(-1, Math.min(1, deltaX / window.innerWidth));
                 const rotateY  = -progress * 85; // derajat maksimum (lebih besar = lebih 3D)
                 const liftZ    = -Math.abs(progress) * 80; // "terangkat" menjauh sedikit
-                // PENTING: tinggi kertas TIDAK boleh ikut menyusut â€” hanya scaleX (lebar) yang
+                // PENTING: tinggi kertas TIDAK boleh ikut menyusut — hanya scaleX (lebar) yang
                 // sedikit mengecil untuk mempertegas kesan lengkung 3D, scaleY tetap 1 (tinggi asli).
                 const scaleXTo = 1 - Math.abs(progress) * 0.15;
                 pageStage.style.transformOrigin = deltaX < 0 ? 'right center' : 'left center';
@@ -3421,7 +3437,7 @@ function initCanvasGestures() {
         }
     }, { passive: false });
 
-    // Timer untuk menunda navigasi halaman â€” dibatalkan jika tap kedua datang
+    // Timer untuk menunda navigasi halaman — dibatalkan jika tap kedua datang
     let _navTimer = null;
 
     // Helper: snap wrapper kembali ke posisi tengah dengan animasi singkat
@@ -3440,9 +3456,9 @@ function initCanvasGestures() {
         }, 300);
     }
 
-    // â”€â”€ touchend â”€â”€
+    // ── touchend ──
     newVP.addEventListener('touchend', (e) => {
-        // Jari ke-2 terangkat â†’ akhiri pinch, perbarui anchor pan agar tidak loncat
+        // Jari ke-2 terangkat → akhiri pinch, perbarui anchor pan agar tidak loncat
         if (e.touches.length === 1 && isPinching) {
             isPinching = false;
             isSwipingPage = false;
@@ -3458,20 +3474,20 @@ function initCanvasGestures() {
             isPinching = false;
             isPanning  = false;
 
-            // â”€â”€ SWIPE NAVIGASI HALAMAN â”€â”€
+            // ── SWIPE NAVIGASI HALAMAN ──
             if (isSwipingPage) {
                 isSwipingPage = false;
                 const deltaX = e.changedTouches[0].clientX - swipeStartX;
                 const absDX  = Math.abs(deltaX);
-                // (slider variable dihapus â€” wrapper digeser langsung)
+                // (slider variable dihapus — wrapper digeser langsung)
 
                 if (absDX < 15) {
-                    // TAP â€” snap kembali ke tengah, teruskan ke logika tap di bawah
+                    // TAP — snap kembali ke tengah, teruskan ke logika tap di bawah
                     _snapSliderToCenter();
-                    // Jangan return â€” biarkan logika tap/double-tap di bawah berjalan
+                    // Jangan return — biarkan logika tap/double-tap di bawah berjalan
 
                 } else if (deltaX < -80) {
-                    // SWIPE KIRI â†’ halaman berikutnya
+                    // SWIPE KIRI → halaman berikutnya
                     if (currentPdfDoc && currentCanvasPage < currentPdfDoc.numPages) {
                         isAnimatingPage = true;
                         _setRevealDirection(-1);
@@ -3541,7 +3557,7 @@ function initCanvasGestures() {
                     return;
 
                 } else if (deltaX > 80) {
-                    // SWIPE KANAN â†’ halaman sebelumnya
+                    // SWIPE KANAN → halaman sebelumnya
                     if (currentPdfDoc && currentCanvasPage > 1) {
                         isAnimatingPage = true;
                         _setRevealDirection(1);
@@ -3611,7 +3627,7 @@ function initCanvasGestures() {
                     return;
 
                 } else {
-                    // BATAL (15â€“80px) â€” snap kembali ke tengah
+                    // BATAL (15–80px) — snap kembali ke tengah
                     _snapSliderToCenter();
                     return;
                 }
@@ -3643,7 +3659,7 @@ function initCanvasGestures() {
             const doubleMoved  = Math.hypot(ex - _canvasLastTapX, ey - _canvasLastTapY);
 
             if (dtDoubleTap < 320 && doubleMoved < 40) {
-                // â”€â”€ DOUBLE TAP â€” batalkan timer navigasi yang mungkin sedang pending â”€â”€
+                // ── DOUBLE TAP — batalkan timer navigasi yang mungkin sedang pending ──
                 clearTimeout(_navTimer);
                 _navTimer = null;
                 _canvasLastTapTime = 0; // reset agar tidak triple-tap
@@ -3657,7 +3673,7 @@ function initCanvasGestures() {
                     _applyCanvasTransform(wrapper);
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 } else {
-                    // Zoom IN 2.5Ã— ke titik yang di-tap
+                    // Zoom IN 2.5× ke titik yang di-tap
                     const fc = screenToContent(ex, ey);
                     wrapper.style.transition = 'transform 0.3s cubic-bezier(0.2,0,0,1)';
                     zoomToContentPoint(2.5, fc.cx, fc.cy,
@@ -3666,7 +3682,7 @@ function initCanvasGestures() {
                     setTimeout(() => { wrapper.style.transition = 'none'; }, 320);
                 }
             } else {
-                // â”€â”€ SINGLE TAP â€” catat dulu, tunda navigasi sampai window double-tap berakhir â”€â”€
+                // ── SINGLE TAP — catat dulu, tunda navigasi sampai window double-tap berakhir ──
                 _canvasLastTapTime = now;
                 _canvasLastTapX    = ex;
                 _canvasLastTapY    = ey;
@@ -3695,7 +3711,7 @@ function initCanvasGestures() {
 }
 
 // Clamp & apply transform.
-// transform-origin: center center â†’ translate 0,0 = wrapper pas di tengah viewport.
+// transform-origin: center center → translate 0,0 = wrapper pas di tengah viewport.
 // Saat scale S: wrapper melebar. Maksimum pan = separuh overflow tiap sisi.
 function _applyCanvasTransform(wrapper) {
     if (wrapper._W && wrapper._cW) {
@@ -3743,7 +3759,7 @@ window._closeReaderAction = function(isFromHistory = false) {
         }
 
         // Render ulang library (murah, cuma manipulasi DOM lokal) supaya progress terbaru
-        // langsung real-time di Home/Scroll/Canvas â€” termasuk saat buku baru masuk/naik
+        // langsung real-time di Home/Scroll/Canvas — termasuk saat buku baru masuk/naik
         // urutan "Lanjutkan Membaca", yang sebelumnya cuma bisa muncul setelah restart app.
         if (activeBookId) {
             renderLibrary(document.getElementById('global-search') ? document.getElementById('global-search').value : '');
@@ -3965,7 +3981,7 @@ function _handleSelectionChange() {
         // Deteksi: apakah seleksi berasal dari TextLayer (Canvas Mode)?
         if (book && book.pdfMode === 'canvas') {
             if (!textLayerDiv || !textLayerDiv.contains(range.commonAncestorContainer)) {
-                // Seleksi bukan dari TextLayer â€” abaikan
+                // Seleksi bukan dari TextLayer — abaikan
                 if (!_isTouchDragging) window.hideSelectionMenu();
                 return;
             }
@@ -4171,7 +4187,7 @@ window.saveBookmarkAnnotation = function() {
         
         if (book.pdfMode === 'canvas') {
             const d_bm = i18n[wikiLang] || i18n['id'];
-            // Cek apakah ada teks yang diseleksi dari TextLayer â€” jika ada, gunakan snippet teks tersebut
+            // Cek apakah ada teks yang diseleksi dari TextLayer — jika ada, gunakan snippet teks tersebut
             const hasTextSnippet = currentSelection.text && 
                                    currentSelection.text.trim().length > 0 && 
                                    currentSelection.text !== `${d_bm.pdfPageLabel || 'Hal'} ${currentCanvasPage}`;
@@ -4195,7 +4211,7 @@ window.saveBookmarkAnnotation = function() {
             const totalNodes = book.nodes.length;
             const pct = Math.round(((currentSelection.nodeIdx + 1) / totalNodes) * 100);
 
-            let closestChapterName = wikiLang === 'id' ? "Bagian Buku" : (wikiLang === 'es' ? "SecciÃ³n del libro" : "Book Section");
+            let closestChapterName = wikiLang === 'id' ? "Bagian Buku" : (wikiLang === 'es' ? "Sección del libro" : "Book Section");
             for (let i = currentSelection.nodeIdx; i >= 0; i--) {
                 if (book.nodes[i].tag === 'h1' || book.nodes[i].tag === 'h2') {
                     closestChapterName = book.nodes[i].text;
@@ -4213,7 +4229,7 @@ window.saveBookmarkAnnotation = function() {
                 color: activeNoteColor, 
                 title: titleVal || (wikiLang === 'id' ? "Bookmark Baru" : (wikiLang === 'es' ? "Nuevo Marcador" : "New Bookmark")), 
                 note: noteVal,
-                meta: `${chapterPreview} â€” ${pct}%`
+                meta: `${chapterPreview} — ${pct}%`
             };
             setTimeout(() => { registerAnnotation(newAnnot); }, 300);
         }
@@ -4366,7 +4382,7 @@ function _renderBookmarkList(annotations) {
             }
             
             const d_bm = i18n[wikiLang] || i18n['id'];
-            let metaText = bm.meta || (wikiLang === 'id' ? 'Bab' : (wikiLang === 'es' ? 'CapÃ­tulo' : 'Chapter'));
+            let metaText = bm.meta || (wikiLang === 'id' ? 'Bab' : (wikiLang === 'es' ? 'Capítulo' : 'Chapter'));
             if (metaText.length > 15) metaText = metaText.substring(0, 15) + '...';
 
             btn.innerHTML = `
@@ -4409,7 +4425,7 @@ window.filterBookmarkPanel = function(query) {
 
 // 12. SWIPE TO DISMISS LOGIC & SCROLL LOCK
 function setupSwipeToDismiss() {
-    // 'welcome-sheet' (view Instruksi) sengaja TIDAK dimasukkan â€” tidak boleh ditutup dengan swipe ke bawah
+    // 'welcome-sheet' (view Instruksi) sengaja TIDAK dimasukkan — tidak boleh ditutup dengan swipe ke bawah
     const sheets = ['b-opt-sheet', 'edit-sheet', 'bookmark-sheet', 'raw-backup-sheet', 'raw-restore-sheet', 'backup-type-sheet', 'pdf-mode-sheet', 'ai-sheet'];
     
     sheets.forEach(sheetId => {
@@ -4601,7 +4617,7 @@ function _archiveRenderCards(docs) {
         const hasPdf = fmts.some(f => f.toLowerCase().includes('pdf'));
         const hasEpub = fmts.some(f => f.toLowerCase().includes('epub'));
         const badge = hasPdf && hasEpub ? 'PDF + EPUB' : hasPdf ? 'PDF' : hasEpub ? 'EPUB' : '?';
-        const downloads = doc.downloads ? parseInt(doc.downloads).toLocaleString('id') : 'â€”';
+        const downloads = doc.downloads ? parseInt(doc.downloads).toLocaleString('id') : '—';
         const card = document.createElement('div');
         card.className = 'flex items-start gap-3 bg-m3-surface rounded-[20px] p-3 shadow-sm';
         card.innerHTML = `
@@ -4611,7 +4627,7 @@ function _archiveRenderCards(docs) {
                 ${creator ? `<p class="text-[10px] text-m3-onSurfaceVariant opacity-55 truncate mb-1">${_esc(creator)}</p>` : ''}
                 <div class="flex items-center gap-1.5">
                     <span class="text-[9px] font-black bg-m3-primary/15 text-m3-primary px-1.5 py-0.5 rounded-full">${badge}</span>
-                    <span class="text-[9px] opacity-40 font-bold">â†“${downloads}</span>
+                    <span class="text-[9px] opacity-40 font-bold">↓${downloads}</span>
                 </div>
             </div>
             <button class="shrink-0 w-9 h-9 rounded-full bg-m3-primary text-m3-onPrimary flex items-center justify-center btn-morph shadow-sm" onclick="window.archiveDownload('${_esc(id)}', '${_esc(title.replace(/'/g, "\\'").replace(/"/g, '&quot;'))}')">
@@ -4668,7 +4684,7 @@ function _showArchiveFormatPicker(epubFile, pdfFile, epubSizeMb, pdfSizeMb, onCh
         if (sheet) sheet.style.transform = 'scale(1)';
     });
 
-    // Push history HANYA untuk back gesture/hardware â€” tombol di dalam tidak menyentuh history sama sekali
+    // Push history HANYA untuk back gesture/hardware — tombol di dalam tidak menyentuh history sama sekali
     history.pushState({ state: 'archive-fmt' }, '', '#archive-fmt');
 
     const _close = () => {
@@ -4681,7 +4697,7 @@ function _showArchiveFormatPicker(epubFile, pdfFile, epubSizeMb, pdfSizeMb, onCh
     document.getElementById('archive-fmt-cancel').onclick = () => { _close(); onChoose(null); };
 }
 
-// â”€â”€â”€ SIMPAN FILE KE PENYIMPANAN HP (Capacitor Filesystem) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SIMPAN FILE KE PENYIMPANAN HP (Capacitor Filesystem) ────────────────────
 async function _saveFileToDevice(file, fileName) {
     const langNow = typeof wikiLang !== 'undefined' ? wikiLang : 'id';
     const FS = window.Capacitor?.Plugins?.Filesystem;
@@ -4740,15 +4756,15 @@ async function _saveFileToDevice(file, fileName) {
             }
 
             saved = true;
-            _toast(langNow === 'en' ? `Saved to Downloads âœ“` : `Tersimpan di perangkat âœ“`, 'success');
+            _toast(langNow === 'en' ? `Saved to Downloads ✓` : `Tersimpan di perangkat ✓`, 'success');
             break; 
         } catch (err) {
             console.warn(`[saveFileToDevice] Gagal di ${dir}:`, err);
         }
     }
 }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 window.archiveDownload = async function(identifier, title) {
     if (_archiveDownloading) return;
@@ -4788,7 +4804,7 @@ window.archiveDownload = async function(identifier, title) {
         document.getElementById('archive-dl-cancel').onclick = () => {
             if (archiveAbortController) archiveAbortController.abort();
         };
-        // Push history HANYA untuk back gesture/hardware â€” tombol Cancel tidak menyentuh history
+        // Push history HANYA untuk back gesture/hardware — tombol Cancel tidak menyentuh history
         history.pushState({ state: 'archive-dl' }, '', '#archive-dl');
         requestAnimationFrame(() => { ov.style.opacity = '1'; });
     };
@@ -4859,7 +4875,7 @@ window.archiveDownload = async function(identifier, title) {
         const fileName   = `${cleanTitle}.${chosenType}`;
         const mimeType   = chosenType === 'epub' ? 'application/epub+zip' : 'application/pdf';
 
-        // â”€â”€ XHR DOWNLOADER: Mengambil file murni tanpa korup â”€â”€
+        // ── XHR DOWNLOADER: Mengambil file murni tanpa korup ──
         const _downloadViaXHR = () => new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('GET', fileUrl, true);
@@ -4940,7 +4956,7 @@ window.archiveDownload = async function(identifier, title) {
         archiveAbortController = null;
 
         if (err.name === 'AbortError') {
-            // Dibatalkan oleh user â€” tampilkan toast bersih tanpa dialog
+            // Dibatalkan oleh user — tampilkan toast bersih tanpa dialog
             if (typeof window.showPersistentToast === 'function') {
                 window.showPersistentToast(txt.canceled, 'duplicate', 3000);
             }
@@ -4963,7 +4979,7 @@ function _esc(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// â”€â”€â”€ PERSISTENT TOAST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PERSISTENT TOAST ────────────────────────────────────────────────────────
 // Toast yang kebal dari history.back() / efek penutupan search.
 // Pakai z-index 99999 (di atas semua overlay) dan TIDAK menyentuh history stack.
 // type: 'success' | 'duplicate' | 'error'
@@ -5031,7 +5047,7 @@ function _processToastQueue() {
         setTimeout(() => _processToastQueue(), 260);
     }, duration);
 }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 // 14. PWA & CAPACITOR SETUP
 if ('serviceWorker' in navigator) {
@@ -5069,7 +5085,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ===================================================================
-// EFEK RIPPLE (Material Design) â€” global listener untuk .btn-morph, .card-morph, dan tombol
+// EFEK RIPPLE (Material Design) — global listener untuk .btn-morph, .card-morph, dan tombol
 // ===================================================================
 function _spawnRipple(target, clientX, clientY) {
     if (!target) return;
@@ -5093,7 +5109,7 @@ function _spawnRipple(target, clientX, clientY) {
 }
 
 function _handleGlobalRippleTrigger(e) {
-    // Kecualikan nav bar bawah â€” ripple tidak boleh muncul di dalamnya
+    // Kecualikan nav bar bawah — ripple tidak boleh muncul di dalamnya
     if (e.target.closest('#bottom-nav-bar, .nav-bar, nav')) return;
     const target = e.target.closest('.btn-morph, .card-morph, button');
     if (!target) return;
