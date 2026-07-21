@@ -1,4 +1,4 @@
-window.APP_VERSION = "2.1.2";
+window.APP_VERSION = "2.2.0";
 window.UPDATE_URL = "https://raw.githubusercontent.com/dyunayuna90-bit/baca./main/package.json";
 window.RELEASES_URL = "https://github.com/dyunayuna90-bit/baca./releases/latest";
 
@@ -156,7 +156,7 @@ const i18n = {
         statChartEmpty: "Belum ada data aktivitas membaca.",
         statChartPages: "halaman",
         setMainTitle: "Pengaturan", setPalette: "Palet Tema", setLang: "Bahasa", setInfo: "Info & Dukungan",
-        btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnClose: "Tutup",
+        btnInfo: "Lihat Instruksi", btnDonate: "Traktir Kopi (Donasi)", btnDonateKofi: "Dukung di Ko-fi", btnClose: "Tutup",
         setData: "Data Aplikasi", btnBackup: "Backup Data", btnRestore: "Pulihkan",
         
         // Teks Sistem Cek Update
@@ -171,7 +171,7 @@ const i18n = {
 
         navBack: "Kembali", navToc: "Daftar Isi", navSearch: "Pencarian", navJumpPage: "Lompat ke Halaman", navText: "Teks", navFull: "Penuh",
         readerLoading: "Memuat Buku...", tocTitle: "Daftar Isi", setTitle: "Tampilan",
-        setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
+        setPageturn: "Animasi Pindah Halaman (Mode Canvas)", pageturnOn: "Aktif", pageturnOff: "Nonaktif", setTheme: "Mode Tema", setSize: "Ukuran Teks", setAlign: "Perataan Teks", setFont: "Jenis Font",
         searchPlaceholder: "Cari dalam buku...", searchNotFound: "Tidak ditemukan.",
         aiTitle: "Penjelasan", aiLoading: "Mencari referensi...", noInternet: "Koneksi internet bermasalah.",
         deleteNoteConfirm: "Hapus catatan/sorotan ini?",
@@ -181,7 +181,7 @@ const i18n = {
         rawResTitle: "Pulihkan Data", rawResDesc: "Pilih file JSON (untuk progres) atau ZIP (untuk full backup) dari perangkat lu.", rawResFile: "Pilih File", rawResProcess: "Proses Teks", rawResClose: "Batal",
         setAiConfig: "Konfigurasi AI", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Tambahkan API Key untuk mendapatkan penjelasan pintar dari AI. (Saran optimal: gunakan Gemini 2.5 Flash Lite untuk kecepatan maksimal).", keySaved: "API Key berhasil disimpan.",
 
-        statTitle: "Statistik Membaca", statTotal: "Koleksi", statReading: "Dibaca", statCompleted: "Selesai", statNotes: "Catatan",
+        statTitle: "Statistik Membaca", statTotal: "Koleksi", statReading: "Dibaca", statCompleted: "Selesai", statNotes: "Catatan", readProgress: "{p}% Dibaca",
 
         // Fitur Hapus Sampul
         btnClearCovers: "Hapus Semua Sampul (Biar Ringan)",
@@ -236,7 +236,6 @@ const i18n = {
 
         // --- PHASE 3 UI UPDATES & NEW MODALS ---
         tocCanvasWarning: "Untuk mode canvas, daftar isi tidak tersedia.",
-        setHideTitles: "Sembunyikan Judul Buku di Rak",
         expressiveLabel: "Ekspresif",
         uploadDuplicateTitle: "Buku Sudah Ada",
         uploadDuplicateDesc: "Buku berikut sudah ada di rakmu. Tambahkan lagi (sebagai file baru) atau lewati saja?",
@@ -272,11 +271,31 @@ const i18n = {
         archiveFilterEpub: "EPUB",
         archiveResultCount: "{n} hasil ditemukan",
         archiveSectionTitle: "Temukan & Unduh Buku",
+        archiveFic: "Fiksi Populer",
+        archiveSci: "Sains & Ilmu Pengetahuan",
+        archiveHis: "Sejarah Dunia",
+        archiveFmtTitle: "Pilih Format",
+        archiveFmtDesc: "Buku ini tersedia dalam dua format. Pilih yang kamu inginkan:",
+        archiveFmtCancel: "Batal",
+        archiveTech: "Teknologi",
+        archivePhil: "Filsafat",
+        archiveFantasy: "Fantasi & Sihir",
+        archiveLoading: "Memuat rekomendasi...",
+        archiveFailed: "Gagal memuat rekomendasi.",
 
         // --- ARCHIVE DOWNLOAD RESULT TOASTS ---
         toastBookAdded: "Buku berhasil ditambah!",
         toastBookDuplicate: "Buku \"{title}\" udah ada di rak sebelumnya.",
-        toastBookFailed: "Gagal diproses, file mungkin rusak."
+        toastBookFailed: "Gagal diproses, file mungkin rusak.",
+
+        // --- SEARCH / NAV / HOME (baru) ---
+        searchArchive: "Cari di Internet Archive...",
+        searchLocal: "Cari di rak lokal...",
+        navHome: "Beranda",
+        navScroll: "Scroll",
+        navCanvas: "Canvas",
+        jelajahArsip: "Jelajahi Arsip",
+        continueReadingHome: "Lanjutkan Membaca"
     },
     en: {
         libEmpty: "Library is Empty.", searchBooks: "Search books...", loadingDocs: "Reading Document...", 
@@ -314,7 +333,7 @@ const i18n = {
         statChartEmpty: "No reading activity data yet.",
         statChartPages: "pages",
         setMainTitle: "Settings", setPalette: "Theme Palette", setLang: "Language", setInfo: "Info & Support",
-        btnInfo: "View Instructions", btnDonate: "Buy Me a Coffee", btnClose: "Close",
+        btnInfo: "View Instructions", btnDonate: "Buy Me a Coffee", btnDonateKofi: "Support on Ko-fi", btnClose: "Close",
         setData: "App Data", btnBackup: "Backup Data", btnRestore: "Restore Data",
         
         // Teks Sistem Cek Update
@@ -329,7 +348,7 @@ const i18n = {
 
         navBack: "Back", navToc: "Contents", navSearch: "Search", navJumpPage: "Jump to Page", navText: "Text", navFull: "Full",
         readerLoading: "Loading Book...", tocTitle: "Table of Contents", setTitle: "Appearance",
-        setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
+        setPageturn: "Page Turn Animation (Canvas Mode)", pageturnOn: "On", pageturnOff: "Off", setTheme: "Theme Mode", setSize: "Text Size", setAlign: "Text Alignment", setFont: "Font Family",
         searchPlaceholder: "Search in book...", searchNotFound: "Not found.",
         aiTitle: "Definition", aiLoading: "Looking for references...", noInternet: "Internet connection issue.",
         deleteNoteConfirm: "Delete this note/highlight?",
@@ -339,7 +358,7 @@ const i18n = {
         rawResTitle: "Restore Data", rawResDesc: "Select a JSON file (for progress) or ZIP file (for full backup) from your device.", rawResFile: "Select File", rawResProcess: "Process Text", rawResClose: "Cancel",
         setAiConfig: "AI Configuration", geminiPlaceholder: "Gemini API Key...", geminiDesc: "Add your API Key to get smart definitions from AI. (Optimal setup: use Gemini 2.5 Flash Lite for maximum speed).", keySaved: "API Key saved successfully.",
 
-        statTitle: "Statistics", statTotal: "Collection", statReading: "Reading", statCompleted: "Completed", statNotes: "Notes",
+        statTitle: "Statistics", statTotal: "Collection", statReading: "Reading", statCompleted: "Completed", statNotes: "Notes", readProgress: "{p}% Read",
 
         // Fitur Hapus Sampul
         btnClearCovers: "Clear All Covers (Save Memory)",
@@ -394,7 +413,6 @@ const i18n = {
 
         // --- PHASE 3 UI UPDATES & NEW MODALS ---
         tocCanvasWarning: "Table of contents is not available in canvas mode.",
-        setHideTitles: "Hide Book Titles in Shelf",
         expressiveLabel: "Expressive",
         uploadDuplicateTitle: "Book Already Exists",
         uploadDuplicateDesc: "The following book is already in your shelf. Add anyway (as new) or skip?",
@@ -430,11 +448,31 @@ const i18n = {
         archiveFilterEpub: "EPUB",
         archiveResultCount: "{n} results found",
         archiveSectionTitle: "Discover & Download Books",
+        archiveFic: "Popular Fiction",
+        archiveSci: "Science & Knowledge",
+        archiveHis: "World History",
+        archiveFmtTitle: "Choose Format",
+        archiveFmtDesc: "This book is available in two formats. Pick the one you want:",
+        archiveFmtCancel: "Cancel",
+        archiveTech: "Technology",
+        archivePhil: "Philosophy",
+        archiveFantasy: "Fantasy & Magic",
+        archiveLoading: "Loading recommendations...",
+        archiveFailed: "Failed to load recommendations.",
 
         // --- ARCHIVE DOWNLOAD RESULT TOASTS ---
         toastBookAdded: "Book added successfully!",
         toastBookDuplicate: "Book \"{title}\" is already in your shelf.",
-        toastBookFailed: "Processing failed, file may be corrupted."
+        toastBookFailed: "Processing failed, file may be corrupted.",
+
+        // --- SEARCH / NAV / HOME (new) ---
+        searchArchive: "Search Internet Archive...",
+        searchLocal: "Search local shelf...",
+        navHome: "Home",
+        navScroll: "Scroll",
+        navCanvas: "Canvas",
+        jelajahArsip: "Explore Archive",
+        continueReadingHome: "Continue Reading"
     },
     es: {
         libEmpty: "La biblioteca está vacía.", searchBooks: "Buscar libros...", loadingDocs: "Leyendo documento...", 
@@ -472,7 +510,7 @@ const i18n = {
         statChartEmpty: "Aún no hay datos de actividad de lectura.",
         statChartPages: "páginas",
         setMainTitle: "Ajustes", setPalette: "Paleta de temas", setLang: "Idioma", setInfo: "Información y soporte",
-        btnInfo: "Ver instrucciones", btnDonate: "Cómprame un café", btnClose: "Cerrar",
+        btnInfo: "Ver instrucciones", btnDonate: "Cómprame un café", btnDonateKofi: "Apóyame en Ko-fi", btnClose: "Cerrar",
         setData: "Datos de la app", btnBackup: "Copia de seguridad", btnRestore: "Restaurar datos",
         
         // Teks Sistem Cek Update
@@ -487,7 +525,7 @@ const i18n = {
 
         navBack: "Atrás", navToc: "Índice", navSearch: "Buscar", navJumpPage: "Ir a Página", navText: "Texto", navFull: "Completo",
         readerLoading: "Cargando libro...", tocTitle: "Índice", setTitle: "Apariencia",
-        setTheme: "Modo de tema", setSize: "Tamaño del texto", setAlign: "Alineación", setFont: "Tipo de letra",
+        setPageturn: "Animación al Pasar Página (Modo Canvas)", pageturnOn: "Activado", pageturnOff: "Desactivado", setTheme: "Modo de tema", setSize: "Tamaño del texto", setAlign: "Alineación", setFont: "Tipo de letra",
         searchPlaceholder: "Buscar en el libro...", searchNotFound: "No encontrado.",
         aiTitle: "Definición", aiLoading: "Buscando referencias...", noInternet: "Problema de conexión a internet.",
         deleteNoteConfirm: "¿Eliminar esta nota/resaltado?",
@@ -497,7 +535,7 @@ const i18n = {
         rawResTitle: "Restaurar datos", rawResDesc: "Selecciona un archivo JSON (progreso) o ZIP (completo) desde tu dispositivo.", rawResFile: "Seleccionar archivo", rawResProcess: "Procesar texto", rawResClose: "Cancelar",
         setAiConfig: "Configuración de IA", geminiPlaceholder: "Clave API de Gemini...", geminiDesc: "Añade tu clave API para obtener definiciones inteligentes de la IA. (Configuración óptima: usa Gemini 2.5 Flash Lite para máxima velocidad).", keySaved: "Clave API guardada con éxito.",
 
-        statTitle: "Estadísticas", statTotal: "Colección", statReading: "Leyendo", statCompleted: "Completados", statNotes: "Notas",
+        statTitle: "Estadísticas", statTotal: "Colección", statReading: "Leyendo", statCompleted: "Completados", statNotes: "Notas", readProgress: "{p}% Leído",
 
         // Fitur Hapus Sampul
         btnClearCovers: "Borrar Todas las Portadas (Ahorrar Memoria)",
@@ -552,7 +590,6 @@ const i18n = {
 
         // --- PHASE 3 UI UPDATES & NEW MODALS ---
         tocCanvasWarning: "El índice no está disponible en el modo canvas.",
-        setHideTitles: "Ocultar Títulos de Libros en Estante",
         expressiveLabel: "Expresivo",
         uploadDuplicateTitle: "El Libro Ya Existe",
         uploadDuplicateDesc: "El siguiente libro ya está en tu estante. ¿Añadir de todos modos (nuevo archivo) o saltar?",
@@ -588,10 +625,30 @@ const i18n = {
         archiveFilterEpub: "EPUB",
         archiveResultCount: "{n} resultados encontrados",
         archiveSectionTitle: "Descubrir y Descargar Libros",
+        archiveFic: "Ficción Popular",
+        archiveSci: "Ciencia y Conocimiento",
+        archiveHis: "Historia Mundial",
+        archiveFmtTitle: "Elegir Formato",
+        archiveFmtDesc: "Este libro está disponible en dos formatos. Elige el que prefieras:",
+        archiveFmtCancel: "Cancelar",
+        archiveTech: "Tecnología",
+        archivePhil: "Filosofía",
+        archiveFantasy: "Fantasía y Magia",
+        archiveLoading: "Cargando recomendaciones...",
+        archiveFailed: "Error al cargar recomendaciones.",
 
         // --- ARCHIVE DOWNLOAD RESULT TOASTS ---
         toastBookAdded: "¡Libro añadido con éxito!",
         toastBookDuplicate: "El libro \"{title}\" ya está en tu estante.",
-        toastBookFailed: "Error al procesar, el archivo puede estar dañado."
+        toastBookFailed: "Error al procesar, el archivo puede estar dañado.",
+
+        // --- SEARCH / NAV / HOME (nuevo) ---
+        searchArchive: "Buscar en Internet Archive...",
+        searchLocal: "Buscar en estante local...",
+        navHome: "Inicio",
+        navScroll: "Scroll",
+        navCanvas: "Canvas",
+        jelajahArsip: "Explorar Archivo",
+        continueReadingHome: "Continuar Leyendo"
     }
 };
